@@ -19,8 +19,6 @@ export async function signInWithGithub() {
     },
   });
 
-  console.log(data);
-
   if (error) {
     redirect("/error");
   }
@@ -42,11 +40,10 @@ export async function signInWithAzure() {
     provider: "azure",
     options: {
       redirectTo: `${origin}/auth/callback`,
-      scopes: "email",
+      // scopes: "email",
+      scopes: "openid profile email User.Read",
     },
   });
-
-  console.log("data", data);
 
   if (error) {
     redirect("/error");
@@ -67,7 +64,7 @@ export async function signOut() {
     redirect("/error");
   }
 
-  revalidatePath("/", "layout");
+  revalidatePath("/", "page");
 
   redirect("/login");
 }

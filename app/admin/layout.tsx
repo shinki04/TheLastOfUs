@@ -14,14 +14,20 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { AppSidebar } from "./_component/app-sidebar";
+import { getUserProfile } from "../actions/auth";
+import { redirect } from "next/navigation";
 interface AdminPageProps {
   children: React.ReactNode;
 }
-export default function AdminLayout({ children }: AdminPageProps) {
+export default async function AdminLayout({ children }: AdminPageProps) {
+  const user = await getUserProfile();
+  if (!user) {
+    redirect("/login");
+  }
   return (
     <>
       <SidebarProvider>
-        <AppSidebar />
+        <AppSidebar user={user} />
         <SidebarInset>
           <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
             <SidebarTrigger className="-ml-1" />
@@ -29,7 +35,7 @@ export default function AdminLayout({ children }: AdminPageProps) {
               orientation="vertical"
               className="mr-2 data-[orientation=vertical]:h-4"
             />
-            <Breadcrumb>
+            {/* <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
                   <BreadcrumbLink href="#">
@@ -41,7 +47,7 @@ export default function AdminLayout({ children }: AdminPageProps) {
                   <BreadcrumbPage>Data Fetching</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
-            </Breadcrumb>
+            </Breadcrumb> */}
           </header>
           <div className="flex flex-1 flex-col gap-4 p-4">
             {/* <div className="grid auto-rows-min gap-4 md:grid-cols-3">

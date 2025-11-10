@@ -5,6 +5,7 @@ import { VersionSwitcher } from "@/components/version-switcher";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -16,8 +17,15 @@ import {
 } from "@/components/ui/sidebar";
 import { AdminSidebarData } from "@/constants/admin-sidebar";
 import Link from "next/link";
+import { NavUser } from "@/components/nav-user";
+import { User } from "@/types/user";
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+// Định nghĩa interface riêng
+interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
+  user: User; // hoặc bất kỳ kiểu nào phù hợp
+}
+
+export function AppSidebar({ user, ...props }: AppSidebarProps) {
   return (
     <Sidebar {...props}>
       <SidebarHeader>
@@ -48,6 +56,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroup>
         ))}
       </SidebarContent>
+      <SidebarFooter>
+        <NavUser user={user} />
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );
