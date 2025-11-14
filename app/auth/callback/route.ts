@@ -41,7 +41,12 @@ export async function GET(request: Request) {
 
     const { error: upsertError } = await supabase
       .from("profiles")
-      .upsert({ id: user.id, username: fullName, avatar_url: avatarUrl });
+      .upsert({
+        id: user.id,
+        username: fullName,
+        avatar_url: avatarUrl,
+        email: user.email,
+      });
 
     if (!error && !upsertError) {
       const forwardedHost = request.headers.get("x-forwarded-host"); // original origin before load balancer
