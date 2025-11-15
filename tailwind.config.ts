@@ -1,55 +1,39 @@
 import type { Config } from "tailwindcss";
 import tailwindcssAnimate from "tailwindcss-animate";
 
-
 const config: Config = {
-    darkMode: "class", // bật dark mode khi có class 'dark'
+    darkMode: "class",
     content: [
-        "./app/**/*.{ts,tsx,js,jsx}",
-        "./pages/**/*.{ts,tsx,js,jsx}",
-        "./components/**/*.{ts,tsx,js,jsx}"
+        "./app/**/*.{js,ts,jsx,tsx}",
+        "./components/**/*.{js,ts,jsx,tsx}",
+        "./pages/**/*.{js,ts,jsx,tsx}",
+        "./ui/**/*.{js,ts,jsx,tsx}",
     ],
     theme: {
         extend: {
             colors: {
+                mainred: "#B52934",
+                'red-bg': 'rgba(181,41,52,0.5)', // nền mờ 50%
+                'red-main': '#B52934',
+                'input-text': '#ffffff',
+                'custom-white': '#ffffff',
                 border: "hsl(var(--border))",
                 input: "hsl(var(--input))",
                 ring: "hsl(var(--ring))",
                 background: "hsl(var(--background))",
                 foreground: "hsl(var(--foreground))",
-                primary: {
-                    DEFAULT: "hsl(var(--primary))",
-                    foreground: "hsl(var(--primary-foreground))",
-                },
-                secondary: {
-                    DEFAULT: "hsl(var(--secondary))",
-                    foreground: "hsl(var(--secondary-foreground))",
-                },
-                destructive: {
-                    DEFAULT: "hsl(var(--destructive))",
-                    foreground: "hsl(var(--destructive-foreground))",
-                },
-                muted: {
-                    DEFAULT: "hsl(var(--muted))",
-                    foreground: "hsl(var(--muted-foreground))",
-                },
-                accent: {
-                    DEFAULT: "hsl(var(--accent))",
-                    foreground: "hsl(var(--accent-foreground))",
-                },
-                popover: {
-                    DEFAULT: "hsl(var(--popover))",
-                    foreground: "hsl(var(--popover-foreground))",
-                },
-                card: {
-                    DEFAULT: "hsl(var(--card))",
-                    foreground: "hsl(var(--card-foreground))",
-                },
             },
             borderRadius: {
-                lg: "var(--radius)",
-                md: "calc(var(--radius) - 2px)",
-                sm: "calc(var(--radius) - 4px)",
+                'xl': '1rem',
+                'lg': '0.75rem',
+                'sm': '0.5rem',
+            },
+            boxShadow: {
+                'login': '0 4px 32px 0 rgba(0, 0, 0, 0.2)',
+            },
+            fontSize: {
+                'login-title': '1.8rem',
+                'login-btn': '1rem',
             },
         }
     },
