@@ -1,6 +1,6 @@
 pre-commit:
   commands:
     check:
-      glob: '*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}'
-      run: npx eslint --fix {staged_files}
+      glob: "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}"
+      run: pnpm eslint --fix {staged_files}
       stage_fixed: true

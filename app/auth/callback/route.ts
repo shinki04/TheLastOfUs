@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 // The client you created from the Server-Side Auth instructions
 import { createClient } from "@/lib/supabase/server";
-import { Global_Roles } from "@/types/user";
+import { BLANK_AVATAR, Global_Roles } from "@/types/user";
 
 const redirectWithCookie = (url: string, name: string, value: string) => {
   const res = NextResponse.redirect(url);
@@ -60,11 +60,8 @@ export async function GET(request: Request) {
 
     // ---- Xử lý sau khi login thành công ----
 
-    const fullName =
-      user.user_metadata?.full_name ||
-      user.user_metadata?.name ||
-      `User ${user.id}`;
-    const avatarUrl = user.user_metadata?.avatar_url ?? null;
+    const fullName = user.user_metadata?.full_name || `User ${user.id}`;
+    const avatarUrl = user.user_metadata?.avatar_url ?? BLANK_AVATAR;
 
     const defaultRole: Global_Roles = "student";
 
@@ -74,6 +71,7 @@ export async function GET(request: Request) {
       avatar_url: avatarUrl,
       email: user.email,
       global_role: defaultRole,
+      display_name: fullName,
     });
 
     if (!error && !upsertError) {

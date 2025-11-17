@@ -1,4 +1,3 @@
-import { getCurrentUser } from "@/lib/services/userService";
 import { User } from "@/types/user";
 import { create } from "zustand";
 

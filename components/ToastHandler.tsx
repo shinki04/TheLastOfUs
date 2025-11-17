@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
+// import { useEffect } from "react";
+// import { useSearchParams, useRouter } from "next/navigation";
+// import { toast } from "sonner";
+// import { createClient } from "@/lib/supabase/client";
 
 export function ToastHandler() {
   // const searchParams = useSearchParams();
