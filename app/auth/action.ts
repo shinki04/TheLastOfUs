@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
-import { FunctionSquare } from "lucide-react";
 
 export async function signInWithGithub() {
   const supabase = await createClient();

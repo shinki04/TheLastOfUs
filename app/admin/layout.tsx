@@ -1,12 +1,5 @@
 import React from "react";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+
 import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
@@ -14,13 +7,13 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { AppSidebar } from "./_component/app-sidebar";
-import { getUserProfile } from "../actions/auth";
+import { getCurrentUser } from "../actions/auth";
 import { redirect } from "next/navigation";
 interface AdminPageProps {
   children: React.ReactNode;
 }
 export default async function AdminLayout({ children }: AdminPageProps) {
-  const user = await getUserProfile();
+  const user = await getCurrentUser();
   if (!user) {
     redirect("/login");
   }
