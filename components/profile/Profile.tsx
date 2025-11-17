@@ -1,5 +1,5 @@
 "use client";
-import { useUpdateProfile } from "@/hooks/useAuth";
+import { useGetCurrentUser, useUpdateProfile } from "@/hooks/useAuth";
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import { useForm } from "@tanstack/react-form";
@@ -21,14 +21,15 @@ import { FieldErrors } from "../FieldErrors";
 import { toast } from "sonner";
 import OldAvatars from "./OldAvatars";
 import { getUserAvatars } from "@/app/actions/auth";
+import { useRouter } from "next/navigation";
 
 interface ProfileProps {
   user: User;
-  isOwner: boolean;
 }
 
-function Profile({ user, isOwner }: ProfileProps) {
-  const { mutateAsync: updateProfile } = useUpdateProfile(user.id);
+function Profile({ user }: ProfileProps) {
+  const { mutateAsync: updateProfile } = useUpdateProfile();
+  const router = useRouter();
   const [avatarPreview, setAvatarPreview] = useState<string>(
     user?.avatar_url || BLANK_AVATAR
   );
@@ -36,6 +37,24 @@ function Profile({ user, isOwner }: ProfileProps) {
 
   const [avatars, setAvatars] = useState<Avatar[]>([]);
 
+  // Lấy data từ cache để xử lý logic owner
+
+  const { data: currentUser } = useGetCurrentUser();
+
+  if (!user || !currentUser) return "Khong tim thay nguoi dung";
+
+  const isOwner = currentUser.id === user.id;
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    const fetchAvatars = async () => {
+      const data = await getUserAvatars(user.id);
+      setAvatars(data);
+    };
+    fetchAvatars();
+  }, []);
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const form = useForm({
     defaultValues: {
       display_name: user?.display_name || "",
@@ -64,7 +83,7 @@ function Profile({ user, isOwner }: ProfileProps) {
           formData.append("avatar_image", value.avatar_image);
         }
 
-        await updateProfile(formData);
+        await updateProfile({ userId: currentUser.id, data: formData });
         toast.success("Cập nhật hồ sơ thành công!");
         setIsDialogOpen(false); // Đóng dialog sau khi thành công
       } catch (error) {
@@ -83,14 +102,6 @@ function Profile({ user, isOwner }: ProfileProps) {
     form.setFieldValue("avatar_image", file);
   };
 
-  useEffect(() => {
-    const fetchAvatars = async () => {
-      const data = await getUserAvatars(user.id);
-      setAvatars(data);
-    };
-    fetchAvatars();
-  }, []);
-
   return (
     <div>
       <p>Display name: {user?.display_name}</p>
@@ -108,11 +119,13 @@ function Profile({ user, isOwner }: ProfileProps) {
           src={user.avatar_url ?? BLANK_AVATAR}
         />
       </div>
+      <Button onClick={() => router.back()}>Go Back</Button>
       <div>
         The last change avatar_image
         <OldAvatars avatars={avatars} />
       </div>
       <p>Des : {user.description}</p>
+
       {isOwner === true && (
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>

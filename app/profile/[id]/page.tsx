@@ -1,4 +1,4 @@
-import { getCurrentUser, getUserProfile } from "@/app/actions/auth";
+import { getUserProfile } from "@/app/actions/auth";
 import Profile from "@/components/profile/Profile";
 import { User } from "@/types/user";
 import {
@@ -29,31 +29,25 @@ async function ProfileIdPage({ params }: ProfileIdPageProps) {
   // });
 
   // Prefetch data cho client-side
-  await Promise.all([
-    queryClient.fetchQuery({
-      queryKey: ["user", id],
-      queryFn: () => getUserProfile(id),
-    }),
-    queryClient.fetchQuery({
-      queryKey: ["user"],
-      queryFn: getCurrentUser,
-    }),
-  ]);
-
-  // Lấy data từ cache để xử lý logic server-side
+  await queryClient.fetchQuery({
+    queryKey: ["user", id],
+    queryFn: () => getUserProfile(id),
+  });
+  // await Promise.all([
+  //   queryClient.fetchQuery({
+  //     queryKey: ["user", id],
+  //     queryFn: () => getUserProfile(id),
+  //   }),
+  // ]);
   const user = queryClient.getQueryData<User>(["user", id]);
-  const currentUser = queryClient.getQueryData<User>(["user"]);
 
-  if (!user || !currentUser) return "Khong tim thay nguoi dung";
-
-  const isOwner = currentUser.id === id;
-  console.log(isOwner, currentUser.id);
+  if (!user) return "Khong tim thay nguoi dung";
 
   return (
     <>
       <div>ID : {id}</div>
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <Profile user={user} isOwner={isOwner} />
+        <Profile user={user} />
       </HydrationBoundary>
     </>
   );

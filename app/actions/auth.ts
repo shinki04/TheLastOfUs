@@ -9,7 +9,6 @@ export async function getCurrentUser() {
   const { data, error } = await supabase.auth.getUser();
 
   if (!data.user || error) {
-    revalidatePath("/", "layout");
     redirect("/login");
   }
 
@@ -142,5 +141,6 @@ export async function updateProfileWithAvatar(
   // Revalidate paths
   revalidatePath("/profile");
   revalidatePath(`/profile/${userId}`);
+  revalidatePath("/", "layout");
   return data;
 }

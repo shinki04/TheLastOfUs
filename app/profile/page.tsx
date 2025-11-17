@@ -9,7 +9,7 @@ import { getCurrentUser } from "../actions/auth";
 async function ProfilePage() {
   const queryClient = new QueryClient();
 
-  const user = await queryClient.prefetchQuery({
+  await queryClient.prefetchQuery({
     queryKey: ["user"],
     queryFn: () => getCurrentUser(),
     staleTime: 10000,

@@ -11,6 +11,7 @@ export function useGetCurrentUser() {
     queryKey: ["user"],
     queryFn: () => getCurrentUser(),
     placeholderData: (previousData) => previousData,
+    staleTime: Infinity,
   });
 }
 
@@ -19,23 +20,25 @@ export function useGetUser(id: string) {
     queryKey: ["user", id],
     queryFn: () => getUserProfile(id),
     placeholderData: (previousData) => previousData,
+    staleTime: 1 * 60 * 1000,
   });
 }
 
-export function useUpdateProfile(userId: string) {
+export function useUpdateProfile() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: FormData) => {
+    mutationFn: ({ userId, data }: { userId: string; data: FormData }) => {
       if (!userId) throw new Error("Missing user id");
       return updateProfileWithAvatar(userId, data);
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       // Update profile cache
       // queryClient.setQueryData(["user"], (old: User | null) =>
       //   old ? { ...old, ...updatedProfile } : updatedProfile
       // );
 
+      const { userId } = variables; // lấy userId từ input mutate
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ["user"] });
       queryClient.invalidateQueries({ queryKey: ["user", userId] });
