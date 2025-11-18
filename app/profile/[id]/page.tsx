@@ -1,4 +1,4 @@
-import { getUserProfile } from "@/app/actions/auth";
+import { getUserProfile } from "@/app/actions/user";
 import Profile from "@/components/profile/Profile";
 import { User } from "@/types/user";
 import {

@@ -3,7 +3,7 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { signOut } from "../auth/action";
 import Tepm from "@/components/dashboard/temp";
-import { getCurrentUser } from "../actions/auth";
+import { getCurrentUser } from "../actions/user";
 import Link from "next/link";
 import {
   dehydrate,

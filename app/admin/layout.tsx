@@ -7,7 +7,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { AppSidebar } from "./_component/app-sidebar";
-import { getCurrentUser } from "../actions/auth";
+import { getCurrentUser } from "../actions/user";
 import { redirect } from "next/navigation";
 interface AdminPageProps {
   children: React.ReactNode;

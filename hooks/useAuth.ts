@@ -2,7 +2,7 @@ import {
   getCurrentUser,
   getUserProfile,
   updateProfileWithAvatar,
-} from "@/app/actions/auth";
+} from "@/app/actions/user";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 

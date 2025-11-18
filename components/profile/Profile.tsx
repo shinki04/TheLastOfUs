@@ -15,13 +15,13 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Avatar, BLANK_AVATAR, User } from "@/types/user";
-import { updateProfileSchema } from "@/lib/validations/updateProfile-schema";
 import supabaseLoader from "@/lib/supabase/supabase-image-loader";
 import { FieldErrors } from "../FieldErrors";
 import { toast } from "sonner";
 import OldAvatars from "./OldAvatars";
-import { getUserAvatars } from "@/app/actions/auth";
+import { getUserAvatars } from "@/app/actions/user";
 import { useRouter } from "next/navigation";
+import { updateProfileSchema } from "@/lib/utils/validations/updateProfile-schema";
 
 interface ProfileProps {
   user: User;
