@@ -10,7 +10,7 @@ export function useGetCurrentUser() {
   return useQuery({
     queryKey: ["user"],
     queryFn: () => getCurrentUser(),
-    placeholderData: (previousData) => previousData,
+    // placeholderData: (previousData) => previousData,
     staleTime: Infinity,
   });
 }

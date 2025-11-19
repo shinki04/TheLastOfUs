@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ERROR_MESSAGES, ErrorMessageKey } from "@/types/login-error";
 import { signInWithAzure } from "@/app/auth/action";
 
+// TODO Get cookies để lấy loading hoặc dùng useForm
 export default function LoginForm() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error") as ErrorMessageKey | null;
@@ -29,11 +30,19 @@ export default function LoginForm() {
             className="mb-3 sm:mb-5   "
           />
 
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-3 sm:mb-4">Login</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-3 sm:mb-4">
+            Login
+          </h1>
 
-          <form className="w-full flex flex-col gap-2 sm:gap-4" onSubmit={(e) => e.preventDefault()}>
+          <form
+            className="w-full flex flex-col gap-2 sm:gap-4"
+            onSubmit={(e) => e.preventDefault()}
+          >
             <div>
-              <Label htmlFor="email" className="text-white mb-1 block font-semibold text-sm sm:text-base">
+              <Label
+                htmlFor="email"
+                className="text-white mb-1 block font-semibold text-sm sm:text-base"
+              >
                 Email
               </Label>
               <Input
@@ -47,7 +56,10 @@ export default function LoginForm() {
             </div>
 
             <div>
-              <Label htmlFor="password" className="text-white mb-1 block font-semibold text-sm sm:text-base">
+              <Label
+                htmlFor="password"
+                className="text-white mb-1 block font-semibold text-sm sm:text-base"
+              >
                 Password
               </Label>
               <Input
@@ -76,7 +88,9 @@ export default function LoginForm() {
 
           <div className="w-full flex items-center gap-2 my-4 sm:my-6">
             <hr className="flex-1 h-px bg-white/30 border-0" />
-            <span className="text-white text-xs sm:text-sm opacity-90">or continue with</span>
+            <span className="text-white text-xs sm:text-sm opacity-90">
+              or continue with
+            </span>
             <hr className="flex-1 h-px bg-white/30 border-0" />
           </div>
 
@@ -86,7 +100,13 @@ export default function LoginForm() {
             onClick={signInWithAzure}
           >
             <span>Microsoft 365</span>
-            <Image src="/logo_Microsoft.png" alt="Azure Logo" width={24} height={24} className="sm:w-[30px] sm:h-[30px]" />
+            <Image
+              src="/logo_Microsoft.png"
+              alt="Azure Logo"
+              width={24}
+              height={24}
+              className="sm:w-[30px] sm:h-[30px]"
+            />
           </Button>
 
           {error && (

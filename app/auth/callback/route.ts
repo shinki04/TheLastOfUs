@@ -1,107 +1,132 @@
 import { NextResponse } from "next/server";
-// The client you created from the Server-Side Auth instructions
 import { createClient } from "@/lib/supabase/server";
 import { BLANK_AVATAR, Global_Roles } from "@/types/user";
+import { getCache, setCache } from "@/lib/redis/redis";
+
+const COOKIE_CONFIG = {
+  path: "/",
+  httpOnly: false,
+  sameSite: "lax" as const,
+  maxAge: 10,
+};
+
+const VLU_EMAIL_DOMAIN = "@vanlanguni.vn";
+const DEFAULT_ROLE: Global_Roles = "student";
+const USER_CACHE_TTL = 3600;
 
 const redirectWithCookie = (url: string, name: string, value: string) => {
   const res = NextResponse.redirect(url);
-  res.cookies.set(name, value, {
-    path: "/",
-    httpOnly: false,
-    sameSite: "lax",
-    maxAge: 10,
-  });
+  res.cookies.set(name, value, COOKIE_CONFIG);
   return res;
+};
+
+const getRedirectUrl = (
+  origin: string,
+  next: string,
+  request: Request
+): string => {
+  const isLocalEnv = process.env.NODE_ENV === "development";
+
+  if (isLocalEnv) {
+    return `${origin}${next}`;
+  }
+
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  return forwardedHost ? `https://${forwardedHost}${next}` : `${origin}${next}`;
 };
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  // if "next" is in param, use it as the redirect URL
-  let next = searchParams.get("next") ?? "/dashboard";
 
+  // Validate and sanitize redirect path
+  let next = searchParams.get("next") ?? "/dashboard";
   if (!next.startsWith("/")) {
-    // if "next" is not a relative URL, use the default
-    next = "/";
+    next = "/dashboard";
   }
 
-  if (code) {
+  // Missing code - redirect to login with error
+  if (!code) {
+    return redirectWithCookie(
+      `${origin}/login`,
+      "access_error",
+      "Có lỗi xảy ra"
+    );
+  }
+
+  try {
     const supabase = await createClient();
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-    const user = data?.user;
 
-    if (!user) {
-      console.error("Something was wrong - User not found");
-      const res = NextResponse.redirect(`${origin}/login`);
-      res.cookies.set("access_error", "Không tìm thấy người dùng", {
-        path: "/",
-        httpOnly: false, // client đọc được
-        sameSite: "lax",
-        maxAge: 10, // 10 giây là đủ
-      });
-      return res;
+    if (error || !data?.user) {
+      console.error("Auth exchange failed:", error);
+      return redirectWithCookie(
+        `${origin}/login`,
+        "access_error",
+        "Không tìm thấy người dùng"
+      );
     }
 
-    if (!user?.email?.endsWith("@vanlanguni.vn")) {
-      console.warn("Khong phai VLU");
-      // Xoá user ngay sau khi tạo
-      const { error } = await supabase.auth.admin.deleteUser(user.id);
-      console.warn("Deleted non-vanlang user:", error);
+    const user = data.user;
 
-      const res = NextResponse.redirect(`${origin}/login`);
-      res.cookies.set("access_error", "Không thuộc VLU", {
-        path: "/",
-        httpOnly: false, // client đọc được
-        sameSite: "lax",
-        maxAge: 10, // 10 giây là đủ
+    // Validate VLU email domain
+    if (!user.email?.endsWith(VLU_EMAIL_DOMAIN)) {
+      console.warn("Non-VLU user attempted login:", user.email);
+
+      // Delete non-VLU user (fire and forget)
+      supabase.auth.admin.deleteUser(user.id).catch((err) => {
+        console.error("Failed to delete non-VLU user:", err);
       });
-      return res;
+
+      return redirectWithCookie(
+        `${origin}/login`,
+        "access_error",
+        "Không thuộc VLU"
+      );
     }
 
-    // ---- Xử lý sau khi login thành công ----
-
+    // Prepare user profile data
     const fullName = user.user_metadata?.full_name || `User ${user.id}`;
     const avatarUrl = user.user_metadata?.avatar_url ?? BLANK_AVATAR;
+    // Upsert user profile
+    const { data: profile, error: upsertError } = await supabase
+      .from("profiles")
+      .upsert(
+        {
+          id: user.id,
+          username: fullName,
+          avatar_url: avatarUrl,
+          email: user.email,
+          global_role: DEFAULT_ROLE,
+        },
+        { onConflict: "id" }
+      )
+      .select()
+      .single();
 
-    const defaultRole: Global_Roles = "student";
+    if (upsertError) {
+      console.error("Profile upsert failed:", upsertError);
+      return redirectWithCookie(
+        `${origin}/login`,
+        "access_error",
+        "Có lỗi xảy ra khi tạo hồ sơ"
+      );
+    }
 
-    const { error: upsertError } = await supabase.from("profiles").upsert({
-      id: user.id,
-      username: fullName,
-      avatar_url: avatarUrl,
-      email: user.email,
-      global_role: defaultRole,
-      display_name: fullName,
+    // Cache user profile (non-blocking)
+    setCache(`user:${user.id}`, profile, USER_CACHE_TTL).catch((err) => {
+      console.error("Cache set failed:", err);
     });
 
-    if (!error && !upsertError) {
-      const forwardedHost = request.headers.get("x-forwarded-host"); // original origin before load balancer
-      const isLocalEnv = process.env.NODE_ENV === "development";
-      if (isLocalEnv) {
-        // we can be sure that there is no load balancer in between, so no need to watch for X-Forwarded-Host
-        return redirectWithCookie(
-          `${origin}${next}`,
-          "success",
-          "Đăng nhập thành công"
-        );
-      } else if (forwardedHost) {
-        return redirectWithCookie(
-          `https://${forwardedHost}${next}`,
-          "success",
-          "Đăng nhập thành công"
-        );
-      } else {
-        return redirectWithCookie(
-          `${origin}${next}`,
-          "success",
-          "Đăng nhập thành công"
-        );
-      }
-    } else {
-      console.error(error, upsertError);
-    }
+    // Successful login - redirect to intended destination
+    const redirectUrl = getRedirectUrl(origin, next, request);
+    return redirectWithCookie(redirectUrl, "success", "Đăng nhập thành công");
+  } catch (err) {
+    console.error("Unexpected error in auth callback:", err);
+    return redirectWithCookie(
+      `${origin}/login`,
+      "access_error",
+      "Có lỗi xảy ra"
+    );
   }
-
-  // return the user to an error page with instructions
-  return redirectWithCookie(`${origin}/login`, "access_error", "Có lỗi xảy ra");
 }

@@ -21,7 +21,7 @@ import { toast } from "sonner";
 import OldAvatars from "./OldAvatars";
 import { getUserAvatars } from "@/app/actions/user";
 import { useRouter } from "next/navigation";
-import { updateProfileSchema } from "@/lib/utils/validations/updateProfile-schema";
+import { updateProfileSchema } from "@/lib/validations/updateProfile-schema";
 
 interface ProfileProps {
   user: User;
@@ -37,15 +37,9 @@ function Profile({ user }: ProfileProps) {
 
   const [avatars, setAvatars] = useState<Avatar[]>([]);
 
-  // Lấy data từ cache để xử lý logic owner
-
   const { data: currentUser } = useGetCurrentUser();
 
-  if (!user || !currentUser) return "Khong tim thay nguoi dung";
-
-  const isOwner = currentUser.id === user.id;
-
-  // eslint-disable-next-line react-hooks/rules-of-hooks
+  // TODO , sửa logic để lấy all avatars
   useEffect(() => {
     const fetchAvatars = async () => {
       const data = await getUserAvatars(user.id);
@@ -54,7 +48,6 @@ function Profile({ user }: ProfileProps) {
     fetchAvatars();
   }, []);
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   const form = useForm({
     defaultValues: {
       display_name: user?.display_name || "",
@@ -66,6 +59,8 @@ function Profile({ user }: ProfileProps) {
     },
     onSubmit: async ({ value }) => {
       try {
+        if (!user || !currentUser) console.error("User not found");
+
         const validatedData = updateProfileSchema.safeParse(value);
 
         if (!validatedData.success) {
@@ -83,7 +78,7 @@ function Profile({ user }: ProfileProps) {
           formData.append("avatar_image", value.avatar_image);
         }
 
-        await updateProfile({ userId: currentUser.id, data: formData });
+        await updateProfile({ userId: currentUser!.id, data: formData });
         toast.success("Cập nhật hồ sơ thành công!");
         setIsDialogOpen(false); // Đóng dialog sau khi thành công
       } catch (error) {
@@ -102,9 +97,12 @@ function Profile({ user }: ProfileProps) {
     form.setFieldValue("avatar_image", file);
   };
 
+  console.log(currentUser);
+  const isOwner = currentUser?.id === user.id;
+
   return (
     <div>
-      <p>Display name: {user?.display_name}</p>
+      <p>Display name: {user?.display_name || user?.username}</p>
       <p>Username: {user?.username}</p>
       <p>Email: {user?.email}</p>
       <p>Roles: {user?.global_role}</p>

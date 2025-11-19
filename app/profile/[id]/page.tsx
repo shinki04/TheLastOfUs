@@ -32,6 +32,7 @@ async function ProfileIdPage({ params }: ProfileIdPageProps) {
   await queryClient.fetchQuery({
     queryKey: ["user", id],
     queryFn: () => getUserProfile(id),
+    staleTime: 5 * 60 * 1000,
   });
   // await Promise.all([
   //   queryClient.fetchQuery({
@@ -41,13 +42,11 @@ async function ProfileIdPage({ params }: ProfileIdPageProps) {
   // ]);
   const user = queryClient.getQueryData<User>(["user", id]);
 
-  if (!user) return "Khong tim thay nguoi dung";
-
   return (
     <>
       <div>ID : {id}</div>
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <Profile user={user} />
+        <Profile user={user!} />
       </HydrationBoundary>
     </>
   );

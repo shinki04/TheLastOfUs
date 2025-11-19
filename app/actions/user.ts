@@ -1,8 +1,20 @@
 "use server";
+import { delCache, getCache, setCache } from "@/lib/redis/redis";
 import { createClient } from "@/lib/supabase/server";
 import { User } from "@/types/user";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+
+async function setUserCache(id: string, value: User, expire: number = 60) {
+  await setCache(`user:${id}`, value, expire);
+}
+
+async function getUserCache(id: string) {
+  return await getCache<User>(`user:${id}`);
+}
+async function delUserCache(id: string) {
+  return await delCache(`user:${id}`);
+}
 
 export async function getCurrentUser() {
   const supabase = await createClient();
@@ -12,11 +24,17 @@ export async function getCurrentUser() {
     redirect("/login");
   }
 
+  const userCache = await getUserCache(data.user.id);
+  if (userCache) return userCache;
+
   const { data: profile } = await supabase
     .from("profiles")
     .select()
     .eq("id", data.user?.id)
     .single();
+
+  if (!profile) throw new Error("Profile not found");
+  await setUserCache(profile!.id, profile, 3600);
 
   return profile;
 }
@@ -27,7 +45,7 @@ export async function getUserAvatars(id: string) {
   const { data, error } = await supabase.storage.from("avatars").list(id, {
     limit: 5,
     offset: 0,
-    sortBy: { column: "name", order: "asc" },
+    sortBy: { column: "created_at", order: "desc" },
   });
 
   if (error || !data) throw new Error(`Error: ${error.message}`);
@@ -43,6 +61,11 @@ export async function getUserAvatars(id: string) {
 }
 
 export async function getUserProfile(id: string) {
+  const userCache = await getUserCache(id);
+  if (userCache) {
+    return userCache;
+  }
+
   const supabase = await createClient();
 
   const { data: profile } = await supabase
@@ -50,6 +73,9 @@ export async function getUserProfile(id: string) {
     .select()
     .eq("id", id)
     .single();
+
+  if (!profile) throw new Error("Profile not found");
+  await setUserCache(profile!.id, profile);
 
   return profile;
 }
@@ -62,6 +88,8 @@ export async function updateUserProfile(user: User) {
   if (error) {
     throw new Error(`Profile update failed: ${error.message}`);
   }
+
+  await delUserCache(user.id);
 
   return user;
 }
@@ -77,7 +105,6 @@ export async function uploadAvatar({
 
   const fileExt = image.name.split(".").pop();
 
-  console.log(fileExt);
   const fileName = `${crypto.randomUUID()}.${fileExt}`;
 
   const filePath = `${userId}/${fileName}`;
@@ -137,6 +164,7 @@ export async function updateProfileWithAvatar(
   if (error) {
     throw new Error(`Profile update failed: ${error.message}`);
   }
+  await delUserCache(userId);
 
   // Revalidate paths
   revalidatePath("/profile");

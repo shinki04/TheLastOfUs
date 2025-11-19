@@ -56,9 +56,9 @@ export async function updateSession(request: NextRequest) {
     const res = NextResponse.redirect(url);
     res.cookies.set("access_error", "Bạn không có quyền truy cập", {
       path: "/",
-      httpOnly: false, // client đọc được
+      httpOnly: false,
       sameSite: "lax",
-      maxAge: 10, // 10 giây là đủ
+      maxAge: 10,
     });
     return res;
   }

@@ -63,7 +63,7 @@ export async function signOut() {
     redirect("/error");
   }
 
-  revalidatePath("/", "page");
+  revalidatePath("/dashboard");
 
   redirect("/login");
 }

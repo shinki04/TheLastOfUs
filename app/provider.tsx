@@ -1,6 +1,6 @@
 "use client";
 
-import { getQueryClient } from "@/lib/utils/react-query/react-query";
+import { getQueryClient } from "@/lib/react-query";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
@@ -23,7 +23,6 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       <ReactQueryDevtools />
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <Toaster />
-
         {children}
       </ThemeProvider>
     </QueryClientProvider>
