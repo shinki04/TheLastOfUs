@@ -1,22 +1,56 @@
 "use server";
-import { delCache, getCache, setCache } from "@/lib/redis/redis";
+import { getRedisClient } from "@/lib/redis/redis";
 import { createClient } from "@/lib/supabase/server";
 import { User } from "@/types/user";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-async function setUserCache(id: string, value: User, expire: number = 60) {
-  await setCache(`user:${id}`, value, expire);
+// Constants
+const CACHE_KEYS = {
+  user: (id: string) => `user:${id}`,
+} as const;
+
+const CACHE_TTL = {
+  USER: 3600, // 1 hour
+  SHORT: 60, // 1 minute
+} as const;
+
+const redis = getRedisClient();
+
+// Cache helpers
+async function setUserCache(
+  id: string,
+  value: User,
+  expire: number = CACHE_TTL.USER
+) {
+  try {
+    await redis.setCache(CACHE_KEYS.user(id), value, expire);
+  } catch (error) {
+    console.error(`Failed to set cache for user ${id}:`, error);
+    // Don't throw - cache failure shouldn't break the main flow
+  }
 }
 
-async function getUserCache(id: string) {
-  return await getCache<User>(`user:${id}`);
-}
-async function delUserCache(id: string) {
-  return await delCache(`user:${id}`);
+async function getUserCache(id: string): Promise<User | null> {
+  try {
+    return await redis.getCache<User>(CACHE_KEYS.user(id));
+  } catch (error) {
+    console.error(`Failed to get cache for user ${id}:`, error);
+    return null;
+  }
 }
 
-export async function getCurrentUser() {
+async function delUserCache(id: string): Promise<void> {
+  try {
+    await redis.delCache(CACHE_KEYS.user(id));
+  } catch (error) {
+    console.error(`Failed to delete cache for user ${id}:`, error);
+    // Don't throw - cache failure shouldn't break the main flow
+  }
+}
+
+// Auth and user functions
+export async function getCurrentUser(): Promise<User> {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getUser();
 
@@ -24,23 +58,63 @@ export async function getCurrentUser() {
     redirect("/login");
   }
 
-  const userCache = await getUserCache(data.user.id);
-  if (userCache) return userCache;
+  // Try cache first
+  const cachedUser = await getUserCache(data.user.id);
+  if (cachedUser) {
+    return cachedUser;
+  }
 
-  const { data: profile } = await supabase
+  // Fetch from database if cache miss
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select()
-    .eq("id", data.user?.id)
+    .select("*")
+    .eq("id", data.user.id)
     .single();
 
-  if (!profile) throw new Error("Profile not found");
-  await setUserCache(profile!.id, profile, 3600);
+  if (profileError || !profile) {
+    throw new Error(profileError?.message || "Profile not found");
+  }
+
+  // Set cache asynchronously without waiting
+  setUserCache(profile.id, profile).catch(console.error);
 
   return profile;
 }
 
-//* Temp
+export async function getUserProfile(id: string): Promise<User> {
+  if (!id) {
+    throw new Error("User ID is required");
+  }
+
+  // Try cache first
+  const cachedUser = await getUserCache(id);
+  if (cachedUser) {
+    return cachedUser;
+  }
+
+  const supabase = await createClient();
+  const { data: profile, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error || !profile) {
+    throw new Error(error?.message || "Profile not found");
+  }
+
+  // Set cache asynchronously without waiting
+  setUserCache(profile.id, profile).catch(console.error);
+
+  return profile;
+}
+
+// Storage functions
 export async function getUserAvatars(id: string) {
+  if (!id) {
+    throw new Error("User ID is required");
+  }
+
   const supabase = await createClient();
   const { data, error } = await supabase.storage.from("avatars").list(id, {
     limit: 5,
@@ -48,109 +122,109 @@ export async function getUserAvatars(id: string) {
     sortBy: { column: "created_at", order: "desc" },
   });
 
-  if (error || !data) throw new Error(`Error: ${error.message}`);
-
-  const avatars = data.map((file) => {
-    return {
-      name: file.name,
-      fullPath: `avatars/${id}/${file.name}`, // Format: bucket/userId/filename
-    };
-  });
-
-  return avatars;
-}
-
-export async function getUserProfile(id: string) {
-  const userCache = await getUserCache(id);
-  if (userCache) {
-    return userCache;
-  }
-
-  const supabase = await createClient();
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select()
-    .eq("id", id)
-    .single();
-
-  if (!profile) throw new Error("Profile not found");
-  await setUserCache(profile!.id, profile);
-
-  return profile;
-}
-
-export async function updateUserProfile(user: User) {
-  const supabase = await createClient();
-
-  const { error } = await supabase.from("profiles").upsert(user);
-
   if (error) {
-    throw new Error(`Profile update failed: ${error.message}`);
+    throw new Error(`Failed to get user avatars: ${error.message}`);
   }
 
-  await delUserCache(user.id);
+  if (!data || data.length === 0) {
+    return [];
+  }
 
-  return user;
+  return data.map((file) => ({
+    name: file.name,
+    fullPath: `avatars/${id}/${file.name}`,
+  }));
 }
 
-export async function uploadAvatar({
-  userId,
-  image,
-}: {
-  userId: string;
-  image: File;
-}) {
+async function uploadAvatar(userId: string, image: File): Promise<string> {
+  if (!userId || !image) {
+    throw new Error("User ID and image are required");
+  }
+
   const supabase = await createClient();
-
   const fileExt = image.name.split(".").pop();
-
   const fileName = `${crypto.randomUUID()}.${fileExt}`;
-
   const filePath = `${userId}/${fileName}`;
 
-  // Upload file lên storage
-  const { data, error: uploadError } = await supabase.storage
+  const { data, error } = await supabase.storage
     .from("avatars")
     .upload(filePath, image, {
-      contentType: "image/*",
+      contentType: image.type,
+      upsert: false, // Don't overwrite existing files
     });
 
-  if (uploadError) {
-    throw new Error(`Upload failed: ${uploadError.message}`);
+  if (error) {
+    throw new Error(`Avatar upload failed: ${error.message}`);
   }
 
   return data.fullPath;
 }
 
+// Update functions
+export async function updateUserProfile(user: User): Promise<User> {
+  if (!user?.id) {
+    throw new Error("Valid user data is required");
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .upsert({
+      ...user,
+      updated_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Profile update failed: ${error.message}`);
+  }
+
+  // Invalidate cache asynchronously
+  delUserCache(user.id).catch(console.error);
+
+  return data;
+}
+
 export async function updateProfileWithAvatar(
   userId: string,
   formData: FormData
-) {
-  // Parse FormData thành object
-  const rawData = {
-    display_name: formData.get("display_name") as string,
-    description: formData.get("description") as string,
-    avatar_image: formData.get("avatar_image") as File | null,
-  };
-  const supabase = await createClient();
-
-  let avatarUrl: string | undefined;
-
-  // Nếu có avatar mới, upload lên storage
-  if (rawData.avatar_image) {
-    const uploadResult = await uploadAvatar({
-      userId,
-      image: rawData.avatar_image,
-    });
-    avatarUrl = uploadResult;
+): Promise<User> {
+  if (!userId) {
+    throw new Error("User ID is required");
   }
 
-  // Chuẩn bị data cho profile update
+  // Parse and validate form data
+  const displayName = formData.get("display_name") as string;
+  const description = formData.get("description") as string;
+  const avatarImage = formData.get("avatar_image") as File | null;
+
+  if (!displayName?.trim()) {
+    throw new Error("Display name is required");
+  }
+
+  const supabase = await createClient();
+  let avatarUrl: string | undefined;
+
+  // Upload new avatar if provided
+  if (avatarImage && avatarImage.size > 0) {
+    try {
+      avatarUrl = await uploadAvatar(userId, avatarImage);
+    } catch (error) {
+      console.error("Avatar upload failed:", error);
+      throw new Error(
+        `Failed to upload avatar: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  }
+
+  // Prepare profile data
   const profileData = {
     id: userId,
-    display_name: rawData.display_name,
-    description: rawData.description,
+    display_name: displayName.trim(),
+    description: description?.trim() || null,
     ...(avatarUrl && { avatar_url: avatarUrl }),
     updated_at: new Date().toISOString(),
   };
@@ -164,11 +238,24 @@ export async function updateProfileWithAvatar(
   if (error) {
     throw new Error(`Profile update failed: ${error.message}`);
   }
+
+  // Invalidate cache
   await delUserCache(userId);
 
-  // Revalidate paths
+  // Revalidate relevant paths
   revalidatePath("/profile");
   revalidatePath(`/profile/${userId}`);
   revalidatePath("/", "layout");
+
   return data;
+}
+
+// Utility function to clear all user-related cache
+export async function clearUserCache(userId: string): Promise<void> {
+  if (!userId) return;
+
+  await delUserCache(userId);
+  // Add other cache keys if you have more user-related cache
+  // await delCache(`user:${userId}:avatars`);
+  // await delCache(`user:${userId}:settings`);
 }

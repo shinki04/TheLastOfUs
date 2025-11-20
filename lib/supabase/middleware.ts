@@ -3,7 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function updateSession(request: NextRequest) {
-  const publicPaths = ["/", "/login", "/auth/callback"];
+  const publicPaths = ["/", "/login", "/auth/callback", "/api/posts"];
 
   // Nếu request nằm trong public path → bỏ qua check user
   const isPublic = publicPaths.some(
