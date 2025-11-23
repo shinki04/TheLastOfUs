@@ -1,121 +1,102 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
 import { ERROR_MESSAGES, ErrorMessageKey } from "@/types/login-error";
 import { signInWithAzure } from "@/app/auth/action";
 
-// TODO Get cookies để lấy loading hoặc dùng useForm
 export default function LoginForm() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error") as ErrorMessageKey | null;
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
   return (
-    <div className="relative w-full max-w-md  px-4 sm:px-0">
-      <Card className="relative bg-[rgba(181,41,52,0.55)] rounded-xl shadow-[0_6px_40px_rgba(0,0,0,0.25)] border border-white/10 backdrop-blur-lg overflow-hidden">
-        <CardContent className="relative z-10 flex flex-col items-center p-6 sm:p-10 gap-2">
+    <div className="flex flex-col min-h-screen w-full items-center justify-center bg-transparent py-4 px-2">
+      {/* Main Login Card */}
+      <div className="bg-mainred-blur w-full max-w-sm mx-auto rounded-2xl overflow-hidden shadow-lg flex flex-col items-center">
+        <div className="w-full flex flex-col items-center px-4 py-8 sm:px-8 sm:py-10 gap-6">{/* Logo lớn & đẹp */}
           <Image
             src="/logo_white.png"
             alt="VLU Logo"
-            width={150}
-            height={150}
-            className="mb-3 sm:mb-5   "
+            width={120}
+            height={120}
+            className="mb-2"
           />
 
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-3 sm:mb-4">
-            Login
-          </h1>
+          {/* Tiêu đề */}
+          <h2 className="px-2 py-0 text-xl sm:text-2xl font-bold text-custom-white text-center tracking-tight whitespace-nowrap">
+            Student & Staff Login
+          </h2>
 
-          <form
-            className="w-full flex flex-col gap-2 sm:gap-4"
-            onSubmit={(e) => e.preventDefault()}
-          >
-            <div>
-              <Label
-                htmlFor="email"
-                className="text-white mb-1 block font-semibold text-sm sm:text-base"
-              >
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="email@vanlanguni.vn"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 sm:px-4 sm:py-3 bg-white/15 border border-white/30 text-white rounded-md placeholder-white/70 text-sm sm:text-base"
-              />
-            </div>
-
-            <div>
-              <Label
-                htmlFor="password"
-                className="text-white mb-1 block font-semibold text-sm sm:text-base"
-              >
-                Password
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 sm:px-4 sm:py-3 bg-white/15 border border-white/30 text-white rounded-md placeholder-white/70 text-sm sm:text-base"
-              />
-            </div>
-
-            <div className="flex justify-end">
-              <a href="#" className="text-white text-xs sm:text-sm underline">
-                Forgot Password?
-              </a>
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full py-2 sm:py-3 bg-[#B52934] text-white font-bold rounded-md text-sm sm:text-base transition-colors duration-300 hover:bg-[#99252D]"
-            >
-              Sign in
-            </Button>
-          </form>
-
-          <div className="w-full flex items-center gap-2 my-4 sm:my-6">
-            <hr className="flex-1 h-px bg-white/30 border-0" />
-            <span className="text-white text-xs sm:text-sm opacity-90">
-              or continue with
-            </span>
-            <hr className="flex-1 h-px bg-white/30 border-0" />
+          {/* Description với 2 line ở hai bên */}
+          <div className="flex items-center w-full gap-2 my-3">
+            <div className="h-px flex-1 bg-white/30 rounded-full max-w-[40px] sm:max-w-[60px]" />
+            <p className="px-2 text-custom-white/80 text-center text-sm sm:text-base leading-snug font-light">
+              Please use your official university
+              <br />Microsoft account to sign in.
+            </p>
+            <div className="h-px flex-1 bg-white/30 rounded-full max-w-[40px] sm:max-w-[60px]" />
           </div>
 
+          {/* Microsoft 365 Button */}
           <Button
             type="button"
-            className="w-full flex items-center justify-center gap-2 py-1.5 sm:py-2 bg-white text-[#B52934] font-bold rounded-lg border-2 border-[#B52934] hover:text-[#99252D] hover:border-[#99252D] hover:bg-white/90 transition-colors duration-300 text-sm sm:text-base"
+            className="btn-mainred w-full flex items-center justify-center gap-2 py-2 bg-custom-white text-mainred text-sm sm:text-base font-bold rounded-lg border-2 border-mainred hover:text-[#99252D] hover:border-[#99252D] hover:bg-custom-white/90 transition-all duration-300"
             onClick={signInWithAzure}
           >
             <span>Microsoft 365</span>
             <Image
               src="/logo_Microsoft.png"
               alt="Azure Logo"
-              width={24}
-              height={24}
-              className="sm:w-[30px] sm:h-[30px]"
+              width={21}
+              height={21}
+              className="sm:w-[26px] sm:h-[26px]"
             />
           </Button>
 
           {error && (
-            <div className="text-red-600 font-semibold mt-4 text-center text-sm sm:text-base">
+            <div className="text-destructive font-semibold mt-3 text-center text-xs sm:text-sm">
               {ERROR_MESSAGES[error] || ERROR_MESSAGES.default}
             </div>
           )}
-        </CardContent>
-      </Card>
+
+          {/* Support Link */}
+          <p className="text-custom-white/70 text-xs text-center mt-2">
+            Trouble logging in?{" "}
+            <a
+              href="#"
+              className="underline hover:text-custom-white transition-colors"
+            >
+              Contact IT Support
+            </a>
+          </p>
+        </div>
+      </div>
+
+      {/* Footer Card */}
+      <div className="bg-mainred-blur w-full max-w-sm mx-auto rounded-2xl overflow-hidden shadow-md flex flex-col items-center mt-7 mb-4">
+        <div className="w-full flex flex-col items-center px-4 py-4 gap-2">
+          <h3 className="text-base sm:text-lg font-semibold text-custom-white text-center">
+            Welcome to the VLU Connect
+          </h3>
+
+          {/* Footer links với 2 line hai bên */}
+          <div className="flex items-center w-full justify-center gap-2 mb-1">
+            <div className="h-px flex-1 bg-white/20 rounded-full max-w-[28px] sm:max-w-[50px]" />
+            <div className="flex items-center gap-2 text-custom-white/80 text-xs sm:text-sm">
+              <a href="#" className="hover:text-custom-white underline">Privacy Policy</a>
+              <span className="text-custom-white/40">•</span>
+              <a href="#" className="hover:text-custom-white underline">Terms of Service</a>
+            </div>
+            <div className="h-px flex-1 bg-white/20 rounded-full max-w-[28px] sm:max-w-[50px]" />
+          </div>
+
+          <p className="text-custom-white/60 text-[12px] sm:text-xs text-center">
+            © 2025 Van Lang University. All Rights Reserved.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

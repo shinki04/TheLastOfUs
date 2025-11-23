@@ -44,6 +44,8 @@
 }
 
 :root {
+  --color-mainred: #B52934;
+  --color-red-bg: rgba(182, 42, 54, 0.65);
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -116,7 +118,18 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
+  }
+
+
+  .bg-mainred-blur {
+    background: var(--color-red-bg);
+    backdrop-filter: blur(16px);
+    /* hoặc blur-lg tùy Tailwind */
+    border-radius: 1rem;
+    box-shadow: 0 6px 32px 0 rgba(0, 0, 0, 0.18);
+    border: 2px solid rgba(255, 255, 255, 0.15);
   }
 }
