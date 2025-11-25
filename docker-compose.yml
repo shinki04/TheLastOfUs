@@ -74,7 +74,7 @@ services:
   #   restart: unless-stopped
 
   # Post Worker Process
-  worker:
+  # worker:
     build:
       context: .
       dockerfile: Dockerfile.worker
