@@ -16,6 +16,7 @@ const USER_CACHE_TTL = 3600;
 
 const redis = getRedisClient();
 
+
 const redirectWithCookie = (url: string, name: string, value: string) => {
   const res = NextResponse.redirect(url);
   res.cookies.set(name, value, COOKIE_CONFIG);
@@ -41,13 +42,9 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
 
-  // Validate and sanitize redirect path
   let next = searchParams.get("next") ?? "/dashboard";
-  if (!next.startsWith("/")) {
-    next = "/dashboard";
-  }
+  if (!next.startsWith("/")) next = "/dashboard";
 
-  // Missing code - redirect to login with error
   if (!code) {
     return redirectWithCookie(
       `${origin}/login`,
@@ -61,7 +58,6 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (error || !data?.user) {
-      console.error("Auth exchange failed:", error);
       return redirectWithCookie(
         `${origin}/login`,
         "access_error",
@@ -71,14 +67,8 @@ export async function GET(request: Request) {
 
     const user = data.user;
 
-    // Validate VLU email domain
     if (!user.email?.endsWith(VLU_EMAIL_DOMAIN)) {
-      console.warn("Non-VLU user attempted login:", user.email);
-
-      // Delete non-VLU user (fire and forget)
-      supabase.auth.admin.deleteUser(user.id).catch((err) => {
-        console.error("Failed to delete non-VLU user:", err);
-      });
+      supabase.auth.admin.deleteUser(user.id).catch(console.error);
 
       return redirectWithCookie(
         `${origin}/login`,
@@ -87,27 +77,24 @@ export async function GET(request: Request) {
       );
     }
 
-    // Prepare user profile data
-    const fullName = user.user_metadata?.full_name || `User ${user.id}`;
-    const avatarUrl = user.user_metadata?.avatar_url ?? BLANK_AVATAR;
-    // Upsert user profile
+    const fullName =
+      user.user_metadata?.full_name ?? `User ${user.id}`;
+
     const { data: profile, error: upsertError } = await supabase
       .from("profiles")
       .upsert(
         {
           id: user.id,
           username: fullName,
-          avatar_url: avatarUrl,
           email: user.email,
           global_role: DEFAULT_ROLE,
+          avatar_url: BLANK_AVATAR,
         },
-        { onConflict: "id" }
+        { onConflict: "id", ignoreDuplicates: true }
       )
-      .select()
-      .single();
+      .select();
 
     if (upsertError) {
-      console.error("Profile upsert failed:", upsertError);
       return redirectWithCookie(
         `${origin}/login`,
         "access_error",
@@ -124,7 +111,6 @@ export async function GET(request: Request) {
     const redirectUrl = getRedirectUrl(origin, next, request);
     return redirectWithCookie(redirectUrl, "success", "Đăng nhập thành công");
   } catch (err) {
-    console.error("Unexpected error in auth callback:", err);
     return redirectWithCookie(
       `${origin}/login`,
       "access_error",
