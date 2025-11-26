@@ -19,15 +19,19 @@ export function useInfinitePostsQuery() {
         `/api/posts?page=${pageParam}&itemsPerPage=${ITEMS_PER_PAGE}`
       );
       if (!res.ok) throw new Error("Failed to fetch posts");
-      const posts = await res.json();
+      const data = await res.json();
+      
+      // API now returns { posts, hasMore, total, currentPage }
       return {
-        posts,
+        posts: data.posts || [],
         page: pageParam,
-        hasMore: posts.length === ITEMS_PER_PAGE,
+        hasMore: data.hasMore,
+        total: data.total,
         nextPage: pageParam + 1,
       };
     },
     getNextPageParam: (lastPage) => {
+      // Only return next page if hasMore is true
       return lastPage.hasMore ? lastPage.nextPage : undefined;
     },
     initialPageParam: 1,
