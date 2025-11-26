@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Temp
 supabase/*
+temp/*
+sequence-diagram/*
+.idea

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { BLANK_AVATAR, Global_Roles } from "@/types/user";
-import { getCache, setCache } from "@/lib/redis/redis";
+import { getRedisClient } from "@/lib/redis/redis";
 
 const COOKIE_CONFIG = {
   path: "/",
@@ -13,6 +13,8 @@ const COOKIE_CONFIG = {
 const VLU_EMAIL_DOMAIN = "@vanlanguni.vn";
 const DEFAULT_ROLE: Global_Roles = "student";
 const USER_CACHE_TTL = 3600;
+
+const redis = getRedisClient();
 
 const redirectWithCookie = (url: string, name: string, value: string) => {
   const res = NextResponse.redirect(url);
@@ -114,7 +116,7 @@ export async function GET(request: Request) {
     }
 
     // Cache user profile (non-blocking)
-    setCache(`user:${user.id}`, profile, USER_CACHE_TTL).catch((err) => {
+    redis.setCache(`user:${user.id}`, profile, USER_CACHE_TTL).catch((err) => {
       console.error("Cache set failed:", err);
     });
 

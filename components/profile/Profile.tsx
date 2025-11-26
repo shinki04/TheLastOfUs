@@ -161,7 +161,7 @@ function Profile({ user }: ProfileProps) {
                   <div className="flex-1">
                     <input
                       type="file"
-                      accept="image/jpeg,image/png,image/webp,image/jpg"
+                      accept="image/*"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) {

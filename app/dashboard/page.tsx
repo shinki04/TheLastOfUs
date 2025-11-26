@@ -10,6 +10,8 @@ import {
   HydrationBoundary,
   QueryClient,
 } from "@tanstack/react-query";
+import AddPost from "@/components/dashboard/AddPost";
+import ListPosts from "@/components/dashboard/ListPosts";
 
 // interface DashboardPageProps {
 //   propName: type;
@@ -18,11 +20,19 @@ import {
 export default async function DashboardPage() {
   const queryClient = new QueryClient();
 
-  const user = await queryClient.fetchQuery({
-    queryKey: ["user"],
-    queryFn: () => getCurrentUser(),
-    staleTime: 10000,
-  });
+  // const user = await queryClient.fetchQuery({
+  //   queryKey: ["user"],
+  //   queryFn: () => getCurrentUser(),
+  //   staleTime: 10000,
+  // });
+
+  const [user] = await Promise.all([
+    await queryClient.fetchQuery({
+      queryKey: ["user"],
+      queryFn: () => getCurrentUser(),
+      staleTime: 10000,
+    }),
+  ]);
 
   return (
     <>
@@ -42,6 +52,8 @@ export default async function DashboardPage() {
         <Link href={`/profile/95a3fadb-5f4f-497f-b826-e9a66e8e4655`}>
           <Button>DucTrung Profile</Button>
         </Link>
+        <AddPost currentUser={user} />
+        <ListPosts />
       </HydrationBoundary>
     </>
   );
