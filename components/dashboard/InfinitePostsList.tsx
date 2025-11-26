@@ -4,6 +4,8 @@ import React, { useEffect, useRef, useCallback } from "react";
 import { useInfinitePostsQuery } from "@/hooks/useInfinitePosts";
 import PostCard from "@/components/dashboard/PostCard";
 import { Skeleton } from "../ui/skeleton";
+import { PostResponse } from "@/types/post";
+import PendingPost from "./PendingPost";
 
 export function InfinitePostsList() {
   const {
@@ -24,20 +26,25 @@ export function InfinitePostsList() {
 
     const observer = new IntersectionObserver(
       (entries) => {
+        // Nếu element đầu tiên đang hiển thị và có trang tiếp theo và không đang tải
+
         if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
+          fetchNextPage(); // Tải trang tiếp theo
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.1 } // Kích hoạt khi 10% element hiển thị
     );
-
+    // Bắt đầu quan sát element target
     observer.observe(observerTarget.current);
+    // Dọn dẹp khi component unmount
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const handleScroll = useCallback(
     (e: React.UIEvent<HTMLDivElement>) => {
       const target = e.currentTarget;
+
+      // Tính toán xem có đang gần cuối trang không (cách dưới 200px)
       const isNearBottom =
         target.scrollHeight - (target.scrollTop + target.clientHeight) < 200;
 
@@ -72,6 +79,7 @@ export function InfinitePostsList() {
   }
 
   const posts = data?.pages.flatMap((page) => page.posts) ?? [];
+  console.log(posts);
 
   return (
     <div
@@ -84,7 +92,10 @@ export function InfinitePostsList() {
         </div>
       ) : (
         <>
-          {posts.map((post) => (
+          <PendingPost />
+
+          {/* Regular fetched posts */}
+          {posts.map((post: PostResponse) => (
             <PostCard key={post.id} post={post} />
           ))}
 

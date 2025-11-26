@@ -77,9 +77,9 @@ export async function GET(request: Request) {
       );
     }
 
-    const fullName =
-      user.user_metadata?.full_name ?? `User ${user.id}`;
-
+    // Prepare user profile data
+    const fullName = user.user_metadata?.full_name || `User ${user.id}`;
+    // Upsert user profile
     const { data: profile, error: upsertError } = await supabase
       .from("profiles")
       .upsert(
@@ -103,9 +103,13 @@ export async function GET(request: Request) {
     }
 
     // Cache user profile (non-blocking)
-    redis.setCache(`user:${user.id}`, profile, USER_CACHE_TTL).catch((err) => {
-      console.error("Cache set failed:", err);
-    });
+    if (profile !== null && profile.length > 0) {
+      redis
+        .setCache(`user:${user.id}`, profile, USER_CACHE_TTL)
+        .catch((err) => {
+          console.error("Cache set failed:", err);
+        });
+    }
 
     // Successful login - redirect to intended destination
     const redirectUrl = getRedirectUrl(origin, next, request);

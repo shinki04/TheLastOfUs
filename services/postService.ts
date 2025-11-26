@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import { Post } from "@/types/post";
+import { Post, PostResponse } from "@/types/post";
 
 export interface CreatePostInput {
   content: string;
@@ -76,16 +76,70 @@ export async function createPost(
     mediaUrls,
   };
 }
+export interface FetchPostsResponse {
+  posts: PostResponse[];
+  hasMore: boolean;
+  total: number;
+  currentPage: number;
+}
+
 export async function fetchPosts(
   page: number,
   itemsPerPage: number
-): Promise<Post[]> {
-  const supabase = await createClient();
+): Promise<FetchPostsResponse> {
+  const supabase = createClient();
+
+  // Validate page number
+  if (page < 1) {
+    throw new Error("Page number must be greater than 0");
+  }
 
   const offset = (page - 1) * itemsPerPage;
+
+  // Get total count
+  const { count, error: countError } = await supabase
+    .from("posts")
+    .select("*", { count: "exact", head: true });
+
+  if (countError) {
+    throw new Error(`Failed to count posts: ${countError.message}`);
+  }
+
+  const total = count || 0;
+
+  // If offset is beyond total, return empty array
+  if (offset >= total && total > 0) {
+    return {
+      posts: [],
+      hasMore: false,
+      total,
+      currentPage: page,
+    };
+  }
+
+  // Fetch posts for current page
   const { data, error } = await supabase
     .from("posts")
-    .select()
+    .select(
+      `
+      id,
+      created_at, 
+      author: author_id(
+        id,
+        username,
+        display_name,
+        avatar_url,
+        global_role
+      ),
+      content,
+      media_urls,
+      updated_at,
+      like_count,
+      comment_count,
+      share_count,
+      privacy_level
+      `
+    )
     .range(offset, offset + itemsPerPage - 1)
     .order("created_at", { ascending: false });
 
@@ -93,7 +147,15 @@ export async function fetchPosts(
     throw new Error(`Failed to fetch posts: ${error.message}`);
   }
 
-  return data;
+  // Check if there are more posts after current page
+  const hasMore = offset + itemsPerPage < total;
+
+  return {
+    posts: data || [],
+    hasMore,
+    total,
+    currentPage: page,
+  };
 }
 
 export async function fetchPostById(postId: string): Promise<Post | null> {

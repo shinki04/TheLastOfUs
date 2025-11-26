@@ -1,11 +1,11 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { CreatePostInput } from "@/services/postService";
 import { useGetCurrentUser } from "./useAuth";
+import { toast } from "sonner";
 
 export function useCreatePostMutation() {
-  const queryClient = useQueryClient();
   const { data: user } = useGetCurrentUser();
 
   return useMutation({
@@ -14,12 +14,28 @@ export function useCreatePostMutation() {
         throw new Error("User is not authenticated");
       }
 
-      console.log(`📤 Queueing post with ${input.media.length} files...`);
+      console.log(
+        `📤 Creating queue entry for post with ${input.media.length} files...`
+      );
+
+      // Create queue status entry first
+      const { createQueueStatus } = await import(
+        "@/services/postQueueStatusService"
+      );
+      const queueStatus = await createQueueStatus(
+        user.id,
+        input.content,
+        input.privacy_level,
+        input.media.length
+      );
+
+      console.log(`✅ Queue entry created with ID: ${queueStatus.id}`);
 
       // Create FormData with files
       const formData = new FormData();
       formData.append("content", input.content);
       formData.append("privacy_level", input.privacy_level);
+      formData.append("queueId", queueStatus.id); // Include queue ID
 
       // Append each file
       input.media.forEach((file) => {
@@ -30,7 +46,6 @@ export function useCreatePostMutation() {
       const response = await fetch("/api/posts", {
         method: "POST",
         body: formData,
-        // Don't set Content-Type header - browser will set it with boundary
       });
 
       if (!response.ok) {
@@ -40,21 +55,17 @@ export function useCreatePostMutation() {
 
       const result = await response.json();
 
-      // Return immediately (202 Accepted pattern)
-      // Worker will process in background
+      // Return queue status ID for tracking
       return {
         message: result.message || "Post creation queued successfully",
         status: "queued",
         filesQueued: result.filesQueued,
+        queueId: queueStatus.id,
       };
-    },
-    onSuccess: () => {
-      // Invalidate posts query to refetch
-      queryClient.invalidateQueries({ queryKey: ["posts"] });
     },
     onError: (error: Error) => {
       console.error("Error queueing post:", error);
-      throw error;
+      toast.error(error.message || "Có lỗi xảy ra khi đăng bài");
     },
   });
 }

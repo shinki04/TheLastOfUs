@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Post } from "@/types/post";
+import { PostResponse } from "@/types/post";
 import Image from "next/image";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -10,12 +10,15 @@ import { Card } from "../ui/card";
 import { getFileInfo, isImageType, isVideoType } from "@/lib/mediaUtils";
 import MediaGalleryModal from "./MediaGalleryModal";
 import MediaLightbox from "./MediaLightbox";
+import ReadMore from "./ReadMore";
+import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 
 interface PostCardProps {
-  post: Post;
+  post: PostResponse;
+  isPending?: boolean; // For optimistic UI
 }
 
-export default function PostCard({ post }: PostCardProps) {
+export default function PostCard({ post, isPending = false }: PostCardProps) {
   const [isLiked, setIsLiked] = React.useState(false);
   const [showGalleryModal, setShowGalleryModal] = React.useState(false);
   const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
@@ -36,20 +39,21 @@ export default function PostCard({ post }: PostCardProps) {
 
   const getFileIcon = (url: string, mimeType?: string) => {
     const fileInfo = getFileInfo(url, mimeType);
-    switch (fileInfo.type) {
-      case "image":
-        return "🖼️";
-      case "video":
-        return "🎬";
-      case "pdf":
-        return "📄";
-      case "word":
-        return "📝";
-      case "excel":
-        return "📊";
-      default:
-        return "📎";
-    }
+    return fileInfo.icon;
+    // switch (fileInfo.type) {
+    //   case "image":
+    //     return "🖼️";
+    //   case "video":
+    //     return "🎬";
+    //   case "pdf":
+    //     return "📄";
+    //   case "word":
+    //     return "📝";
+    //   case "excel":
+    //     return "📊";
+    //   default:
+    //     return "📎";
+    // }
   };
 
   const imageUrls =
@@ -70,19 +74,39 @@ export default function PostCard({ post }: PostCardProps) {
   };
 
   return (
-    <Card className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow">
+    <Card
+      className={` rounded-lg shadow hover:shadow-lg transition-shadow ${
+        isPending ? "opacity-50 pointer-events-none relative" : ""
+      }`}
+    >
+      {isPending && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 rounded-lg">
+          <div className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-full shadow-lg">
+            <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+            <span className="text-sm font-medium">Đang xử lý...</span>
+          </div>
+        </div>
+      )}
       <div className="p-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-              <span className="text-gray-500 font-semibold text-sm">
-                {post.author_id?.charAt(0).toUpperCase() || "U"}
-              </span>
+              <Avatar>
+                <AvatarImage
+                  src={post.author?.avatar_url || "/next.svg"}
+                  alt={
+                    post.author?.display_name ||
+                    post.author?.username ||
+                    "User Avatar"
+                  }
+                />
+                <AvatarFallback>U</AvatarFallback>
+              </Avatar>
             </div>
             <div>
               <p className="font-semibold text-sm">
-                User {post.author_id?.slice(0, 8)}
+                {post.author?.display_name || post.author?.username}
               </p>
               <p className="text-xs text-gray-500">{createdAt}</p>
             </div>
@@ -94,9 +118,7 @@ export default function PostCard({ post }: PostCardProps) {
 
         {/* Content */}
         <div className="mb-3">
-          <p className="text-gray-700 text-sm leading-relaxed">
-            {post.content}
-          </p>
+          <ReadMore content={post.content} />
         </div>
 
         {/* Media Gallery */}
@@ -149,7 +171,7 @@ export default function PostCard({ post }: PostCardProps) {
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center bg-linear-to-br from-gray-100 to-gray-200 group-hover:from-gray-200 group-hover:to-gray-300 transition-colors">
                       <span className="text-3xl mb-1">{getFileIcon(url)}</span>
-                      <p className="text-xs text-gray-600 text-center px-1 line-clamp-1 group-hover:text-gray-700 font-medium">
+                      <p className="text-xs text-gray-600 text-center px-1 line-clamp-3 group-hover:text-gray-700 font-medium">
                         {url.split("/").pop()?.split("?")[0] || "File"}
                       </p>
                       <p className="text-xs text-gray-500 mt-1 group-hover:text-gray-600">

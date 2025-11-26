@@ -3,16 +3,16 @@ import { queuePostCreation } from "@/services/postQueueService";
 import { fetchPosts } from "@/services/postService";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(
-  request: NextRequest,
-  params: Promise<{ page?: string; itemsPerPage: number }>
-) {
+export async function GET(request: NextRequest) {
   try {
-    const { page: pageParam, itemsPerPage } = await params;
-    const page = parseInt(pageParam || "1", 10);
-    const posts = await fetchPosts(page, itemsPerPage || 10);
+    const page = parseInt(request.nextUrl.searchParams.get("page") || "1", 10);
+    const itemsPerPage = parseInt(
+      request.nextUrl.searchParams.get("itemsPerPage") || "1",
+      10
+    );
+    const response = await fetchPosts(page, itemsPerPage);
 
-    return NextResponse.json(posts);
+    return NextResponse.json(response);
   } catch (error) {
     return NextResponse.json({
       error: error instanceof Error ? error.message : "Internal server error",
@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
 
     const content = formData.get("content") as string;
     const privacy_level = (formData.get("privacy_level") as string) || "public";
+    const queueId = formData.get("queueId") as string | null;
     const mediaFiles: File[] = [];
 
     // Extract all file uploads (sent as "files" from FormData)
@@ -79,7 +80,8 @@ export async function POST(request: NextRequest) {
       user.id,
       content,
       privacy_level as "public" | "friends" | "private",
-      mediaFiles
+      mediaFiles,
+      queueId || undefined
     );
 
     // Return immediately to client with 202 Accepted status

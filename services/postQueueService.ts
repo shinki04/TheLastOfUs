@@ -1,4 +1,4 @@
-import { getRabbitMQClient } from "@/lib/rabbitmq/rabbitmq";
+import { getPostRabbitMQClient } from "@/lib/rabbitmq/PostRabbitMQ";
 import { createClient } from "@/lib/supabase/client";
 import { saveHashtagsFromContent } from "@/services/hashtagService";
 import { uploadPostImages } from "@/services/postService";
@@ -16,6 +16,7 @@ export interface PostCreateJobPayload {
   content: string;
   privacyLevel: "public" | "friends" | "private";
   media: MediaFile[]; // Changed from mediaUrls to media with base64
+  queueId?: string; // Track queue status ID
 }
 
 /**
@@ -58,15 +59,16 @@ function base64ToFile(base64: string, name: string, mimeType: string): File {
 
 /**
  * Publish a post creation job to the queue
- * Now includes media files as base64
+ * Now includes media files as base64 and creates queue status entry
  */
 export async function queuePostCreation(
   userId: string,
   content: string,
   privacyLevel: privacyPost,
-  mediaFiles: File[] = []
+  mediaFiles: File[] = [],
+  queueId?: string
 ) {
-  const rabbitMQ = getRabbitMQClient();
+  const rabbitMQ = getPostRabbitMQClient();
 
   if (!rabbitMQ.isReady()) {
     await rabbitMQ.connect();
@@ -89,26 +91,33 @@ export async function queuePostCreation(
     content,
     privacyLevel,
     media: encodedMedia,
+    queueId, // Include queue ID for tracking
   };
 
   console.log(`📤 Queueing post with ${encodedMedia.length} files`);
 
-  return await rabbitMQ.publishPostCreateJob(
+  return await rabbitMQ.publishPostCreate(
     payload as unknown as Record<string, unknown>
   );
 }
 
 /**
  * Process post creation job from queue
- * Handles file upload + post creation + hashtag extraction
+ * Handles file upload + post creation + hashtag extraction + queue status updates
  */
 export async function processPostCreation(payload: PostCreateJobPayload) {
   const supabase = await createClient();
+  const { updateQueueStatus } = await import("./postQueueStatusService");
 
   try {
     console.log(
       `🔄 Processing post creation for user: ${payload.userId}, media: ${payload.media.length} files`
     );
+
+    // Update status to 'processing'
+    if (payload.queueId) {
+      await updateQueueStatus(payload.queueId, "processing");
+    }
 
     // Step 1: Upload files to Supabase Storage
     let mediaUrls: string[] = [];
@@ -125,11 +134,20 @@ export async function processPostCreation(payload: PostCreateJobPayload) {
         console.log(`✅ Uploaded ${mediaUrls.length} files`);
       } catch (uploadError) {
         console.error("❌ Error uploading files:", uploadError);
-        throw new Error(
-          `Failed to upload files: ${
-            uploadError instanceof Error ? uploadError.message : "Unknown error"
-          }`
-        );
+        const errorMessage =
+          uploadError instanceof Error ? uploadError.message : "Unknown error";
+
+        // Update status to 'failed' with error message
+        if (payload.queueId) {
+          await updateQueueStatus(
+            payload.queueId,
+            "failed",
+            undefined,
+            `Failed to upload files: ${errorMessage}`
+          );
+        }
+
+        throw new Error(`Failed to upload files: ${errorMessage}`);
       }
     }
 
@@ -147,6 +165,15 @@ export async function processPostCreation(payload: PostCreateJobPayload) {
       .single();
 
     if (error) {
+      // Update status to 'failed' with error message
+      if (payload.queueId) {
+        await updateQueueStatus(
+          payload.queueId,
+          "failed",
+          undefined,
+          `Failed to create post: ${error.message}`
+        );
+      }
       throw new Error(`Failed to create post: ${error.message}`);
     }
 
@@ -161,6 +188,11 @@ export async function processPostCreation(payload: PostCreateJobPayload) {
     } catch (hashtagError) {
       console.error("⚠️  Error saving hashtags:", hashtagError);
       // Don't fail the post creation if hashtags fail
+    }
+
+    // Update status to 'completed' with post ID
+    if (payload.queueId) {
+      await updateQueueStatus(payload.queueId, "completed", post.id);
     }
 
     console.log("🎉 Post processing completed successfully");

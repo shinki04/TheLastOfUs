@@ -1,4 +1,4 @@
-import { getRabbitMQClient } from "@/lib/rabbitmq/rabbitmq";
+import { getPostRabbitMQClient } from "@/lib/rabbitmq/PostRabbitMQ";
 import {
   processPostCreation,
   PostCreateJobPayload,
@@ -10,22 +10,24 @@ config({ path: resolve(process.cwd(), ".env.local") });
 /**
  * Worker process that consumes messages from RabbitMQ queue
  */
+
+/**
+ * Worker process that consumes messages from RabbitMQ queue
+ */
 export async function startPostWorker() {
   console.log("🚀 Starting Post Worker...");
-
   try {
-    const rabbitMQ = getRabbitMQClient();
-    const res = rabbitMQ.isReady();
-    console.log(res);
-    // Connect to RabbitMQ
-    await rabbitMQ.connect();
+    const rabbitMQ = getPostRabbitMQClient();
 
+    if (!rabbitMQ.isReady()) {
+      console.log("📡 Connecting to RabbitMQ...");
+      await rabbitMQ.connect();
+    }
     // Start consuming jobs
-    await rabbitMQ.consumePostCreateJob(
+    await rabbitMQ.consumePostCreate(
       async (payload: Record<string, unknown>) => {
         const typedPayload = payload as unknown as PostCreateJobPayload;
         console.log("🔄 Processing job for user:", typedPayload.userId);
-
         try {
           const post = await processPostCreation(typedPayload);
           console.log("✅ Job completed. Post ID:", post.id);
@@ -35,9 +37,7 @@ export async function startPostWorker() {
         }
       }
     );
-
     console.log("✅ Post Worker ready and listening for jobs...");
-
     // Graceful shutdown
     process.on("SIGINT", async () => {
       console.log("\n🛑 Shutting down worker...");
@@ -49,7 +49,6 @@ export async function startPostWorker() {
     process.exit(1);
   }
 }
-
 console.log("WORKER", process.argv[1]);
 // Start the worker if run directly
 // if (import.meta.url === `file://${process.argv[1]}`) {

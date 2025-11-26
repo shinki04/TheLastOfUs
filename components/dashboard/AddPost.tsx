@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useCreatePostMutation } from "@/hooks/usePost";
 import { getFileInfo, isImageType, isVideoType } from "@/lib/mediaUtils";
+import { Card } from "../ui/card";
 
 interface AddPostProps {
   currentUser: User;
@@ -129,9 +130,7 @@ function AddPost({ currentUser }: AddPostProps) {
           media: mediaPreviews.map((p) => p.file),
         });
 
-        toast.success("Bài viết đã được đưa vào hàng đợi!");
-
-        // Reset form
+        // Reset form - Realtime will show success toast
         form.reset();
         setMediaPreviews([]);
       } catch (error) {
@@ -162,7 +161,7 @@ function AddPost({ currentUser }: AddPostProps) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 mb-6">
+    <Card className=" rounded-lg shadow p-6 my-6">
       <h2 className="text-xl font-semibold mb-4">Tạo bài viết mới</h2>
 
       <form
@@ -343,7 +342,7 @@ function AddPost({ currentUser }: AddPostProps) {
           </form.Subscribe>
         </div>
       </form>
-    </div>
+    </Card>
   );
 }
 

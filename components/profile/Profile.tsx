@@ -15,7 +15,6 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Avatar, BLANK_AVATAR, User } from "@/types/user";
-import supabaseLoader from "@/lib/supabase/supabase-image-loader";
 import { FieldErrors } from "../FieldErrors";
 import { toast } from "sonner";
 import OldAvatars from "./OldAvatars";
@@ -37,7 +36,7 @@ function Profile({ user }: ProfileProps) {
 
   const [avatars, setAvatars] = useState<Avatar[]>([]);
 
-  const { data: currentUser } = useGetCurrentUser();
+  const { data: currentUser, error } = useGetCurrentUser();
 
   // TODO , sửa logic để lấy all avatars
   useEffect(() => {
@@ -102,6 +101,8 @@ function Profile({ user }: ProfileProps) {
 
   return (
     <div>
+      {error && <div>User not found</div>}
+
       <p>Display name: {user?.display_name || user?.username}</p>
       <p>Username: {user?.username}</p>
       <p>Email: {user?.email}</p>
@@ -110,7 +111,6 @@ function Profile({ user }: ProfileProps) {
         <p>Avatar</p>
         <Image
           loading="lazy"
-          loader={supabaseLoader}
           width={200}
           height={200}
           alt={`Avatar user ${user?.id}`}
@@ -150,7 +150,6 @@ function Profile({ user }: ProfileProps) {
                 <div className="flex items-center space-x-4">
                   <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-200">
                     <Image
-                      loader={supabaseLoader}
                       width={10}
                       height={10}
                       src={avatarPreview}
