@@ -21,6 +21,7 @@ import OldAvatars from "./OldAvatars";
 import { getUserAvatars } from "@/app/actions/user";
 import { useRouter } from "next/navigation";
 import { updateProfileSchema } from "@/lib/validations/updateProfile-schema";
+import { Skeleton } from "../ui/skeleton";
 
 interface ProfileProps {
   user: User;
@@ -96,162 +97,165 @@ function Profile({ user }: ProfileProps) {
     form.setFieldValue("avatar_image", file);
   };
 
-  console.log(currentUser);
-  const isOwner = currentUser?.id === user.id;
+  console.log(user);
+  const isOwner = currentUser?.id === user?.id;
 
   return (
-    <div>
-      {error && <div>User not found</div>}
+    (error || !user) ? (
+      <>
+        <div>User not found</div>
+        <Skeleton className="h-12 my-4 max-w-[30px]" />
+        <Button onClick={() => router.back()}>Go Back</Button>
 
-      <p>Display name: {user?.display_name || user?.username}</p>
-      <p>Username: {user?.username}</p>
-      <p>Email: {user?.email}</p>
-      <p>Roles: {user?.global_role}</p>
+      </>
+
+    ) : (
       <div>
-        <p>Avatar</p>
-        <Image
-          loading="lazy"
-          width={200}
-          height={200}
-          alt={`Avatar user ${user?.id}`}
-          src={user.avatar_url ?? BLANK_AVATAR}
-        />
-      </div>
-      <Button onClick={() => router.back()}>Go Back</Button>
-      <div>
-        The last change avatar_image
-        <OldAvatars avatars={avatars} />
-      </div>
-      <p>Des : {user.description}</p>
+        <p>Display name: {user?.display_name || user?.username}</p>
+        <p>Username: {user?.username}</p>
+        <p>Email: {user?.email}</p>
+        <p>Roles: {user?.global_role}</p>
 
-      {isOwner === true && (
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>Update Profile</Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Chỉnh sửa trang cá nhân</DialogTitle>
-            </DialogHeader>
+        <div>
+          <p>Avatar</p>
+          <Image
+            loading="lazy"
+            width={200}
+            height={200}
+            alt={`Avatar user ${user?.id}`}
+            src={user?.avatar_url ?? BLANK_AVATAR}
+          />
+        </div>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                form.handleSubmit();
-              }}
-              className="space-y-6"
-            >
-              {/* Avatar Field */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Ảnh đại diện
-                </label>
-                <div className="flex items-center space-x-4">
-                  <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-200">
-                    <Image
-                      width={10}
-                      height={10}
-                      src={avatarPreview}
-                      alt="Avatar preview"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          handleAvatarChange(file);
-                        }
-                      }}
-                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                    />
-                    <form.Field name="avatar_image">
-                      {(field) => <FieldErrors field={field} />}
-                    </form.Field>
-                  </div>
-                </div>
-              </div>
+        <Button onClick={() => router.back()}>Go Back</Button>
 
-              {/* Display Name Field */}
-              <form.Field name="display_name">
-                {(field) => (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tên hiển thị *
-                    </label>
-                    <input
-                      name={field.name}
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Nhập tên hiển thị của bạn"
-                    />
-                    <FieldErrors field={field} />
-                  </div>
-                )}
-              </form.Field>
+        <div>
+          The last change avatar_image
+          <OldAvatars avatars={avatars} />
+        </div>
 
-              {/* Description Field */}
-              <form.Field name="description">
-                {(field) => (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Giới thiệu
-                    </label>
-                    <textarea
-                      name={field.name}
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Giới thiệu về bản thân..."
-                    />
-                    <div className="flex justify-between text-sm text-gray-500 mt-1">
-                      <FieldErrors field={field} />
-                      <div>{field.state.value.length}/500</div>
+        <p>Des : {user?.description}</p>
+
+        {isOwner && (
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>Update Profile</Button>
+            </DialogTrigger>
+
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Chỉnh sửa trang cá nhân</DialogTitle>
+              </DialogHeader>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  form.handleSubmit();
+                }}
+                className="space-y-6"
+              >
+                {/* Avatar Field */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Ảnh đại diện
+                  </label>
+                  <div className="flex items-center space-x-4">
+                    <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-200">
+                      <Image
+                        width={10}
+                        height={10}
+                        src={avatarPreview}
+                        alt="Avatar preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleAvatarChange(file);
+                        }}
+                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      />
+                      <form.Field name="avatar_image">
+                        {(field) => <FieldErrors field={field} />}
+                      </form.Field>
                     </div>
                   </div>
-                )}
-              </form.Field>
+                </div>
 
-              {/* Dialog Footer */}
-              <DialogFooter>
-                <form.Subscribe
-                  selector={(state) => [state.canSubmit, state.isSubmitting]}
-                >
-                  {([canSubmit, isSubmitting]) => (
-                    <>
-                      <DialogClose asChild>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          disabled={!canSubmit || isSubmitting}
-                        >
-                          Cancel
-                        </Button>
-                      </DialogClose>
-                      <Button
-                        type="submit"
-                        disabled={!canSubmit || isSubmitting}
-                      >
-                        {isSubmitting ? "Đang cập nhật..." : "Save changes"}
-                      </Button>
-                    </>
+                {/* Display Name Field */}
+                <form.Field name="display_name">
+                  {(field) => (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Tên hiển thị *
+                      </label>
+                      <input
+                        name={field.name}
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Nhập tên hiển thị của bạn"
+                      />
+                      <FieldErrors field={field} />
+                    </div>
                   )}
-                </form.Subscribe>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      )}
-    </div>
+                </form.Field>
+
+                {/* Description Field */}
+                <form.Field name="description">
+                  {(field) => (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Giới thiệu
+                      </label>
+                      <textarea
+                        name={field.name}
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        rows={4}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Giới thiệu về bản thân..."
+                      />
+                      <div className="flex justify-between text-sm text-gray-500 mt-1">
+                        <FieldErrors field={field} />
+                        <div>{field.state.value.length}/500</div>
+                      </div>
+                    </div>
+                  )}
+                </form.Field>
+
+                {/* Dialog Footer */}
+                <DialogFooter>
+                  <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+                    {([canSubmit, isSubmitting]) => (
+                      <>
+                        <DialogClose asChild>
+                          <Button type="button" variant="outline" disabled={!canSubmit || isSubmitting}>
+                            Cancel
+                          </Button>
+                        </DialogClose>
+                        <Button type="submit" disabled={!canSubmit || isSubmitting}>
+                          {isSubmitting ? "Đang cập nhật..." : "Save changes"}
+                        </Button>
+                      </>
+                    )}
+                  </form.Subscribe>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+    )
   );
+
 }
 
 export default Profile;
