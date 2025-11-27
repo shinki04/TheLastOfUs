@@ -80,7 +80,7 @@ export async function getCurrentUser(): Promise<User> {
   return profile;
 }
 
-export async function getUserProfile(id: string): Promise<User> {
+export async function getUserProfile(id: string): Promise<User | null> {
   if (!id) {
     throw new Error("User ID is required");
   }
@@ -98,8 +98,10 @@ export async function getUserProfile(id: string): Promise<User> {
     .eq("id", id)
     .single();
 
+
   if (error || !profile) {
-    throw new Error(error?.message || "Profile not found");
+   console.error(error?.message || "Profile not found");
+    return null;
   }
 
   // Set cache asynchronously without waiting

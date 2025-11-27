@@ -21,6 +21,7 @@ import OldAvatars from "./OldAvatars";
 import { getUserAvatars } from "@/app/actions/user";
 import { useRouter } from "next/navigation";
 import { updateProfileSchema } from "@/lib/validations/updateProfile-schema";
+import { Skeleton } from "../ui/skeleton";
 
 interface ProfileProps {
   user: User;
@@ -96,17 +97,22 @@ function Profile({ user }: ProfileProps) {
     form.setFieldValue("avatar_image", file);
   };
 
-  console.log(currentUser);
-  const isOwner = currentUser?.id === user.id;
+  console.log(user);
+  const isOwner = currentUser?.id === user?.id;
 
-  return (
+  return error || !user ? (
+    <>
+      <div>User not found</div>
+      <Skeleton className="h-12 my-4 max-w-[30px]" />
+      <Button onClick={() => router.back()}>Go Back</Button>
+    </>
+  ) : (
     <div>
-      {error && <div>User not found</div>}
-
       <p>Display name: {user?.display_name || user?.username}</p>
       <p>Username: {user?.username}</p>
       <p>Email: {user?.email}</p>
       <p>Roles: {user?.global_role}</p>
+
       <div>
         <p>Avatar</p>
         <Image
@@ -114,21 +120,25 @@ function Profile({ user }: ProfileProps) {
           width={200}
           height={200}
           alt={`Avatar user ${user?.id}`}
-          src={user?.avatar_url || BLANK_AVATAR}
+          src={user?.avatar_url ?? BLANK_AVATAR}
         />
       </div>
+
       <Button onClick={() => router.back()}>Go Back</Button>
+
       <div>
         The last change avatar_image
         <OldAvatars avatars={avatars} />
       </div>
-      <p>Des : {user.description}</p>
 
-      {isOwner === true && (
+      <p>Des : {user?.description}</p>
+
+      {isOwner && (
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>Update Profile</Button>
           </DialogTrigger>
+
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Chỉnh sửa trang cá nhân</DialogTitle>
@@ -163,9 +173,7 @@ function Profile({ user }: ProfileProps) {
                       accept="image/*"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) {
-                          handleAvatarChange(file);
-                        }
+                        if (file) handleAvatarChange(file);
                       }}
                       className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                     />

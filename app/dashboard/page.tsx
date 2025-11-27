@@ -45,7 +45,7 @@ export default async function DashboardPage() {
         <Link href={`/profile/716ce5a8-a82c-4bce-be69-723110b28c47`}>
           <Button>HieuTran Profile</Button>
         </Link>
-        <Link href={`/profile/4969daec-dad6-4008-9892-ab8eda0aab3e`}>
+        <Link href={`/profile/89780d45-e3da-4920-9a80-33af0266ffea`}>
           <Button>NhiNguyen Profile</Button>
         </Link>
         <Link href={`/profile/95a3fadb-5f4f-497f-b826-e9a66e8e4655`}>

@@ -89,6 +89,7 @@ export async function GET(request: Request) {
           email: user.email,
           global_role: DEFAULT_ROLE,
           avatar_url: BLANK_AVATAR,
+          display_name: fullName,
         },
         { onConflict: "id", ignoreDuplicates: true }
       )
