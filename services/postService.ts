@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/server";
 import { Post, PostResponse } from "@/types/post";
 
 export interface CreatePostInput {
@@ -87,7 +87,7 @@ export async function fetchPosts(
   page: number,
   itemsPerPage: number
 ): Promise<FetchPostsResponse> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Validate page number
   if (page < 1) {

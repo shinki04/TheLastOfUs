@@ -114,7 +114,7 @@ function Profile({ user }: ProfileProps) {
           width={200}
           height={200}
           alt={`Avatar user ${user?.id}`}
-          src={user.avatar_url ?? BLANK_AVATAR}
+          src={user?.avatar_url || BLANK_AVATAR}
         />
       </div>
       <Button onClick={() => router.back()}>Go Back</Button>
