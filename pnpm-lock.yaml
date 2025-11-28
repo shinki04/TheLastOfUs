@@ -11,6 +11,9 @@ importers:
       eslint:
         specifier: ^9.34.0
         version: 9.39.1(jiti@2.6.1)
+      lefthook:
+        specifier: ^2.0.4
+        version: 2.0.4
       turbo:
         specifier: latest
         version: 2.6.1
