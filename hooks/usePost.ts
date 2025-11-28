@@ -4,9 +4,11 @@ import { useMutation } from "@tanstack/react-query";
 import { CreatePostInput } from "@/services/postService";
 import { useGetCurrentUser } from "./useAuth";
 import { toast } from "sonner";
+import { createQueueStatus } from "@/services/postQueueStatusService";
 
 export function useCreatePostMutation() {
   const { data: user } = useGetCurrentUser();
+  console.log(user);
 
   return useMutation({
     mutationFn: async (input: CreatePostInput) => {
@@ -19,9 +21,7 @@ export function useCreatePostMutation() {
       );
 
       // Create queue status entry first
-      const { createQueueStatus } = await import(
-        "@/services/postQueueStatusService"
-      );
+
       const queueStatus = await createQueueStatus(
         user.id,
         input.content,

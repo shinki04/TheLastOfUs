@@ -97,7 +97,6 @@ function Profile({ user }: ProfileProps) {
     form.setFieldValue("avatar_image", file);
   };
 
-  console.log(user);
   const isOwner = currentUser?.id === user?.id;
 
   return error || !user ? (

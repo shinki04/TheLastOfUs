@@ -5,11 +5,8 @@ import {
 } from "@/services/postQueueService";
 import { config } from "dotenv";
 import { resolve } from "path";
-config({ path: resolve(process.cwd(), ".env.local") });
 
-/**
- * Worker process that consumes messages from RabbitMQ queue
- */
+config({ path: resolve(process.cwd(), ".env.local") });
 
 /**
  * Worker process that consumes messages from RabbitMQ queue

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/client";
 import { saveHashtagsFromContent } from "@/services/hashtagService";
 import { uploadPostImages } from "@/services/postService";
 import { privacyPost } from "@/types/post";
+import { updateQueueStatus } from "./postQueueStatusService";
 
 interface MediaFile {
   name: string;
@@ -106,8 +107,7 @@ export async function queuePostCreation(
  * Handles file upload + post creation + hashtag extraction + queue status updates
  */
 export async function processPostCreation(payload: PostCreateJobPayload) {
-  const supabase = await createClient();
-  const { updateQueueStatus } = await import("./postQueueStatusService");
+  const supabase = createClient();
 
   try {
     console.log(

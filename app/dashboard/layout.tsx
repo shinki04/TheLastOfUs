@@ -9,7 +9,15 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <>
-      <div className="w-full h-full fixed top-0 left-0 z-0">
+      <div className="w-full h-full fixed top-0 left-0 z-0 min-h-screen">
+        {/* <Galaxy
+          mouseRepulsion={false}
+          mouseInteraction={false}
+          density={1.5}
+          glowIntensity={0.5}
+          saturation={0.8}
+          hueShift={240}
+        /> */}
         <LightRays
           raysOrigin="top-center"
           raysColor="#ffffff"
@@ -23,10 +31,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           className="custom-rays"
         />
       </div>
-      <section className="container mx-auto relative z-1">
-        <div className="flex flex-row gap-3">
+      <section className=" min-h-screen container mx-auto relative z-1">
+        <div className="flex flex-col md:flex-row gap-3">
           <div>
-            <TrendingHashtags className="sticky top-0" />
+            <TrendingHashtags className="md:sticky top-0" />
           </div>
           <div> {children}</div>
         </div>

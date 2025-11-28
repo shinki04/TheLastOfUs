@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/client";
+"use server";
+import { createClient } from "@/lib/supabase/server";
 import { PostQueueItem, PostQueueStatus } from "@/types/postQueue";
 
 /**
@@ -10,7 +11,7 @@ export async function createQueueStatus(
   privacyLevel: "public" | "friends" | "private",
   mediaCount: number
 ): Promise<PostQueueItem> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("post_queue_status")
@@ -39,7 +40,7 @@ export async function updateQueueStatus(
   postId?: string,
   errorMessage?: string
 ): Promise<PostQueueItem | null> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const updateData: {
     status: PostQueueStatus;

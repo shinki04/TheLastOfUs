@@ -79,7 +79,6 @@ export function InfinitePostsList() {
   }
 
   const posts = data?.pages.flatMap((page) => page.posts) ?? [];
-  console.log(posts);
 
   return (
     <div
