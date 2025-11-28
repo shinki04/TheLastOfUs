@@ -46,3 +46,4 @@ temp/*
 sequence-diagram/*
 .idea
 .turbo
+*.tsbuildinfo
