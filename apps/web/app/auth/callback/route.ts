@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
-import { getRedisClient } from "@/lib/redis/redis";
 import { createClient } from "@/lib/supabase/server";
 import { BLANK_AVATAR, Global_Roles } from "@repo/shared/types/user";
+import { getRedisClient } from "@repo/redis/redis";
 
 const COOKIE_CONFIG = {
   path: "/",

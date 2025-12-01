@@ -212,23 +212,28 @@ export const useUppyWithSupabase = (bucketName: string) => {
         .use(Tus, {
           endpoint: `${process.env
             .NEXT_PUBLIC_SUPABASE_URL!}/storage/v1/upload/resumable`,
-          retryDelays: [0, 3000, 5000, 10000, 20000],
+          retryDelays: [0, 3000, 5000, 10000, 20000], // Retry delays for resumable uploads
           chunkSize: 6 * 1024 * 1024,
-          uploadDataDuringCreation: true,
-          removeFingerprintOnSuccess: true,
-          // Headers lấy mới mỗi request → tránh token hết hạn
+          uploadDataDuringCreation: true, // Send metadata with file chunks
+          removeFingerprintOnSuccess: true, // Remove fingerprint after successful upload
           headers: {
             authorization: `Bearer ${session?.access_token ?? ""}`,
             apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
           },
-          allowedMetaFields: ["bucketName", "objectName", "contentType"],
+          allowedMetaFields: [
+            "bucketName",
+            "objectName",
+            "contentType",
+            "cacheControl",
+            "metadata",
+          ],
+          onError: (error) => console.error("Upload error:", error), // Error handling for uploads
         })
         .on("file-added", (file) => {
           const timestamp = Date.now();
           const randomStr = Math.random().toString(36).substring(2, 9);
           const extension = file.name.split(".").pop() || "";
           const uniqueName = `${session?.user.id}/${timestamp}-${randomStr}.${extension}`;
-          const filesLength = uppy.getFiles().length;
 
           file.meta = {
             ...file.meta,
@@ -245,6 +250,7 @@ export const useUppyWithSupabase = (bucketName: string) => {
           }
         });
     };
+
     initializeUppy();
   }, [uppy, bucketName]);
 

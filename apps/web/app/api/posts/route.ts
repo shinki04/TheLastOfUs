@@ -1,17 +1,57 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { fetchPosts } from "@/app/actions/post";
+import { getRedisClient } from "@repo/redis/redis";
+import { getFeedCacheService } from "@repo/redis/feedCacheService";
 
 export async function GET(request: NextRequest) {
   try {
+    const redis = getRedisClient();
+    const feedCache = getFeedCacheService();
+    await redis.connect();
+    
     const page = parseInt(request.nextUrl.searchParams.get("page") || "1", 10);
     const itemsPerPage = parseInt(
-      request.nextUrl.searchParams.get("itemsPerPage") || "1",
+      request.nextUrl.searchParams.get("itemsPerPage") || "10",
       10
     );
-    const response = await fetchPosts(page, itemsPerPage);
+    const userId = request.nextUrl.searchParams.get("userId") || "public";
+    const noCache = request.nextUrl.searchParams.get("noCache") === "true";
 
-    return NextResponse.json(response);
+    // Check if cache bypass is requested
+    let cacheStatus = "MISS";
+    
+    if (!noCache) {
+      // Try to get from cache first
+      const cachedFeed = await feedCache.getCachedFeedPage(userId, page, itemsPerPage);
+      if (cachedFeed) {
+        cacheStatus = "HIT";
+        return NextResponse.json(
+          {
+            posts: cachedFeed.posts,
+            hasMore: cachedFeed.hasMore,
+            total: cachedFeed.total,
+            currentPage: cachedFeed.page,
+          },
+          {
+            headers: {
+              "X-Cache-Status": cacheStatus,
+              "X-Cache-Key": `feed:${userId}:${page}:${itemsPerPage}`,
+            },
+          }
+        );
+      }
+    }
+
+    // Fetch from database
+    const response = await fetchPosts(page, itemsPerPage, userId);
+    
+    return NextResponse.json(response, {
+      headers: {
+        "X-Cache-Status": noCache ? "BYPASS" : cacheStatus,
+        "X-Cache-Key": `feed:${userId}:${page}:${itemsPerPage}`,
+      },
+    });
   } catch (error) {
     return NextResponse.json({
       error: error instanceof Error ? error.message : "Internal server error",
@@ -19,6 +59,40 @@ export async function GET(request: NextRequest) {
     });
   }
 }
+// export async function GET(request: NextRequest) {
+//   const userId = request.nextUrl.searchParams.get("userId") || "guest";
+//   const page = parseInt(request.nextUrl.searchParams.get("page") || "1", 10);
+//   const itemsPerPage = parseInt(
+//     request.nextUrl.searchParams.get("itemsPerPage") || "10",
+//     10
+//   );
+
+//   try {
+//     const redis = getRedisClient();
+//     await redis.connect();
+
+//     const feedIds = await getPostIdsWithCache(userId);
+//     const start = (page - 1) * itemsPerPage;
+//     const end = start + itemsPerPage;
+
+//     const posts = [];
+//     for (const id of feedIds.slice(start, end)) {
+//       const post = await getPostCached(id);
+//       posts.push(post);
+//     }
+
+//     return NextResponse.json({
+//       posts,
+//       currentPage: page,
+//       hasMore: end < feedIds.length,
+//     });
+//   } catch (error) {
+//     return NextResponse.json({
+//       error: error instanceof Error ? error.message : "Internal server error",
+//       status: 500,
+//     });
+//   }
+// }
 
 // export async function POST(request: NextRequest) {
 //   try {

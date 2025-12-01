@@ -87,7 +87,7 @@ function AddPost({ currentUser }: AddPostProps) {
           if (!result || result === undefined) return null;
 
           if (result.failed!.length > 0) {
-            toast.error("Một số file upload thất bại");
+            toast.error("Một số file upload thất bại", { id: "upload" });
             return;
           }
 

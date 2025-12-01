@@ -14,7 +14,7 @@ export interface PostJobPayload {
   userId: string;
   content: string;
   privacyLevel: privacyPost;
-  media_urls?: string[];
+  media_urls?: string[] | null;
   queueId: string; // Track queue status ID
   queueStatus?: PostQueueStatus;
 }

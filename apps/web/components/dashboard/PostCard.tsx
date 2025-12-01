@@ -3,14 +3,27 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
-import { Heart, MessageCircle, Share2 } from "lucide-react";
+import {
+  FileSpreadsheet,
+  FileText,
+  FileType,
+  Heart,
+  MessageCircle,
+  Share2,
+} from "lucide-react";
 import Image from "next/image";
 import React from "react";
 
-import { getFileInfo, isImageType, isVideoType } from "@/lib/mediaUtils";
-import { PostResponse } from "@/types/post";
+import {
+  getFileInfo,
+  isImageType,
+  isVideoType,
+  type MediaType,
+} from "@/lib/mediaUtils";
+import { PostResponse } from "@repo/shared/types/post";
 
 import { Card } from "../ui/card";
+import FileLightbox from "./FileLightbox";
 import MediaGalleryModal from "./MediaGalleryModal";
 import MediaLightbox from "./MediaLightbox";
 import ReadMore from "./ReadMore";
@@ -24,6 +37,11 @@ export default function PostCard({ post, isPending = false }: PostCardProps) {
   const [isLiked, setIsLiked] = React.useState(false);
   const [showGalleryModal, setShowGalleryModal] = React.useState(false);
   const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
+  const [fileLightboxData, setFileLightboxData] = React.useState<{
+    url: string;
+    type: MediaType;
+    name: string;
+  } | null>(null);
 
   const createdAt = post.created_at
     ? formatDistanceToNow(new Date(post.created_at), {
@@ -39,23 +57,19 @@ export default function PostCard({ post, isPending = false }: PostCardProps) {
       private: "Riêng tư",
     }[post.privacy_level] || "Công khai";
 
-  const getFileIcon = (url: string, mimeType?: string) => {
-    const fileInfo = getFileInfo(url, mimeType);
-    return fileInfo.icon;
-    // switch (fileInfo.type) {
-    //   case "image":
-    //     return "🖼️";
-    //   case "video":
-    //     return "🎬";
-    //   case "pdf":
-    //     return "📄";
-    //   case "word":
-    //     return "📝";
-    //   case "excel":
-    //     return "📊";
-    //   default:
-    //     return "📎";
-    // }
+  const getFileIconComponent = (type: MediaType) => {
+    const iconClass = "w-8 h-8";
+    switch (type) {
+      case "pdf":
+      case "document":
+        return <FileText className={iconClass} />;
+      case "word":
+        return <FileType className={iconClass} />;
+      case "excel":
+        return <FileSpreadsheet className={iconClass} />;
+      default:
+        return <FileText className={iconClass} />;
+    }
   };
 
   const imageUrls =
@@ -152,7 +166,14 @@ export default function PostCard({ post, isPending = false }: PostCardProps) {
                       const imageIndex = imageUrls.indexOf(url);
                       setLightboxIndex(imageIndex);
                     } else if (!isImage && !isVideo) {
-                      handleDownload(url);
+                      // Open FileLightbox for documents
+                      const fileName =
+                        url.split("/").pop()?.split("?")[0] || "File";
+                      setFileLightboxData({
+                        url,
+                        type: fileInfo.type,
+                        name: fileName,
+                      });
                     }
                   }}
                 >
@@ -171,13 +192,25 @@ export default function PostCard({ post, isPending = false }: PostCardProps) {
                       controls
                     />
                   ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center bg-linear-to-br from-gray-100 to-gray-200 group-hover:from-gray-200 group-hover:to-gray-300 transition-colors">
-                      <span className="text-3xl mb-1">{getFileIcon(url)}</span>
-                      <p className="text-xs text-gray-600 text-center px-1 line-clamp-3 group-hover:text-gray-700 font-medium">
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 group-hover:from-blue-100 group-hover:to-indigo-200 transition-all duration-200">
+                      {/* File Icon */}
+                      <div className="text-blue-600 mb-2 group-hover:scale-110 transition-transform duration-200">
+                        {getFileIconComponent(fileInfo.type)}
+                      </div>
+
+                      {/* File Extension Badge */}
+                      <span className="inline-block bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded mb-2 uppercase">
+                        {fileInfo.extension}
+                      </span>
+
+                      {/* File Name */}
+                      <p className="text-xs text-gray-700 text-center px-2 line-clamp-2 group-hover:text-gray-900 font-medium mb-1">
                         {url.split("/").pop()?.split("?")[0] || "File"}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1 group-hover:text-gray-600">
-                        Tải xuống
+
+                      {/* Action hint */}
+                      <p className="text-[10px] text-gray-500 group-hover:text-gray-700 font-medium">
+                        Click để xem
                       </p>
                     </div>
                   )}
@@ -238,13 +271,23 @@ export default function PostCard({ post, isPending = false }: PostCardProps) {
       )}
 
       {/* Lightbox - fullscreen image viewer */}
-      {lightboxIndex !== null && imageUrls.length > 0 && (
+      {lightboxIndex !== null && imageUrls.length > 0 && imageUrls[lightboxIndex] && (
         <MediaLightbox
           imageUrl={imageUrls[lightboxIndex]}
           allImageUrls={imageUrls}
           currentIndex={lightboxIndex}
           onClose={() => setLightboxIndex(null)}
           onNavigate={(index) => setLightboxIndex(index)}
+        />
+      )}
+
+      {/* File Lightbox - fullscreen file viewer */}
+      {fileLightboxData && (
+        <FileLightbox
+          fileUrl={fileLightboxData.url}
+          fileType={fileLightboxData.type}
+          fileName={fileLightboxData.name}
+          onClose={() => setFileLightboxData(null)}
         />
       )}
     </Card>

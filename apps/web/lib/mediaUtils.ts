@@ -214,3 +214,37 @@ export function isVideoType(type: MediaType): boolean {
 export function isDocumentType(type: MediaType): boolean {
   return ["document", "pdf", "word", "excel"].includes(type);
 }
+
+/**
+ * Format file size from bytes to human-readable format
+ */
+export function formatFileSize(bytes: number): string {
+  if (bytes === 0) return "0 B";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024)
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+}
+
+/**
+ * Check if file type can be previewed in browser
+ */
+export function canPreviewInBrowser(type: MediaType): boolean {
+  return ["image", "video", "pdf", "document"].includes(type);
+}
+
+/**
+ * Get lucide-react icon name for file type
+ */
+export function getFileIconName(type: MediaType): string {
+  const iconMap: Record<MediaType, string> = {
+    image: "Image",
+    video: "Video",
+    pdf: "FileText",
+    word: "FileType",
+    excel: "FileSpreadsheet",
+    document: "File",
+  };
+  return iconMap[type] || "File";
+}

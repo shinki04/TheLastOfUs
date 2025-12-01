@@ -103,6 +103,66 @@ class RedisClient {
     return await this.redis.ttl(key);
   }
 
+  async expire(key: string, seconds: number): Promise<boolean> {
+    const result = await this.redis.expire(key, seconds);
+    return result === 1;
+  }
+
+  async mget<T>(keys: string[]): Promise<(T | null)[]> {
+    if (keys.length === 0) return [];
+    
+    const start = Date.now();
+    const values = await this.redis.mget(...keys);
+    console.log(`⏱️  Multi-get ${keys.length} keys in ${Date.now() - start}ms`);
+
+    return values.map((data) => {
+      if (!data) return null;
+      try {
+        return JSON.parse(data) as T;
+      } catch {
+        return data as T;
+      }
+    });
+  }
+
+  async mset(keyValuePairs: Record<string, string | number | object>): Promise<void> {
+    const start = Date.now();
+    const pairs: string[] = [];
+
+    for (const [key, value] of Object.entries(keyValuePairs)) {
+      const data = typeof value === "string" ? value : JSON.stringify(value);
+      pairs.push(key, data);
+    }
+
+    if (pairs.length > 0) {
+      await this.redis.mset(...pairs);
+      console.log(`⏱️  Multi-set ${Object.keys(keyValuePairs).length} keys in ${Date.now() - start}ms`);
+    }
+  }
+
+  async deletePattern(pattern: string): Promise<number> {
+    const start = Date.now();
+    const keys = await this.redis.keys(pattern);
+    
+    if (keys.length === 0) {
+      console.log(`🗑️  No keys found for pattern '${pattern}'`);
+      return 0;
+    }
+
+    const result = await this.redis.del(...keys);
+    console.log(`🗑️  Deleted ${result} keys matching '${pattern}' in ${Date.now() - start}ms`);
+    return result;
+  }
+
+  async getWithTTL<T>(key: string): Promise<{ value: T | null; ttl: number }> {
+    const [value, ttl] = await Promise.all([
+      this.getCache<T>(key),
+      this.ttl(key),
+    ]);
+
+    return { value, ttl };
+  }
+
   isReady(): boolean {
     return this.isConnected && this.redis.status === "ready";
   }

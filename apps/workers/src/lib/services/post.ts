@@ -1,5 +1,5 @@
 import { createServiceClient } from "../supabase/services_roles";
-import { Post, PostResponse } from "@repo/shared/types/post";
+import { Post, PostResponse, UpdatePost } from "@repo/shared/types/post";
 import { getPostRabbitMQClient } from "@repo/rabbitmq/PostRabbitMQ";
 import {
   PostJobPayload,
@@ -20,16 +20,20 @@ export async function deletePost(postId: string): Promise<void> {
 }
 
 export async function updatePost(
-  postId: string,
-  content: string,
-  privacy_level: "public" | "friends" | "private"
+  payload: PostJobPayload & { post_id: string }
 ): Promise<Post> {
   const supabase = createServiceClient();
 
   const { data, error } = await supabase
     .from("posts")
-    .update({ content, privacy_level })
-    .eq("id", postId)
+    .update({
+      id: payload.post_id,
+      content: payload.content,
+      media_urls: payload.media_urls,
+      author_id: payload.userId,
+      updated_at: Date.now().toString(),
+    })
+    .eq("id", payload.post_id)
     .select()
     .single();
 

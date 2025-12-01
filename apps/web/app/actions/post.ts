@@ -1,4 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
+import { getRedisClient } from "@repo/redis/redis";
+import { getPostCacheService } from "@repo/redis/postCacheService";
+import { getFeedCacheService } from "@repo/redis/feedCacheService";
+import { getCacheInvalidationService } from "@repo/redis/cacheInvalidationService";
 import { Post, PostResponse } from "@repo/shared/types/post";
 
 export interface CreatePostInput {
@@ -19,10 +23,27 @@ export interface FetchPostsResponse {
   currentPage: number;
 }
 
+const redis = getRedisClient();
+const feedCache = getFeedCacheService();
+const postCache = getPostCacheService();
+const cacheInvalidation = getCacheInvalidationService();
+
 export async function fetchPosts(
   page: number,
-  itemsPerPage: number
+  itemsPerPage: number,
+  userId: string = "public" // For future use with user-specific feeds
 ): Promise<FetchPostsResponse> {
+  // Try cache first
+  const cachedFeed = await feedCache.getCachedFeedPage(userId, page, itemsPerPage);
+  if (cachedFeed) {
+    return {
+      posts: cachedFeed.posts as PostResponse[],
+      hasMore: cachedFeed.hasMore,
+      total: cachedFeed.total,
+      currentPage: cachedFeed.page,
+    };
+  }
+
   const supabase = await createClient();
 
   // Validate page number
@@ -86,35 +107,91 @@ export async function fetchPosts(
   // Check if there are more posts after current page
   const hasMore = offset + itemsPerPage < total;
 
-  return {
+  const result = {
     posts: data || [],
     hasMore,
     total,
     currentPage: page,
   };
+
+  // Cache the feed page
+  await feedCache.setCachedFeedPage(userId, page, itemsPerPage, {
+    posts: data || [],
+    page,
+    hasMore,
+    total,
+    itemsPerPage,
+  });
+
+  return result;
 }
 
-export async function fetchPostById(postId: string): Promise<Post | null> {
-  const supabase = await createClient();
+// export async function getPostIdsWithCache(userId: string) {
+//   let postIds = await redis.getCache<string[]>(`feed:${userId}`);
+//   if (!postIds) {
+//     const response = await fetchPosts(1, 100); // lấy nhiều ID để cache
+//     postIds = response.posts.map((p) => p.id);
+//     await redis.setCache(`post:${userId}`, postIds, 60);
+//   }
+//   return postIds;
+// }
+// export async function getPostCached(postId: string) {
+//   let post = await redis.getCache<Post>(`post:${postId}`);
+//   if (!post || post !== undefined || post !== null) {
+//     // fetch từ DB
+//     post = await fetchPostById(postId);
+//     await redis.setCache(`post:${postId}`, post, 3600);
+//   }
+//   return post;
+// }
 
-  const { data, error } = await supabase
-    .from("posts")
-    .select()
-    .eq("id", postId)
-    .single();
+export async function fetchPostById(postId: string) {
+  try {
+    // Use cache service with stampede protection
+    const post = await postCache.getCachedOrFetch(postId, async () => {
+      const supabase = await createClient();
+      const { data, error } = await supabase
+        .from("posts")
+        .select(
+          `
+          id,
+          created_at, 
+          author: author_id(
+            id,
+            username,
+            display_name,
+            avatar_url,
+            global_role
+          ),
+          content,
+          media_urls,
+          updated_at,
+          like_count,
+          comment_count,
+          share_count,
+          privacy_level
+          `
+        )
+        .eq("id", postId)
+        .single();
 
-  if (error) {
-    if (error.code === "PGRST116") {
-      // No rows found
-      return null;
+      if (error) {
+        throw new Error(`Failed to fetch post: ${error.message}`);
+      }
+      return data;
+    });
+
+    return post;
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Caught an Error object:", error.message);
+    } else {
+      console.error("Caught an unknown type of error:", error);
     }
-    throw new Error(`Failed to fetch post: ${error.message}`);
   }
-
-  return data;
 }
 
-export async function deletePost(postId: string): Promise<void> {
+export async function deletePost(postId: string, authorId: string): Promise<void> {
   const supabase = await createClient();
 
   const { error } = await supabase.from("posts").delete().eq("id", postId);
@@ -122,12 +199,16 @@ export async function deletePost(postId: string): Promise<void> {
   if (error) {
     throw new Error(`Failed to delete post: ${error.message}`);
   }
+
+  // Invalidate cache
+  await cacheInvalidation.onPostDeleted(postId, authorId);
 }
 
 export async function updatePost(
   postId: string,
   content: string,
-  privacy_level: "public" | "friends" | "private"
+  privacy_level: "public" | "friends" | "private",
+  authorId: string
 ): Promise<Post> {
   const supabase = await createClient();
 
@@ -141,6 +222,9 @@ export async function updatePost(
   if (error) {
     throw new Error(`Failed to update post: ${error.message}`);
   }
+
+  // Invalidate cache
+  await cacheInvalidation.onPostUpdated(postId, authorId);
 
   return data;
 }
