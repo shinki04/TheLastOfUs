@@ -1,10 +1,12 @@
+packages:
+  - apps/*
+  - packages/*
+
 onlyBuiltDependencies:
+  - core-js-pure
   - esbuild
   - lefthook
   - msw
   - sharp
   - supabase
   - unrs-resolver
-packages:
-  - "apps/*"
-  - "packages/*"

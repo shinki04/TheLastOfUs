@@ -1,4 +1,9 @@
 import RabbitMQClient from "./rabbitmq";
+import {
+  PostJobPayload,
+  PostQueueDeletePayload,
+  UpdatePostJobPayload,
+} from "@repo/shared/types/postQueue";
 
 /**
  * PostRabbitMQ handles all post-related queue operations
@@ -28,7 +33,7 @@ class PostRabbitMQ extends RabbitMQClient {
   /**
    * Publish a post creation job to the queue
    */
-  async publishPostCreate(payload: Record<string, unknown>): Promise<boolean> {
+  async publishPostCreate(payload: PostJobPayload): Promise<boolean> {
     return await this.publishToExchange("posts", "post.create", payload);
   }
 
@@ -36,7 +41,7 @@ class PostRabbitMQ extends RabbitMQClient {
    * Consume post creation jobs from the queue
    */
   async consumePostCreate(
-    callback: (payload: Record<string, unknown>) => Promise<void>
+    callback: (payload: PostJobPayload) => Promise<void>
   ): Promise<void> {
     return await this.consumeQueue("post.create", callback);
   }
@@ -46,7 +51,7 @@ class PostRabbitMQ extends RabbitMQClient {
   /**
    * Publish a post update job via exchange
    */
-  async publishPostUpdate(payload: Record<string, unknown>): Promise<boolean> {
+  async publishPostUpdate(payload: UpdatePostJobPayload): Promise<boolean> {
     return await this.publishToExchange("posts", "post.update", payload);
   }
 
@@ -54,7 +59,7 @@ class PostRabbitMQ extends RabbitMQClient {
    * Consume post update jobs from the queue
    */
   async consumePostUpdate(
-    callback: (payload: Record<string, unknown>) => Promise<void>
+    callback: (payload: UpdatePostJobPayload) => Promise<void>
   ): Promise<void> {
     return await this.consumeQueue("post.update", callback);
   }
@@ -64,7 +69,7 @@ class PostRabbitMQ extends RabbitMQClient {
   /**
    * Publish a post delete job via exchange
    */
-  async publishPostDelete(payload: Record<string, unknown>): Promise<boolean> {
+  async publishPostDelete(payload: PostQueueDeletePayload): Promise<boolean> {
     return await this.publishToExchange("posts", "post.delete", payload);
   }
 
@@ -72,9 +77,9 @@ class PostRabbitMQ extends RabbitMQClient {
    * Consume post delete jobs from the queue
    */
   async consumePostDelete(
-    callback: (payload: Record<string, unknown>) => Promise<void>
+    callback: (payload: PostQueueDeletePayload) => Promise<void>
   ): Promise<void> {
-    return await this.consumeQueue("post.delete", callback);
+    return await this.consumeQueue("post.delete", callback, { prefetch: 20 });
   }
 }
 

@@ -1,5 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
 import { Database } from "@repo/shared/types/database.types";
+import { createClient } from "@supabase/supabase-js";
 
 export function createServiceClient() {
   return createClient<Database>(

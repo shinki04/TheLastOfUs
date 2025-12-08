@@ -1,13 +1,19 @@
 "use client";
 
-import { privacyPost } from "@repo/shared/types/post";
-import { useForm } from "@tanstack/react-form";
-import React, { useEffect, useRef } from "react";
-import { toast } from "sonner";
-
 import "@uppy/react/css/style.css";
 
-import { Dropzone, FilesList, UppyContextProvider } from "@uppy/react";
+import { privacyPost } from "@repo/shared/types/post";
+import type { User } from "@repo/shared/types/user";
+import { useForm } from "@tanstack/react-form";
+import {
+  Dropzone,
+  FilesGrid,
+  UppyContextProvider,
+} from "@uppy/react";
+import React, { useEffect } from "react";
+import { toast } from "sonner";
+
+import { createQueueStatus } from "@/app/actions/post-queue";
 import {
   Select,
   SelectContent,
@@ -17,16 +23,15 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreatePostMutation } from "@/hooks/usePost";
+import { useUppyWithSupabase } from "@/hooks/useUppy"; // hook đã sửa ở trên
 import { createClient } from "@/lib/supabase/client";
 import {
   createPostSchema,
   validateContent,
 } from "@/lib/validations/addPost-schema";
-import type { User } from "@repo/shared/types/user";
+
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
-import { useUppyWithSupabase } from "@/hooks/useUppy"; // hook đã sửa ở trên
-import { createQueueStatus } from "@/app/actions/post-queue";
 
 interface AddPostProps {
   currentUser: User;
@@ -34,8 +39,7 @@ interface AddPostProps {
 
 function AddPost({ currentUser }: AddPostProps) {
   const supabase = createClient();
-  const uppy = useUppyWithSupabase("posts");
-  const dashboardMounted = useRef(false);
+  const uppy = useUppyWithSupabase("posts", "add-post");
 
   const createPostMutation = useCreatePostMutation();
 
@@ -66,6 +70,7 @@ function AddPost({ currentUser }: AddPostProps) {
         content: value.content,
         privacyLevel: value.privacy_level,
         mediaCount: files.length,
+        queueOperations: "CREATE",
       });
 
       if (!res) {
@@ -137,15 +142,20 @@ function AddPost({ currentUser }: AddPostProps) {
   //   }, [uppy]);
 
   // Cleanup khi rời component
+  // useEffect(() => {
+  //   return () => {
+  //     uppy;
+  //   };
+  // }, [uppy]);
   useEffect(() => {
     return () => {
-      uppy;
+      uppy.cancelAll();
     };
   }, [uppy]);
 
   return (
-    <UppyContextProvider uppy={uppy}>
-      <Card className="rounded-lg shadow p-6 my-6">
+    <Card className="rounded-lg shadow p-6 my-6">
+      <UppyContextProvider uppy={uppy}>
         <h2 className="text-xl font-semibold mb-4">Tạo bài viết mới</h2>
 
         <form
@@ -191,12 +201,12 @@ function AddPost({ currentUser }: AddPostProps) {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Thêm media (tối đa 10 file)
             </label>
-            <div
+            <article
             // id="uppy-dashboard-container"
             //   className="border-2 border-dashed rounded-lg h-4"
             />
             <Dropzone />
-            <FilesList />
+            <FilesGrid imageThumbnail={true} columns={2} />
           </div>
 
           {/* Quyền riêng tư */}
@@ -256,8 +266,8 @@ function AddPost({ currentUser }: AddPostProps) {
             </form.Subscribe>
           </div>
         </form>
-      </Card>
-    </UppyContextProvider>
+      </UppyContextProvider>
+    </Card>
   );
 }
 

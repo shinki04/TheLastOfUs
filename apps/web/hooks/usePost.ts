@@ -72,15 +72,21 @@
 
 "use client";
 
+import { PostJobPayload, PostQueueStatus } from "@repo/shared/types/postQueue";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import { useGetCurrentUser } from "./useAuth";
+import { deletePost } from "@/app/actions/post";
 import {
+  createQueueStatus,
   queuePostCreation,
+  queuePostUpdate,
   updateQueueStatus,
 } from "@/app/actions/post-queue";
-import { PostJobPayload, PostQueueStatus } from "@repo/shared/types/postQueue";
+import { getQueryClient } from "@/lib/react-query";
+
+import { useGetCurrentUser } from "./useAuth";
+import { privacyPost } from "@repo/shared/types/post";
 
 export function useCreatePostMutation() {
   const { data: user } = useGetCurrentUser();
@@ -139,6 +145,7 @@ export function useCreatePostMutation() {
       // };
 
       // ======================
+
       const [res, isQueued] = await Promise.all([
         updateQueueStatus(input.queueId, "processing"),
         queuePostCreation(input),
@@ -154,6 +161,93 @@ export function useCreatePostMutation() {
     onError: (error: Error) => {
       console.error("Error queueing post:", error);
       toast.error(error.message || "Có lỗi xảy ra khi đăng bài");
+    },
+  });
+}
+
+export function useDeletePost() {
+  const { data: user } = useGetCurrentUser();
+  const queryKey = ["posts", "infinite"];
+  const queryClient = getQueryClient();
+  return useMutation({
+    mutationFn: async (postId: string) => {
+      if (!user?.id) {
+        throw new Error("User is not authenticated");
+      }
+
+      await deletePost(postId, user.id);
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
+    onError: (error: Error) => {
+      console.error("Error queueing post:", error);
+      toast.error(error.message || "Có lỗi xảy ra khi đăng bài");
+    },
+  });
+}
+
+export interface UpdatePostInput {
+  postId: string;
+  content: string;
+  privacy_level: "public" | "friends" | "private";
+  media_urls: string[];
+}
+
+export function useUpdatePost() {
+  const { data: user } = useGetCurrentUser();
+  const queryClient = getQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: UpdatePostInput) => {
+      if (!user?.id) {
+        throw new Error("User is not authenticated");
+      }
+      const data = await createQueueStatus({
+        userId: user.id,
+        content: input.content,
+        privacyLevel: input.privacy_level,
+        mediaCount: input.media_urls.length,
+        queueOperations: "UPDATE",
+      });
+
+      const isQueued = await queuePostUpdate({
+        userId: user.id,
+        postId: input.postId,
+        content: input.content,
+        privacyLevel: input.privacy_level as privacyPost,
+        media_urls: input.media_urls,
+        queueOperations: "UPDATE",
+        queueStatus: "processing",
+        queueId: data.id,
+      });
+
+      if (isQueued && data) {
+        return {
+          message: "Post update queued successfully",
+          status: "processing" as PostQueueStatus,
+          id: input.postId,
+        };
+      }
+
+      // return await updatePost(
+      //   input.postId,
+      //   input.content,
+      //   input.privacy_level,
+      //   input.media_urls,
+      //   user.id
+      // );
+    },
+    onSuccess: (data) => {
+      // Invalidate all posts queries to refetch updated data
+      queryClient.invalidateQueries({ queryKey: ["posts", data?.id] });
+
+      toast.success("Cập nhật bài viết thành công");
+    },
+    onError: (error: Error) => {
+      console.error("Error updating post:", error);
+      toast.error(error.message || "Có lỗi xảy ra khi cập nhật bài viết");
     },
   });
 }

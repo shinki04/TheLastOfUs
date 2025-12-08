@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { PostQueueItem } from "@repo/shared/types/postQueue";
-import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+
 import {
   deleteQueueStatus,
   getQueueStatusByUser,
 } from "@/app/actions/post-queue";
+import { createClient } from "@/lib/supabase/client";
+
 import { useGetCurrentUser } from "./useAuth";
 
 export function usePostQueueStatus() {
@@ -185,6 +187,7 @@ export function usePostQueueStatus() {
       toastIdsRef.current.forEach((toastId) => {
         toast.dismiss(toastId);
       });
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       toastIdsRef.current.clear();
     };
   }, [user?.id, queryClient]);

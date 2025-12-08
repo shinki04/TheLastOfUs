@@ -1,9 +1,15 @@
 import { getPostRabbitMQClient } from "@repo/rabbitmq/PostRabbitMQ";
+import {
+  PostJobPayload,
+  PostQueueDeletePayload,
+  UpdatePostJobPayload,
+} from "@repo/shared/types/postQueue";
 
-import { processPostCreation } from "@/lib/services/post";
-import { config } from "dotenv";
-import { resolve } from "path";
-import { PostJobPayload } from "@repo/shared/types/postQueue";
+import {
+  deletePostMedia,
+  processPostCreation,
+  processPostUpdate,
+} from "@/lib/services/post";
 
 // config({ path: resolve(process.cwd(), ".env.local") });
 
@@ -20,31 +26,32 @@ export async function startPostWorker() {
       await rabbitMQ.connect();
     }
     // Start consuming jobs
-    await rabbitMQ.consumePostCreate(
-      async (payload: Record<string, unknown>) => {
-        const typedPayload = payload as unknown as PostJobPayload;
-        console.log("🔄 Processing job for user:", typedPayload.userId);
-        try {
-          const post = await processPostCreation(typedPayload);
-          console.log("✅ Job completed. Post ID:", post.id);
-        } catch (error) {
-          console.error("❌ Job failed:", error);
-          throw error;
-        }
+    await rabbitMQ.consumePostCreate(async (payload: PostJobPayload) => {
+      console.log("🔄 Processing job for user:", payload.userId);
+      try {
+        const post = await processPostCreation(payload);
+        console.log("✅ Job completed. Post ID:", post.id);
+      } catch (error) {
+        console.error("❌ Job failed:", error);
+        throw error;
       }
-    );
-    await rabbitMQ.consumePostUpdate(
-      async (payload: Record<string, unknown>) => {
-        const typedPayload = payload as unknown as PostJobPayload;
-        console.log("🔄 Processing update job for user:", typedPayload.userId);
+    });
+    await rabbitMQ.consumePostUpdate(async (payload: UpdatePostJobPayload) => {
+      console.log("🔄 Processing update job for user:", payload.userId);
+      try {
+        const post = await processPostUpdate(payload);
+        console.log("✅ Update job completed. Post ID:", post.id);
+      } catch (error) {
+        console.error("❌ Update job failed:", error);
+        throw error;
       }
-    );
+    });
 
     await rabbitMQ.consumePostDelete(
-      async (payload: Record<string, unknown>) => {
-        // ✅ Sửa thành consume
-        const typedPayload = payload as unknown as PostJobPayload;
-        console.log("🔄 Processing delete job for user:", typedPayload.userId);
+      async (payload: PostQueueDeletePayload) => {
+        await deletePostMedia(payload);
+
+        console.log("🔄 Processing delete job for user:", payload.queueId);
         // TODO: Implement delete logic
       }
     );

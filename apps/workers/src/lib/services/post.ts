@@ -1,16 +1,30 @@
-import { createServiceClient } from "../supabase/services_roles";
-import { Post, PostResponse, UpdatePost } from "@repo/shared/types/post";
-import { getPostRabbitMQClient } from "@repo/rabbitmq/PostRabbitMQ";
+import { Post } from "@repo/shared/types/post";
 import {
   PostJobPayload,
+  PostQueueDeletePayload,
   PostQueueItem,
   PostQueueStatus,
+  UpdatePostJobPayload,
 } from "@repo/shared/types/postQueue";
-import { saveHashtagsFromContent } from "./hashtag";
-import { privacyPost } from "@repo/shared/types/post";
+
+import { createServiceClient } from "../supabase/services_roles";
+import { 
+  saveHashtagsFromContent, 
+  syncHashtagsForPost, 
+  removeHashtagsForPost 
+} from "./hashtag";
+import { urlToPath } from "@repo/utils/getPathSupabase";
 
 export async function deletePost(postId: string): Promise<void> {
   const supabase = createServiceClient();
+
+  // Clean up hashtags before deleting post
+  try {
+    await removeHashtagsForPost(postId);
+  } catch (hashtagError) {
+    console.error("⚠️  Error removing hashtags:", hashtagError);
+    // Continue with delete even if hashtag cleanup fails
+  }
 
   const { error } = await supabase.from("posts").delete().eq("id", postId);
 
@@ -108,6 +122,7 @@ export async function processPostCreation(payload: PostJobPayload) {
     }
 
     console.log("🎉 Post processing completed successfully");
+    await deleteQueueStatus(payload.queueId!);
     return post;
   } catch (error) {
     console.error("❌ Error processing post creation:", error);
@@ -115,6 +130,78 @@ export async function processPostCreation(payload: PostJobPayload) {
   }
 }
 
+/**
+ * Process post update job from queue
+ * Handles post update + hashtag extraction + queue status updates
+ */
+export async function processPostUpdate(payload: UpdatePostJobPayload) {
+  const supabase = createServiceClient();
+
+  try {
+    // console.log(
+    //   `🔄 Processing post update for user: ${payload.userId}, media: ${payload.media.length} files`
+    // );
+
+    // Update status to 'processing'
+    if (payload.queueId) {
+      await updateQueueStatus(payload.queueId, "processing");
+    }
+
+    // Step 1: Using AI for check
+
+    // Step 2: Create post in database
+    console.log("📝 Creating post in database...");
+    const { data: post, error } = await supabase
+      .from("posts")
+      .update({
+        content: payload.content,
+        privacy_level: payload.privacyLevel,
+        media_urls: payload.media_urls || [],
+      })
+      .eq("id", payload.postId)
+      .eq("author_id", payload.userId)
+      .select()
+      .single();
+
+    if (error) {
+      // Update status to 'failed' with error message
+      if (payload.queueId) {
+        await updateQueueStatus(
+          payload.queueId,
+          "failed",
+          undefined,
+          `Failed to update post: ${error.message}`
+        );
+      }
+      throw new Error(`Failed to update post: ${error.message}`);
+    }
+
+    console.log("✅ Post updated successfully:", post.id);
+
+    // Step 3: Sync hashtags (remove old, add new)
+    try {
+      const hashtags = await syncHashtagsForPost(payload.content, post.id);
+      if (hashtags.length > 0) {
+        console.log(`✅ Synced ${hashtags.length} new hashtags for post`);
+      }
+    } catch (hashtagError) {
+      console.error("⚠️  Error syncing hashtags:", hashtagError);
+      // Don't fail the post update if hashtags fail
+    }
+
+    // Update status to 'completed' with post ID
+    if (payload.queueId) {
+      await updateQueueStatus(payload.queueId, "completed", post.id);
+    }
+
+    console.log("🎉 Post updated processing completed successfully");
+    await deleteQueueStatus(payload.queueId!);
+    return post;
+  } catch (error) {
+    console.error("❌ Error processing post update:", error);
+    throw error;
+  }
+}
 /**
  * Create a new queue status entry when post is submitted
  */
@@ -262,4 +349,22 @@ export async function getQueueStatusById(
   }
 
   return data as PostQueueItem;
+}
+
+/**
+ * Delete Post Media
+ */
+export async function deletePostMedia(
+  payload: PostQueueDeletePayload
+): Promise<void> {
+  const supabase = createServiceClient();
+  const media_paths = payload.media_urls
+    .map((i) => urlToPath(i, "posts"))
+    .filter((p): p is string => Boolean(p));
+  console.log("MEDIA PATH", media_paths);
+  const { error } = await supabase.storage.from("posts").remove(media_paths);
+  if (error) {
+    console.error("Failed to fetch queue status by ID:", error);
+    throw new Error(`Failed to delete post media: ${error.message}`);
+  }
 }

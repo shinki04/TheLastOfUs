@@ -1,6 +1,8 @@
 "use client";
 import { privacyPost } from "@repo/shared/types/post";
+import type { User } from "@repo/shared/types/user";
 import { useForm } from "@tanstack/react-form";
+import Dashboard from "@uppy/dashboard";
 import {
   File,
   FileText,
@@ -10,9 +12,8 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
-import React, { useState, useEffect } from "react";
+import React, { useEffect,useState } from "react";
 import { toast } from "sonner";
-import Dashboard from "@uppy/dashboard";
 
 import {
   Select,
@@ -25,16 +26,15 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreatePostMutation } from "@/hooks/usePost";
+import { useUppyWithSupabase } from "@/hooks/useUppy";
 import { getFileInfo, isImageType, isVideoType } from "@/lib/mediaUtils";
 import {
   validateContent,
   validateMedia,
 } from "@/lib/validations/addPost-schema";
-import type { User } from "@repo/shared/types/user";
 
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
-import { useUppyWithSupabase } from "@/hooks/useUppy";
 
 interface AddPostProps {
   currentUser: User;
@@ -51,7 +51,7 @@ function AddPost({ currentUser }: AddPostProps) {
   const [mediaPreviews, setMediaPreviews] = useState<MediaPreview[]>([]);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const createPostMutation = useCreatePostMutation();
-  const uppy = useUppyWithSupabase("posts");
+  const uppy = useUppyWithSupabase("posts", "add-post-legacy");
 
   const handleMediaChange = (files: FileList | null) => {
     if (!files) return;

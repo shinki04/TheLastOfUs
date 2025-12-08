@@ -8,10 +8,12 @@
     "exports": {
         "./*": "./src/*.ts"
     },
-    "dependencies": {},
+    "dependencies": {
+        "date-fns": "^4.1.0"
+    },
     "devDependencies": {
         "@repo/eslint-config": "workspace:*",
-        "@repo/typescript-config": "workspace:*",
-        "@repo/shared": "workspace:*"
+        "@repo/shared": "workspace:*",
+        "@repo/typescript-config": "workspace:*"
     }
 }

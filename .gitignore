@@ -1,6 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
+node_modules
 /node_modules
 /.pnp
 .pnp.*
@@ -40,10 +41,20 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+
+
+# Turbo
+.turbo
+
+# Build Outputs
+.next/
+out/
+build
+dist
+
 # Temp
 supabase/*
 temp/*
 sequence-diagram/*
 .idea
-.turbo
 *.tsbuildinfo

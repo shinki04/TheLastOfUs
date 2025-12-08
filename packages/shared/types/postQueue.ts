@@ -4,6 +4,7 @@ import { Post, privacyPost } from "./post.js";
 export type PostQueueStatus = Enums<"queue_status">;
 
 export type PostQueueItem = Tables<"post_queue_status">;
+export type PostQueueOperations = Enums<"sql_operation">;
 
 export interface OptimisticPost extends Omit<Post, "id"> {
   id: string; // Temporary ID from queue
@@ -17,4 +18,21 @@ export interface PostJobPayload {
   media_urls?: string[] | null;
   queueId: string; // Track queue status ID
   queueStatus?: PostQueueStatus;
+  queueOperations?: PostQueueOperations;
+}
+
+export interface UpdatePostJobPayload {
+  userId: string;
+  postId: string;
+  content: string;
+  privacyLevel: privacyPost;
+  media_urls?: string[] | null;
+  queueId?: string; // Track queue status ID
+  queueStatus: PostQueueStatus;
+  queueOperations: PostQueueOperations;
+}
+
+export interface PostQueueDeletePayload {
+  media_urls: string[];
+  queueId?: string;
 }

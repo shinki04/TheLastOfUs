@@ -1,3 +1,4 @@
+import { User } from "@repo/shared/types/user";
 import {
   dehydrate,
   HydrationBoundary,
@@ -6,8 +7,8 @@ import {
 import React from "react";
 
 import { getUserProfile } from "@/app/actions/user";
+import InfinitePostsListByAuthor from "@/components/posts/InfinitePostsListByAuthor";
 import Profile from "@/components/profile/Profile";
-import { User } from "@repo/shared/types/user";
 
 interface ProfileIdPageProps {
   params: Promise<{ id: string }>;
@@ -42,12 +43,17 @@ async function ProfileIdPage({ params }: ProfileIdPageProps) {
   //   }),
   // ]);
   const user = queryClient.getQueryData<User>(["user", id]);
-
   return (
     <>
       <div>ID : {id}</div>
       <HydrationBoundary state={dehydrate(queryClient)}>
         <Profile user={user!} />
+        <div className="w-full text-center">
+          <h2 className="text-2xl font-bold mb-4">Bài viết</h2>
+          <div className=" w-1/2 mx-auto">
+            <InfinitePostsListByAuthor authorId={user!.id} />
+          </div>
+        </div>
       </HydrationBoundary>
     </>
   );

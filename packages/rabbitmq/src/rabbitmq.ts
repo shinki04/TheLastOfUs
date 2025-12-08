@@ -20,11 +20,11 @@ interface BindingConfig {
 
 interface RabbitMQConfig {
   url?: string;
-  publisherPrefetch?: number;
-  consumerPrefetch?: number;
-  exchanges?: ExchangeConfig[];
-  queues?: QueueConfig[];
-  bindings?: BindingConfig[];
+  publisherPrefetch: number;
+  consumerPrefetch: number;
+  exchanges: ExchangeConfig[];
+  queues: QueueConfig[];
+  bindings: BindingConfig[];
 }
 
 class RabbitMQClient {
@@ -34,7 +34,7 @@ class RabbitMQClient {
   private isConnected: boolean = false;
   private config: RabbitMQConfig;
 
-  constructor(config: RabbitMQConfig = {}) {
+  constructor(config: RabbitMQConfig) {
     this.config = {
       url:
         config.url ||
@@ -136,7 +136,7 @@ class RabbitMQClient {
     }
 
     const consumerChannel = await this.connection!.createChannel();
-    await consumerChannel.prefetch(this.config.consumerPrefetch!);
+    // await consumerChannel.prefetch(this.config.consumerPrefetch!);
 
     this.consumerChannels.set(queue, consumerChannel);
 
@@ -235,10 +235,10 @@ class RabbitMQClient {
   /**
    * Publish message to an exchange with routing key
    */
-  public async publishToExchange(
+  public async publishToExchange<T>(
     exchange: string,
     routingKey: string,
-    payload: Record<string, unknown>,
+    payload: T,
     options?: {
       persistent?: boolean;
       contentType?: string;
@@ -251,7 +251,7 @@ class RabbitMQClient {
       );
     }
 
-    const message = JSON.stringify(payload);
+    const message = Buffer.from(JSON.stringify(payload));
     const published = this.publisherChannel.publish(
       exchange,
       routingKey,
@@ -277,15 +277,19 @@ class RabbitMQClient {
   /**
    * Consume messages from a queue with dedicated consumer channel
    */
-  public async consumeQueue(
+  public async consumeQueue<T>(
     queue: string,
-    callback: (payload: Record<string, unknown>, msg: Message) => Promise<void>,
+    callback: (payload: T, msg: Message) => Promise<void>,
     options?: {
       sendToDLQ?: boolean;
       dlqName?: string;
+      prefetch?: number;
     }
   ): Promise<void> {
     const consumerChannel = await this.getConsumerChannel(queue);
+
+    const prefetchValue = options?.prefetch ?? this.config.consumerPrefetch;
+    await consumerChannel.prefetch(prefetchValue!);
 
     await consumerChannel.consume(queue, async (msg: Message | null) => {
       if (!msg) {
@@ -294,24 +298,21 @@ class RabbitMQClient {
       }
 
       try {
-        const payload = JSON.parse(msg.content.toString());
+        const payload = JSON.parse(msg.content.toString()) as T;
         console.log(`📥 Processing message from queue: ${queue}`);
 
         await callback(payload, msg);
 
-        // Acknowledge message after successful processing
         consumerChannel.ack(msg);
         console.log(`✅ Message processed successfully: ${queue}`);
       } catch (error) {
         console.error(`❌ Error processing message from ${queue}:`, error);
 
         if (options?.sendToDLQ && options.dlqName) {
-          // Send to Dead Letter Queue
           await this.sendToDLQ(options.dlqName, msg.content, consumerChannel);
-          consumerChannel.ack(msg); // Ack original message since it's moved to DLQ
+          consumerChannel.ack(msg);
           console.log(`↪️ Message moved to DLQ: ${options.dlqName}`);
         } else {
-          // Negative acknowledge without requeue
           consumerChannel.nack(msg, false, false);
           console.log(`❌ Message rejected from: ${queue}`);
         }

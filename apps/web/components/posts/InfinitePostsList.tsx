@@ -1,10 +1,10 @@
 "use client";
 
+import { PostResponse } from "@repo/shared/types/post";
 import React, { useCallback, useEffect, useRef } from "react";
 
-import PostCard from "@/components/dashboard/PostCard";
+import PostCard from "@/components/posts/PostCard";
 import { useInfinitePostsQuery } from "@/hooks/useInfinitePosts";
-import { PostResponse } from "@repo/shared/types/post";
 
 import { Skeleton } from "../ui/skeleton";
 import PendingPost from "./PendingPost";

@@ -1,4 +1,5 @@
 "use client";
+import { Avatar, BLANK_AVATAR, User } from "@repo/shared/types/user";
 import { useForm } from "@tanstack/react-form";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -17,7 +18,6 @@ import {
 } from "@/components/ui/dialog";
 import { useGetCurrentUser, useUpdateProfile } from "@/hooks/useAuth";
 import { updateProfileSchema } from "@/lib/validations/updateProfile-schema";
-import { Avatar, BLANK_AVATAR, User } from "@repo/shared/types/user";
 
 import { FieldErrors } from "../FieldErrors";
 import { Button } from "../ui/button";
@@ -139,7 +139,12 @@ function Profile({ user }: ProfileProps) {
             <Button>Update Profile</Button>
           </DialogTrigger>
 
-          <DialogContent className="max-w-2xl">
+          <DialogContent
+            className="max-w-2xl"
+            onInteractOutside={(e) => {
+              e.preventDefault(); // ❌ không cho đóng khi click ra ngoài
+            }}
+          >
             <DialogHeader>
               <DialogTitle>Chỉnh sửa trang cá nhân</DialogTitle>
             </DialogHeader>

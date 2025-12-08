@@ -1,29 +1,33 @@
+import { getFeedCacheService } from "@repo/redis/feedCacheService";
+import { getRedisClient } from "@repo/redis/redis";
 import { NextRequest, NextResponse } from "next/server";
 
 import { fetchPosts } from "@/app/actions/post";
-import { getRedisClient } from "@repo/redis/redis";
-import { getFeedCacheService } from "@repo/redis/feedCacheService";
 
 export async function GET(request: NextRequest) {
   try {
     const redis = getRedisClient();
     const feedCache = getFeedCacheService();
     await redis.connect();
-    
+
     const page = parseInt(request.nextUrl.searchParams.get("page") || "1", 10);
     const itemsPerPage = parseInt(
       request.nextUrl.searchParams.get("itemsPerPage") || "10",
       10
     );
-    const userId = request.nextUrl.searchParams.get("userId") || "public";
+    const userId = request.nextUrl.searchParams.get("userId");
     const noCache = request.nextUrl.searchParams.get("noCache") === "true";
 
     // Check if cache bypass is requested
     let cacheStatus = "MISS";
-    
+
     if (!noCache) {
       // Try to get from cache first
-      const cachedFeed = await feedCache.getCachedFeedPage(userId, page, itemsPerPage);
+      const cachedFeed = await feedCache.getCachedFeedPage(
+        userId!,
+        page,
+        itemsPerPage
+      );
       if (cachedFeed) {
         cacheStatus = "HIT";
         return NextResponse.json(
@@ -44,8 +48,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch from database
-    const response = await fetchPosts(page, itemsPerPage, userId);
-    
+    const response = await fetchPosts(page, itemsPerPage, userId!);
+
     return NextResponse.json(response, {
       headers: {
         "X-Cache-Status": noCache ? "BYPASS" : cacheStatus,

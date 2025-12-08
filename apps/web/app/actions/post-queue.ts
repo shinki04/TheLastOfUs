@@ -1,18 +1,22 @@
 "use server";
-import {
+import { getPostRabbitMQClient } from "@repo/rabbitmq/PostRabbitMQ";
+import type {
   PostJobPayload,
   PostQueueItem,
+  PostQueueOperations,
   PostQueueStatus,
+  UpdatePostJobPayload,
 } from "@repo/shared/types/postQueue";
 
-import { getPostRabbitMQClient } from "@repo/rabbitmq/PostRabbitMQ";
 import { createClient } from "@/lib/supabase/server";
 
 export type TCreateQueue = {
   userId: string;
   content: string;
   privacyLevel: "public" | "friends" | "private";
-  mediaCount: number;
+  mediaCount?: number;
+  mediaUrls?: string[] | null;
+  queueOperations?: PostQueueOperations;
 };
 /**
  * Create a new queue status entry when post is submitted
@@ -22,6 +26,7 @@ export async function createQueueStatus({
   content,
   privacyLevel,
   mediaCount,
+  queueOperations,
 }: TCreateQueue): Promise<PostQueueItem> {
   const supabase = await createClient();
 
@@ -33,6 +38,7 @@ export async function createQueueStatus({
       content,
       privacy_level: privacyLevel,
       media_count: mediaCount,
+      operation_type: queueOperations,
     })
     .select()
     .single();
@@ -72,8 +78,6 @@ export async function updateQueueStatus(
   if (errorMessage) {
     updateData.error_message = errorMessage;
   }
-
-  console.log("UPDATEDATA", updateData);
 
   if (status === "failed") {
     // Increment retry count on failure
@@ -208,6 +212,7 @@ function base64ToFile(base64: string, name: string, mimeType: string): File {
   return new File([byteArray], name, { type: mimeType });
 }
 
+// ============================ publish to RabbitMQ ==========================
 /**
  * Publish a post creation job to the queue
  */
@@ -221,7 +226,16 @@ export async function queuePostCreation(payload: PostJobPayload) {
 
   if (!payload) throw new Error("Payload is null or undefined");
 
-  return await rabbitMQ.publishPostCreate(
-    payload as unknown as Record<string, unknown>
-  );
+  return await rabbitMQ.publishPostCreate(payload as PostJobPayload);
+}
+
+export async function queuePostUpdate(payload: UpdatePostJobPayload) {
+  const rabbitMQ = getPostRabbitMQClient();
+  if (!rabbitMQ.isReady()) {
+    await rabbitMQ.connect();
+  }
+
+  if (!payload) throw new Error("Payload is null or undefined");
+
+  return await rabbitMQ.publishPostUpdate(payload);
 }

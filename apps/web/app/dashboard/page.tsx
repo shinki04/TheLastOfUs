@@ -6,9 +6,9 @@ import {
 import Link from "next/link";
 import * as React from "react";
 
-import AddPost from "@/components/dashboard/add";
-import ListPosts from "@/components/dashboard/ListPosts";
 import Tepm from "@/components/dashboard/temp";
+import AddPost from "@/components/posts/add";
+import ListPosts from "@/components/posts/ListPosts";
 import { Button } from "@/components/ui/button";
 
 import { getCurrentUser } from "../actions/user";

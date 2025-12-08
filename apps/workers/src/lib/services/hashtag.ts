@@ -1,5 +1,6 @@
-import { extractHashtags } from "@repo/utils/hashtagUtils";
 import { getRedisClient } from "@repo/redis/redis";
+import { extractHashtags } from "@repo/utils/hashtagUtils";
+
 import { createServiceClient } from "../supabase/services_roles";
 
 interface HashtagWithCount {
@@ -107,6 +108,243 @@ export async function saveHashtagsFromContent(
 
   return savedHashtags;
 }
+
+/**
+ * Sync hashtags when post is updated
+ * Removes old hashtags and adds new ones
+ */
+export async function syncHashtagsForPost(
+  content: string,
+  postId: string
+): Promise<HashtagWithCount[]> {
+  const supabase = createServiceClient();
+  
+  // Extract new hashtags from updated content
+  const newHashtagNames = extractHashtags(content);
+  
+  // Get existing hashtags for this post
+  const { data: existingPostHashtags } = await supabase
+    .from("post_hashtags")
+    .select("hashtag_id, hashtags(id, name)")
+    .eq("post_id", postId);
+  
+  const existingHashtagNames = 
+    existingPostHashtags?.map((ph: any) => ph.hashtags?.name).filter(Boolean) || [];
+  
+  const existingHashtagIds = 
+    existingPostHashtags?.reduce((acc: Record<string, string>, ph: any) => {
+      if (ph.hashtags?.name) {
+        acc[ph.hashtags.name] = ph.hashtag_id;
+      }
+      return acc;
+    }, {}) || {};
+  
+  // Determine which hashtags to add and remove
+  const hashtagsToAdd = newHashtagNames.filter(
+    (tag) => !existingHashtagNames.includes(tag)
+  );
+  const hashtagsToRemove = existingHashtagNames.filter(
+    (tag) => !newHashtagNames.includes(tag)
+  );
+  
+  console.log(`📊 Hashtag sync for post ${postId}:
+    - Adding: ${hashtagsToAdd.join(", ") || "none"}
+    - Removing: ${hashtagsToRemove.join(", ") || "none"}
+    - Keeping: ${newHashtagNames.filter(tag => existingHashtagNames.includes(tag)).join(", ") || "none"}`);
+  
+  // Remove old hashtags
+  for (const tagName of hashtagsToRemove) {
+    try {
+      const hashtagId = existingHashtagIds[tagName];
+      if (!hashtagId) continue;
+      
+      // Delete post_hashtag relationship
+      const { error: deleteError } = await supabase
+        .from("post_hashtags")
+        .delete()
+        .eq("post_id", postId)
+        .eq("hashtag_id", hashtagId);
+      
+      if (deleteError) {
+        console.error(
+          `Failed to remove hashtag '${tagName}' from post:`,
+          deleteError
+        );
+        continue;
+      }
+      
+      // Decrement post_count using database function
+      const { error: decrementError } = await supabase.rpc(
+        "decrement_hashtag_count" as any,
+        { hashtag_id: hashtagId }
+      );
+      
+      if (decrementError) {
+        console.error(
+          `Failed to decrement hashtag count for '${tagName}':`,
+          decrementError
+        );
+      } else {
+        console.log(`✅ Removed hashtag '${tagName}' from post`);
+      }
+    } catch (error) {
+      console.error(`Error removing hashtag '${tagName}':`, error);
+    }
+  }
+  
+  // Add new hashtags
+  const savedHashtags: HashtagWithCount[] = [];
+  for (const tagName of hashtagsToAdd) {
+    try {
+      // Check if hashtag exists
+      const { data: existingTag } = await supabase
+        .from("hashtags")
+        .select("*")
+        .eq("name", tagName)
+        .single();
+      
+      let hashtagId: string;
+      
+      if (existingTag) {
+        hashtagId = existingTag.id;
+      } else {
+        // Create new hashtag
+        const { data: newTag, error: createError } = await supabase
+          .from("hashtags")
+          .insert({ name: tagName, post_count: 0 })
+          .select()
+          .single();
+        
+        if (createError) {
+          console.error(`Failed to create hashtag '${tagName}':`, createError);
+          continue;
+        }
+        
+        hashtagId = newTag!.id;
+      }
+      
+      // Create post_hashtag relationship
+      const { error: linkError } = await supabase
+        .from("post_hashtags")
+        .insert({ post_id: postId, hashtag_id: hashtagId });
+      
+      if (linkError) {
+        console.error(
+          `Failed to link hashtag '${tagName}' to post:`,
+          linkError
+        );
+        continue;
+      }
+      
+      // Increment post_count using database function
+      const { error: incrementError } = await supabase.rpc(
+        "increment_hashtag_count",
+        { hashtag_id: hashtagId }
+      );
+      
+      if (incrementError) {
+        console.error(
+          `Failed to increment hashtag count for '${tagName}':`,
+          incrementError
+        );
+        continue;
+      }
+      
+      // Fetch updated hashtag
+      const { data: updatedTag } = await supabase
+        .from("hashtags")
+        .select("*")
+        .eq("id", hashtagId)
+        .single();
+      
+      if (updatedTag) {
+        savedHashtags.push(updatedTag as HashtagWithCount);
+      }
+      
+      console.log(`✅ Added hashtag '${tagName}' to post`);
+    } catch (error) {
+      console.error(`Error adding hashtag '${tagName}':`, error);
+    }
+  }
+  
+  // Invalidate cache
+  const redis = getRedisClient();
+  if (redis.isReady()) {
+    await redis.delCache("trending:hashtags");
+    console.log("🗑️  Cleared hashtag cache");
+  }
+  
+  return savedHashtags;
+}
+
+/**
+ * Remove all hashtags for a post (when post is deleted)
+ */
+export async function removeHashtagsForPost(postId: string): Promise<void> {
+  const supabase = createServiceClient();
+  
+  try {
+    // Get all hashtags associated with this post
+    const { data: postHashtags, error: fetchError } = await supabase
+      .from("post_hashtags")
+      .select("hashtag_id, hashtags(name)")
+      .eq("post_id", postId);
+    
+    if (fetchError) {
+      console.error("Failed to fetch hashtags for post:", fetchError);
+      return;
+    }
+    
+    if (!postHashtags || postHashtags.length === 0) {
+      console.log("No hashtags to remove for this post");
+      return;
+    }
+    
+    console.log(`🗑️  Removing ${postHashtags.length} hashtags for post ${postId}`);
+    
+    // Decrement count for each hashtag
+    for (const ph of postHashtags) {
+      try {
+        const { error: decrementError } = await supabase.rpc(
+          "decrement_hashtag_count" as any,
+          { hashtag_id: ph.hashtag_id }
+        );
+        
+        if (decrementError) {
+          console.error(
+            `Failed to decrement count for hashtag:`,
+            decrementError
+          );
+        }
+      } catch (error) {
+        console.error("Error decrementing hashtag count:", error);
+      }
+    }
+    
+    // Delete all post_hashtag relationships
+    const { error: deleteError } = await supabase
+      .from("post_hashtags")
+      .delete()
+      .eq("post_id", postId);
+    
+    if (deleteError) {
+      console.error("Failed to delete post_hashtags:", deleteError);
+      return;
+    }
+    
+    console.log(`✅ Removed all hashtags for post ${postId}`);
+    
+    // Invalidate cache
+    const redis = getRedisClient();
+    if (redis.isReady()) {
+      await redis.delCache("trending:hashtags");
+      console.log("🗑️  Cleared hashtag cache");
+    }
+  } catch (error) {
+    console.error("Error removing hashtags for post:", error);
+  }
+}
+
 
 /**
  * Get trending hashtags with caching

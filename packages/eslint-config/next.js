@@ -8,6 +8,7 @@ import pluginNext from "@next/eslint-plugin-next";
 import { config as baseConfig } from "./base.js";
 import { globalIgnores } from "eslint/config";
 import unusedImports from "eslint-plugin-unused-imports";
+import eslintPluginSimpleImportSort from "eslint-plugin-simple-import-sort";
 /**
  * A custom ESLint configuration for libraries that use Next.js.
  *
@@ -96,6 +97,15 @@ export const nextJsConfig = [
           ["^\\.\\.\\/"],
         ],
       },
+    },
+  },
+  {
+    plugins: {
+      "simple-import-sort": eslintPluginSimpleImportSort,
+    },
+    rules: {
+      "simple-import-sort/imports": "warn",
+      "simple-import-sort/exports": "warn",
     },
   },
 ];

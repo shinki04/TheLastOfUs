@@ -6,13 +6,13 @@ export type UpdatePost = TablesUpdate<"posts">;
 
 export type PostResponse = {
   id: string;
-  created_at: string | null;
+  created_at: string;
   author: {
     id: string;
-    username: string | null;
-    display_name: string | null;
+    username: string;
+    display_name: string;
     avatar_url: string | null;
-    global_role: "admin" | "moderator" | "student" | "lecturer" | null;
+    global_role: "admin" | "moderator" | "student" | "lecturer";
   };
   content: string;
   media_urls: string[] | null;
