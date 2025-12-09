@@ -3,7 +3,7 @@
 import { PostResponse } from "@repo/shared/types/post";
 import React from "react";
 
-import { Card } from "../ui/card";
+import { Card } from "@repo/ui/components/card";
 import { useDeletePost } from "@/hooks/usePost";
 import { toast } from "sonner";
 import { useGetCurrentUser } from "@/hooks/useAuth";

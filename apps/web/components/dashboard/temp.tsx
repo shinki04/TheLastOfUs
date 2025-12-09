@@ -4,7 +4,7 @@ import { toast } from "sonner";
 
 import { useGetCurrentUser } from "@/hooks/useAuth";
 
-import { Button } from "../ui/button";
+import { Button } from "@repo/ui/components/button";
 
 export default function Tepm() {
   const { data } = useGetCurrentUser();

@@ -1,12 +1,12 @@
 import { redirect } from "next/navigation";
 import React from "react";
 
-import { Separator } from "@/components/ui/separator";
+import { Separator } from "@repo/ui/components/separator";
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
-} from "@/components/ui/sidebar";
+} from "@repo/ui/components/sidebar";
 
 import { getCurrentUser } from "../actions/user";
 import { AppSidebar } from "./_component/app-sidebar";

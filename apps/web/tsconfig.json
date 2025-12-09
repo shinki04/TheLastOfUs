@@ -8,7 +8,8 @@
     ],
     "baseUrl": ".", // baseUrl của app web
     "paths": {
-      "@/*": ["./*"] // Cho phép import từ apps/web
+      "@/*": ["./*"], // Cho phép import từ apps/web
+      "@repo/ui/*": ["../../packages/ui/src/*"]
     }
   },
   "include": [
@@ -16,6 +17,11 @@
     "**/*.tsx",
     "next-env.d.ts",
     "next.config.js",
+    ".next/types/**/*.ts",
+    "next-env.d.ts",
+    "next.config.ts",
+    "**/*.ts",
+    "**/*.tsx",
     ".next/types/**/*.ts"
   ],
 

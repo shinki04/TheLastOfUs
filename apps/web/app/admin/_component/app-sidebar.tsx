@@ -15,7 +15,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-} from "@/components/ui/sidebar";
+} from "@repo/ui/componentssidebar";
 import { VersionSwitcher } from "@/components/version-switcher";
 import { AdminSidebarData } from "@/constants/admin-sidebar";
 import { User } from "@/types/user";

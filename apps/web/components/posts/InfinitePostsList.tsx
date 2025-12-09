@@ -6,7 +6,7 @@ import React, { useCallback, useEffect, useRef } from "react";
 import PostCard from "@/components/posts/PostCard";
 import { useInfinitePostsQuery } from "@/hooks/useInfinitePosts";
 
-import { Skeleton } from "../ui/skeleton";
+import { Skeleton } from "@repo/ui/components/skeleton";
 import PendingPost from "./PendingPost";
 
 export function InfinitePostsList() {

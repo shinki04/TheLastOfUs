@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import React from "react";
 
 import { signInWithAzure } from "@/app/auth/action";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/button";
 import { ERROR_MESSAGES, ErrorMessageKey } from "@/types/login-error";
 
 export default function LoginForm() {
@@ -16,7 +16,8 @@ export default function LoginForm() {
     <div className="flex flex-col min-h-screen w-full items-center justify-center bg-transparent py-4 px-2">
       {/* Main Login Card */}
       <div className="bg-mainred-blur w-full max-w-sm mx-auto rounded-2xl overflow-hidden shadow-lg flex flex-col items-center">
-        <div className="w-full flex flex-col items-center px-4 py-8 sm:px-8 sm:py-10 gap-6">{/* Logo lớn & đẹp */}
+        <div className="w-full flex flex-col items-center px-4 py-8 sm:px-8 sm:py-10 gap-6">
+          {/* Logo lớn & đẹp */}
           <Image
             src="/logo_white.png"
             alt="VLU Logo"
@@ -35,7 +36,8 @@ export default function LoginForm() {
             <div className="h-px flex-1 bg-white/30 rounded-full max-w-[40px] sm:max-w-[60px]" />
             <p className="px-2 text-custom-white/80 text-center text-sm sm:text-base leading-snug font-light">
               Please use your official university
-              <br />Microsoft account to sign in.
+              <br />
+              Microsoft account to sign in.
             </p>
             <div className="h-px flex-1 bg-white/30 rounded-full max-w-[40px] sm:max-w-[60px]" />
           </div>
@@ -86,9 +88,13 @@ export default function LoginForm() {
           <div className="flex items-center w-full justify-center gap-2 mb-1">
             <div className="h-px flex-1 bg-white/20 rounded-full max-w-[28px] sm:max-w-[50px]" />
             <div className="flex items-center gap-2 text-custom-white/80 text-xs sm:text-sm">
-              <a href="#" className="hover:text-custom-white underline">Privacy Policy</a>
+              <a href="#" className="hover:text-custom-white underline">
+                Privacy Policy
+              </a>
               <span className="text-custom-white/40">•</span>
-              <a href="#" className="hover:text-custom-white underline">Terms of Service</a>
+              <a href="#" className="hover:text-custom-white underline">
+                Terms of Service
+              </a>
             </div>
             <div className="h-px flex-1 bg-white/20 rounded-full max-w-[28px] sm:max-w-[50px]" />
           </div>

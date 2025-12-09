@@ -5,11 +5,7 @@ import "@uppy/react/css/style.css";
 import { privacyPost } from "@repo/shared/types/post";
 import type { User } from "@repo/shared/types/user";
 import { useForm } from "@tanstack/react-form";
-import {
-  Dropzone,
-  FilesGrid,
-  UppyContextProvider,
-} from "@uppy/react";
+import { Dropzone, FilesGrid, UppyContextProvider } from "@uppy/react";
 import React, { useEffect } from "react";
 import { toast } from "sonner";
 
@@ -20,8 +16,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+} from "@repo/ui/components/select";
+import { Textarea } from "@repo/ui/components/textarea";
 import { useCreatePostMutation } from "@/hooks/usePost";
 import { useUppyWithSupabase } from "@/hooks/useUppy"; // hook đã sửa ở trên
 import { createClient } from "@/lib/supabase/client";
@@ -30,8 +26,8 @@ import {
   validateContent,
 } from "@/lib/validations/addPost-schema";
 
-import { Button } from "../ui/button";
-import { Card } from "../ui/card";
+import { Button } from "@repo/ui/components/button";
+import { Card } from "@repo/ui/components/card";
 
 interface AddPostProps {
   currentUser: User;

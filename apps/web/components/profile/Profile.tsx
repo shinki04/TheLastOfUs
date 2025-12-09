@@ -15,13 +15,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@repo/ui/components/dialog";
 import { useGetCurrentUser, useUpdateProfile } from "@/hooks/useAuth";
 import { updateProfileSchema } from "@/lib/validations/updateProfile-schema";
 
 import { FieldErrors } from "../FieldErrors";
-import { Button } from "../ui/button";
-import { Skeleton } from "../ui/skeleton";
+import { Button } from "@repo/ui/components/button";
+import { Skeleton } from "@repo/ui/components/skeleton";
 import OldAvatars from "./OldAvatars";
 
 interface ProfileProps {

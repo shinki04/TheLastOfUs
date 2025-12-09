@@ -1,13 +1,11 @@
 import { FileSpreadsheet, FileText, FileType } from "lucide-react";
 import Image from "next/image";
-
 import {
   getFileInfo,
   isImageType,
   isVideoType,
   type MediaType,
 } from "@/lib/mediaUtils";
-import * as MediaPlayer from "@/components/ui/media-player";
 interface PostMediaGalleryProps {
   mediaUrls?: string[] | null;
   onMediaClick: (url: string, index: number, isMoreMedia: boolean) => void;
@@ -89,9 +87,9 @@ function MediaItem({
       ) : isVideo ? (
         <>
           <video src={url} className="w-full h-full object-cover" controls />
-          <MediaPlayer.Root
+          {/* <MediaPlayer.Root
             className="w-full h-full object-cover"
-            onFullscreenChange={(isFullscreen) => {
+            onFullscreenChange={(isFullscreen: Boolean) => {
               console.log(isFullscreen);
             }}
           >
@@ -103,20 +101,20 @@ function MediaItem({
               <MediaPlayer.Seek />
               <div className="flex w-full items-center ">
                 <div className="flex flex-1 items-center ">
-                  <MediaPlayer.Play />
-                  {/* <MediaPlayer.SeekBackward />
+                  <MediaPlayer.Play /> */}
+          {/* <MediaPlayer.SeekBackward />
                   <MediaPlayer.SeekForward /> */}
-                  <MediaPlayer.Volume expandable />
+          {/* <MediaPlayer.Volume expandable />
                   <MediaPlayer.Time />
                 </div>
-                <div className="flex items-center ">
-                  {/* <MediaPlayer.PlaybackSpeed /> */}
-                  {/* <MediaPlayer.PiP /> */}
-                  <MediaPlayer.Fullscreen />
-                </div>
-              </div>
+                <div className="flex items-center "> */}
+          {/* <MediaPlayer.PlaybackSpeed /> */}
+          {/* <MediaPlayer.PiP /> */}
+          {/* <MediaPlayer.Fullscreen />
+                </div> */}
+          {/* </div>
             </MediaPlayer.Controls>
-          </MediaPlayer.Root>
+          </MediaPlayer.Root> */}
         </>
       ) : (
         <FilePreview url={url} fileInfo={fileInfo} />

@@ -9,7 +9,7 @@ import * as React from "react";
 import Tepm from "@/components/dashboard/temp";
 import AddPost from "@/components/posts/add";
 import ListPosts from "@/components/posts/ListPosts";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/button";
 
 import { getCurrentUser } from "../actions/user";
 import { signOut } from "../auth/action";

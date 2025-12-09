@@ -1,7 +1,0 @@
-onlyBuiltDependencies:
-  - esbuild
-  - lefthook
-  - msw
-  - sharp
-  - supabase
-  - unrs-resolver

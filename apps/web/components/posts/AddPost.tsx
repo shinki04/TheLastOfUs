@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
-import React, { useEffect,useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -23,8 +23,8 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+} from "@repo/ui/components/select";
+import { Textarea } from "@repo/ui/components/textarea";
 import { useCreatePostMutation } from "@/hooks/usePost";
 import { useUppyWithSupabase } from "@/hooks/useUppy";
 import { getFileInfo, isImageType, isVideoType } from "@/lib/mediaUtils";
@@ -33,8 +33,8 @@ import {
   validateMedia,
 } from "@/lib/validations/addPost-schema";
 
-import { Button } from "../ui/button";
-import { Card } from "../ui/card";
+import { Button } from "@repo/ui/components/button";
+import { Card } from "@repo/ui/components/card";
 
 interface AddPostProps {
   currentUser: User;
@@ -331,10 +331,10 @@ function AddPost({ currentUser }: AddPostProps) {
               <Select
                 // Nhận giá trị từ form
                 value={field.state.value}
-                onOpenChange={(open) => {
+                onOpenChange={(open: boolean) => {
                   if (!open) field.handleBlur();
                 }}
-                onValueChange={(value) =>
+                onValueChange={(value: privacyPost) =>
                   field.handleChange(value as privacyPost)
                 }
               >

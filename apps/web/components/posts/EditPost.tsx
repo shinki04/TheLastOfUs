@@ -16,16 +16,16 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@repo/ui/components/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "../ui/button";
+} from "@repo/ui/components/select";
+import { Textarea } from "@repo/ui/components/textarea";
+import { Button } from "@repo/ui/components/button";
 import { useUppyWithSupabase } from "@/hooks/useUppy";
 import {
   loadRemoteFilesToUppy,
@@ -221,8 +221,8 @@ function EditPost({ open, onOpenChange, onConfirm, post }: EditPostProps) {
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
           className="max-w-2xl max-h-[90vh] overflow-y-auto"
-          onInteractOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
+          onInteractOutside={(e: any) => e.preventDefault()}
+          onEscapeKeyDown={(e: any) => e.preventDefault()}
         >
           <DialogHeader>
             <DialogTitle>Chỉnh sửa bài viết</DialogTitle>
@@ -305,7 +305,7 @@ function EditPost({ open, onOpenChange, onConfirm, post }: EditPostProps) {
                     </label>
                     <Select
                       value={field.state.value}
-                      onValueChange={(v) =>
+                      onValueChange={(v: privacyPost) =>
                         field.handleChange(v as privacyPost)
                       }
                     >
