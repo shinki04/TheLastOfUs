@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+/* @import "tailwindcss";
+@import "tw-animate-css"; */
 @import "@repo/ui/globals.css";
 
 @custom-variant dark (&:is(.dark *));
@@ -127,7 +127,6 @@
   .bg-mainred-blur {
     background: var(--color-red-bg);
     backdrop-filter: blur(16px);
-    /* hoặc blur-lg tùy Tailwind */
     border-radius: 1rem;
     box-shadow: 0 6px 32px 0 rgba(0, 0, 0, 0.18);
     border: 2px solid rgba(255, 255, 255, 0.15);
