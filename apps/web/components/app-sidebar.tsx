@@ -8,6 +8,7 @@ import {
   Frame,
   GalleryVerticalEnd,
   Map,
+  MessageCircle,
   PieChart,
   Settings2,
   SquareTerminal,
@@ -51,6 +52,13 @@ const data = {
     },
   ],
   navMain: [
+    {
+      title: "Tin nhắn",
+      url: "/messages",
+      icon: MessageCircle,
+      isActive: false,
+      items: [],
+    },
     {
       title: "Playground",
       url: "#",
