@@ -7,7 +7,7 @@ import type {
   OptimisticMessage,
 } from "@repo/shared/types/messaging";
 import type { RealtimeChannel } from "@supabase/supabase-js";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo,useRef, useState } from "react";
 
 import {
   getMessages,
@@ -34,11 +34,20 @@ interface UseMessagesReturn {
   isLoadingMore: boolean;
 }
 
+// Broadcast event types
+interface BroadcastMessage {
+  type: "new_message" | "message_sent" | "message_failed";
+  tempId: string;
+  message?: MessageWithSender;
+  error?: string;
+  senderId: string;
+}
+
 const MESSAGES_PER_PAGE = 50;
 
 /**
- * Hook for managing messages with optimistic UI and realtime updates
- * Provides smooth UX with instant message display and retry on failure
+ * Hook for managing messages with Supabase Broadcast for optimistic UI
+ * Uses Broadcast for instant message delivery without waiting for DB
  */
 export function useMessages({
   conversationId,
@@ -46,11 +55,11 @@ export function useMessages({
   currentUser,
   enabled = true,
 }: UseMessagesOptions): UseMessagesReturn {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   // Server messages (confirmed from DB)
   const [serverMessages, setServerMessages] = useState<MessageWithSender[]>([]);
-  // Optimistic messages (pending/failed)
+  // Optimistic messages (pending/failed - from broadcast)
   const [optimisticMessages, setOptimisticMessages] = useState<
     OptimisticMessage[]
   >([]);
@@ -64,17 +73,25 @@ export function useMessages({
   const cursorRef = useRef<string | undefined>(undefined);
 
   // Combine server and optimistic messages
-  const messages = [
-    ...serverMessages,
-    ...optimisticMessages.filter((m) => m.status !== "sent"),
-  ];
+  const messages = useMemo(() => {
+    const combined = [
+      ...serverMessages,
+      ...optimisticMessages.filter((m) => m.status !== "sent"),
+    ];
+    // Sort by created_at
+    return combined.sort((a, b) => {
+      const dateA = new Date(a.created_at || 0).getTime();
+      const dateB = new Date(b.created_at || 0).getTime();
+      return dateA - dateB;
+    });
+  }, [serverMessages, optimisticMessages]);
 
   // Generate temporary ID for optimistic messages
   const generateTempId = useCallback(() => {
     return `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }, []);
 
-  // Fetch initial messages
+  // Fetch initial messages from DB
   const fetchMessages = useCallback(async () => {
     if (!enabled || !conversationId) return;
 
@@ -127,12 +144,13 @@ export function useMessages({
     }
   }, [conversationId, hasMore, isLoadingMore]);
 
-  // Send message with optimistic UI
+  // Send message with Broadcast for instant delivery
   const sendMessage = useCallback(
     async (content: string) => {
-      if (!content.trim()) return;
+      if (!content.trim() || !channelRef.current) return;
 
       const tempId = generateTempId();
+      const now = new Date().toISOString();
 
       // Create optimistic message
       const optimisticMessage: OptimisticMessage = {
@@ -141,18 +159,30 @@ export function useMessages({
         sender_id: currentUserId,
         content: content.trim(),
         message_type: "text",
-        created_at: new Date().toISOString(),
+        created_at: now,
         status: "sending",
         sender: currentUser,
         is_deleted: false,
         is_edited: false,
       };
 
-      // Add to optimistic list immediately (instant UI feedback)
+      // Add to local optimistic list immediately
       setOptimisticMessages((prev) => [...prev, optimisticMessage]);
 
+      // Broadcast to all subscribers (including self) for instant UI update
+      channelRef.current.send({
+        type: "broadcast",
+        event: "new_message",
+        payload: {
+          type: "new_message",
+          tempId,
+          message: optimisticMessage,
+          senderId: currentUserId,
+        } as BroadcastMessage,
+      });
+
+      // Save to database in background
       try {
-        // Send to server
         const serverMessage = await sendMessageAction(
           conversationId,
           content,
@@ -160,38 +190,52 @@ export function useMessages({
           tempId
         );
 
-        // Mark as sent and remove from optimistic (will be added via realtime)
-        setOptimisticMessages((prev) =>
-          prev.map((m) =>
-            m.tempId === tempId ? { ...m, status: "sent" as MessageStatus } : m
-          )
-        );
+        // Broadcast success - update status
+        channelRef.current?.send({
+          type: "broadcast",
+          event: "message_sent",
+          payload: {
+            type: "message_sent",
+            tempId,
+            message: { ...serverMessage, sender: currentUser },
+            senderId: currentUserId,
+          } as BroadcastMessage,
+        });
 
-        // If realtime doesn't pick it up quickly, add to server messages
-        setTimeout(() => {
-          setOptimisticMessages((prev) =>
-            prev.filter((m) => m.tempId !== tempId)
-          );
-          setServerMessages((prev) => {
-            if (!prev.find((m) => m.id === serverMessage.id)) {
-              return [
-                ...prev,
-                { ...serverMessage, sender: currentUser } as MessageWithSender,
-              ];
-            }
-            return prev;
-          });
-        }, 500);
+        // Update local state: remove optimistic, add server message
+        setOptimisticMessages((prev) =>
+          prev.filter((m) => m.tempId !== tempId)
+        );
+        setServerMessages((prev) => {
+          if (!prev.find((m) => m.id === serverMessage.id)) {
+            return [
+              ...prev,
+              { ...serverMessage, sender: currentUser } as MessageWithSender,
+            ];
+          }
+          return prev;
+        });
       } catch (err) {
-        // Mark as failed
+        // Broadcast failure
+        channelRef.current?.send({
+          type: "broadcast",
+          event: "message_failed",
+          payload: {
+            type: "message_failed",
+            tempId,
+            error: err instanceof Error ? err.message : "Failed to send",
+            senderId: currentUserId,
+          } as BroadcastMessage,
+        });
+
+        // Mark as failed locally
         setOptimisticMessages((prev) =>
           prev.map((m) =>
             m.tempId === tempId
               ? {
                   ...m,
                   status: "failed" as MessageStatus,
-                  error:
-                    err instanceof Error ? err.message : "Failed to send",
+                  error: err instanceof Error ? err.message : "Failed to send",
                   retryCount: (m.retryCount || 0) + 1,
                 }
               : m
@@ -226,26 +270,19 @@ export function useMessages({
           tempId
         );
 
+        // Success - remove optimistic, add to server messages
         setOptimisticMessages((prev) =>
-          prev.map((m) =>
-            m.tempId === tempId ? { ...m, status: "sent" as MessageStatus } : m
-          )
+          prev.filter((m) => m.tempId !== tempId)
         );
-
-        setTimeout(() => {
-          setOptimisticMessages((prev) =>
-            prev.filter((m) => m.tempId !== tempId)
-          );
-          setServerMessages((prev) => {
-            if (!prev.find((m) => m.id === serverMessage.id)) {
-              return [
-                ...prev,
-                { ...serverMessage, sender: currentUser } as MessageWithSender,
-              ];
-            }
-            return prev;
-          });
-        }, 500);
+        setServerMessages((prev) => {
+          if (!prev.find((m) => m.id === serverMessage.id)) {
+            return [
+              ...prev,
+              { ...serverMessage, sender: currentUser } as MessageWithSender,
+            ];
+          }
+          return prev;
+        });
       } catch (err) {
         setOptimisticMessages((prev) =>
           prev.map((m) =>
@@ -253,8 +290,7 @@ export function useMessages({
               ? {
                   ...m,
                   status: "failed" as MessageStatus,
-                  error:
-                    err instanceof Error ? err.message : "Failed to send",
+                  error: err instanceof Error ? err.message : "Failed to send",
                   retryCount: (m.retryCount || 0) + 1,
                 }
               : m
@@ -265,85 +301,119 @@ export function useMessages({
     [conversationId, currentUser, optimisticMessages]
   );
 
-  // Subscribe to realtime updates
-  useEffect(() => {
-    if (!enabled || !conversationId) return;
+  // Handle broadcast events from other users
+  const handleBroadcastEvent = useCallback(
+    async (payload: BroadcastMessage) => {
+      console.log("[Broadcast] Received:", payload.type, payload);
 
-    // Fetch initial messages
-    fetchMessages();
+      // Skip own messages (already handled locally)
+      if (payload.senderId === currentUserId) {
+        return;
+      }
 
-    // Subscribe to new messages
-    const channel = supabase
-      .channel(`messages:${conversationId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `conversation_id=eq.${conversationId}`,
-        },
-        async (payload) => {
-          console.log("[Realtime] New message received:", payload);
-          const newMessage = payload.new as MessageWithSender;
+      switch (payload.type) {
+        case "new_message":
+          // Add message from other user immediately
+          if (payload.message) {
+            const newMessage = payload.message;
+            
+            // Fetch sender info if not included
+            let senderProfile = newMessage.sender;
+            if (!senderProfile && newMessage.sender_id) {
+              const { data: sender } = await supabase
+                .from("profiles")
+                .select("*")
+                .eq("id", newMessage.sender_id)
+                .single();
+              senderProfile = sender || undefined;
+            }
 
-          // Skip if it's from current user (already handled optimistically)
-          if (newMessage.sender_id === currentUserId) {
-            // Just remove the optimistic version
-            setOptimisticMessages((prev) =>
-              prev.filter((m) => m.status !== "sent")
-            );
-            // Add to server messages if not already there
-            setServerMessages((prev) => {
-              if (!prev.find((m) => m.id === newMessage.id)) {
-                // Fetch sender info
-                supabase
-                  .from("profiles")
-                  .select("*")
-                  .eq("id", newMessage.sender_id || "")
-                  .single()
-                  .then(({ data: sender }) => {
-                    setServerMessages((current) => [
-                      ...current.filter((m) => m.id !== newMessage.id),
-                      { ...newMessage, sender: sender || undefined },
-                    ]);
-                  });
+            // Add as optimistic for now (will be replaced when we fetch from DB)
+            setOptimisticMessages((prev) => {
+              // Check if already exists
+              if (prev.find((m) => m.tempId === payload.tempId)) {
                 return prev;
+              }
+              return [
+                ...prev,
+                {
+                  ...newMessage,
+                  tempId: payload.tempId,
+                  status: "sending" as MessageStatus,
+                  sender: senderProfile,
+                },
+              ];
+            });
+          }
+          break;
+
+        case "message_sent":
+          // Message confirmed saved - move from optimistic to server
+          if (payload.message) {
+            setOptimisticMessages((prev) =>
+              prev.filter((m) => m.tempId !== payload.tempId)
+            );
+            setServerMessages((prev) => {
+              if (!prev.find((m) => m.id === payload.message?.id)) {
+                return [...prev, payload.message as MessageWithSender];
               }
               return prev;
             });
-            return;
           }
-
-          // Fetch sender info for other users' messages
-          const { data: sender } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", newMessage.sender_id || "")
-            .single();
-
-          setServerMessages((prev) => [
-            ...prev,
-            { ...newMessage, sender: sender || undefined },
-          ]);
-
           // Mark as read
           markAsRead(conversationId);
-        }
-      )
+          break;
+
+        case "message_failed":
+          // Remove failed message from other user (they'll retry)
+          setOptimisticMessages((prev) =>
+            prev.filter((m) => m.tempId !== payload.tempId)
+          );
+          break;
+      }
+    },
+    [conversationId, currentUserId, supabase]
+  );
+
+  // Subscribe to Broadcast channel
+  useEffect(() => {
+    if (!enabled || !conversationId) return;
+
+    // Fetch initial messages from DB
+    fetchMessages();
+
+    // Create Broadcast channel for this conversation
+    const channel = supabase.channel(`chat:${conversationId}`, {
+      config: {
+        broadcast: {
+          // Receive own broadcasts for consistency
+          self: true,
+        },
+      },
+    });
+
+    // Listen for broadcast events
+    channel
+      .on("broadcast", { event: "new_message" }, ({ payload }) => {
+        handleBroadcastEvent(payload as BroadcastMessage);
+      })
+      .on("broadcast", { event: "message_sent" }, ({ payload }) => {
+        handleBroadcastEvent(payload as BroadcastMessage);
+      })
+      .on("broadcast", { event: "message_failed" }, ({ payload }) => {
+        handleBroadcastEvent(payload as BroadcastMessage);
+      })
       .subscribe((status) => {
-        console.log("[Realtime] Channel status:", status);
+        console.log("[Broadcast] Channel status:", status);
       });
 
     channelRef.current = channel;
 
     return () => {
-      console.log("[Realtime] Unsubscribing from channel");
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-      }
+      console.log("[Broadcast] Unsubscribing from channel");
+      supabase.removeChannel(channel);
     };
-  }, [conversationId, currentUserId, enabled, fetchMessages, supabase]);
+  }, [conversationId, enabled, fetchMessages, handleBroadcastEvent, supabase]);
 
   return {
     messages,

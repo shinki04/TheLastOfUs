@@ -3,7 +3,7 @@
 import { Button } from "@repo/ui/components/button";
 import { Textarea } from "@repo/ui/components/textarea";
 import { cn } from "@repo/ui/lib/utils";
-import { Loader2, Send } from "lucide-react";
+import { Send } from "lucide-react";
 import { KeyboardEvent,useEffect, useRef, useState } from "react";
 
 interface MessageInputProps {
@@ -56,7 +56,7 @@ export function MessageInput({
       console.error("Failed to send message:", error);
     } finally {
       setIsSending(false);
-      textareaRef.current?.focus();
+        textareaRef.current?.focus();
     }
   };
 
@@ -87,14 +87,15 @@ export function MessageInput({
         {/* Input */}
         <div className="flex-1 relative">
           <Textarea
+          
             ref={textareaRef}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            disabled={disabled || isSending}
+            // disabled={disabled || isSending}
             className={cn(
-              "resize-none min-h-[44px] max-h-[150px] pr-12 py-3",
+              "resize-none overflow-hidden min-h-[44px] max-h-[150px] pr-12 py-3",
               "rounded-2xl",
               "focus-visible:ring-1"
             )}
@@ -118,7 +119,7 @@ export function MessageInput({
           type="button"
           size="icon"
           onClick={handleSend}
-          disabled={!canSend}
+          // disabled={!canSend}
           className={cn(
             "shrink-0 h-10 w-10 rounded-full transition-all duration-200",
             canSend
@@ -126,11 +127,12 @@ export function MessageInput({
               : "bg-muted scale-90"
           )}
         >
-          {isSending ? (
+         <Send className="h-5 w-5" />
+          {/* {isSending ? (
             <Loader2 className="h-5 w-5 animate-spin" />
           ) : (
             <Send className="h-5 w-5" />
-          )}
+          )} */}
         </Button>
       </div>
 

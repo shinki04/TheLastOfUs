@@ -4,15 +4,13 @@ import { Tables } from "@repo/shared/types/database.types";
 import { cn } from "@repo/ui/lib/utils";
 import { MessageCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback,useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
-import {
-  ChatWindow,
-  ConversationList,
-  CreateConversationDialog,
-} from "@/components/messaging";
-import { useConversation,useConversations } from "@/hooks/useConversations";
+import { ChatWindow } from "@/components/messaging/ChatWindow";
+import { ConversationList } from "@/components/messaging/ConversationList";
+import { CreateConversationDialog } from "@/components/messaging/CreateConversationDialog";
+import { useConversation, useConversations } from "@/hooks/useConversations";
 
 interface MessagesClientProps {
   currentUser: Tables<"profiles">;
@@ -101,11 +99,14 @@ export function MessagesClient({
   }, [activeConversationId, leave]);
 
   // Handle adding friend from chat banner
-  const handleAddFriend = useCallback((userId: string) => {
-    // This will be handled by the FriendButton component
-    // For now, we can just navigate to profile
-    router.push(`/profile/${userId}`);
-  }, [router]);
+  const handleAddFriend = useCallback(
+    (userId: string) => {
+      // This will be handled by the FriendButton component
+      // For now, we can just navigate to profile
+      router.push(`/profile/${userId}`);
+    },
+    [router]
+  );
 
   return (
     <>
@@ -128,7 +129,9 @@ export function MessagesClient({
         </div>
 
         {/* Chat window - main area */}
-        <div className={cn("flex-1", !activeConversationId && "hidden md:flex")}>
+        <div
+          className={cn("flex-1", !activeConversationId && "hidden md:flex")}
+        >
           {activeConversation ? (
             <ChatWindow
               conversation={activeConversation}
