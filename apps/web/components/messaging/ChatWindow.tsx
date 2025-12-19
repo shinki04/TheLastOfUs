@@ -3,28 +3,21 @@
 import { Tables } from "@repo/shared/types/database.types";
 import type { ConversationWithDetails } from "@repo/shared/types/messaging";
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/avatar";
-import { Button } from "@repo/ui/components/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@repo/ui/components/dropdown-menu";
+import  ScrollButton  from "@repo/ui/components/scroll-button";
 import { Skeleton } from "@repo/ui/components/skeleton";
 import { TooltipProvider } from "@repo/ui/components/tooltip";
 import { cn } from "@repo/ui/lib/utils";
 import {
   Loader2,
-  LogOut,
   MessageCircle,
-  MoreVertical,
   Users,
 } from "lucide-react";
-import { useCallback,useEffect, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 
 import { useConversationFriendship } from "@/hooks/useConversations";
 import { useMessages } from "@/hooks/useMessages";
 
+import { ChatDropdownDirect, ChatDropdownGroup } from "./ChatDropdown";
 import { MessageBubble, MessageDateSeparator } from "./MessageBubble";
 import { MessageInput } from "./MessageInput";
 import { NotFriendsBanner } from "./NotFriendsBanner";
@@ -36,6 +29,13 @@ interface ChatWindowProps {
   onLeave?: () => void;
   onAddFriend?: (userId: string) => void;
   className?: string;
+}
+
+// Scroll state refs type
+interface ScrollState {
+  prevScrollHeight: number;
+  prevMessagesCount: number;
+  isInitialLoad: boolean;
 }
 
 /**
@@ -52,6 +52,13 @@ export function ChatWindow({
 }: ChatWindowProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Combined scroll state ref for better performance
+  const scrollStateRef = useRef<ScrollState>({
+    prevScrollHeight: 0,
+    prevMessagesCount: 0,
+    isInitialLoad: true,
+  });
 
   const {
     messages,
@@ -72,9 +79,10 @@ export function ChatWindow({
   // Check friendship status for direct chats
   const { data: friendshipData } = useConversationFriendship(conversation.id);
 
-  // Get display info for header
   const isGroup = conversation.type === "group";
-  const getHeaderInfo = () => {
+
+  // Memoized header info to prevent recalculation on every render
+  const headerInfo = useMemo(() => {
     if (isGroup) {
       return {
         name: conversation.name || "Nhóm chat",
@@ -91,51 +99,85 @@ export function ChatWindow({
     return {
       name: profile?.display_name || profile?.username || "Người dùng",
       avatarUrl: profile?.avatar_url,
-      subtitle: "Đang hoạt động", // Future: online status
+      subtitle: "Đang hoạt động",
     };
-  };
+  }, [isGroup, conversation.name, conversation.avatar_url, conversation.members, currentUserId]);
 
-  const headerInfo = getHeaderInfo();
+  // Memoized grouped messages
+  const groupedMessages = useMemo(() => 
+    messages.reduce<Record<string, typeof messages>>((groups, message) => {
+      const date = message.created_at
+        ? new Date(message.created_at).toDateString()
+        : "Unknown";
+      (groups[date] ??= []).push(message);
+      return groups;
+    }, {}),
+    [messages]
+  );
 
-  // Scroll to bottom on new messages
+  // Reset scroll state when conversation changes
   useEffect(() => {
-    if (messages.length > 0) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages.length]);
+    scrollStateRef.current = {
+      prevScrollHeight: 0,
+      prevMessagesCount: 0,
+      isInitialLoad: true,
+    };
+  }, [conversation.id]);
 
-  // Handle scroll for loading more (infinite scroll)
+  // Combined scroll management effect
+  useLayoutEffect(() => {
+    const container = messagesContainerRef.current;
+    const state = scrollStateRef.current;
+    
+    if (!container || messages.length === 0) return;
+
+    // Handle scroll position preservation after load more
+    if (state.prevScrollHeight > 0 && !isLoadingMore) {
+      const scrollDiff = container.scrollHeight - state.prevScrollHeight;
+      if (scrollDiff > 0) {
+        container.scrollTop += scrollDiff;
+      }
+      state.prevScrollHeight = 0;
+      return;
+    }
+
+    // Handle initial load - scroll to bottom
+    if (state.isInitialLoad && !isLoading) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+      state.isInitialLoad = false;
+      state.prevMessagesCount = messages.length;
+      return;
+    }
+
+    // Handle new messages - auto scroll if near bottom
+    const newCount = messages.length;
+    if (newCount > state.prevMessagesCount && state.prevMessagesCount > 0) {
+      const isNearBottom = 
+        container.scrollHeight - container.scrollTop - container.clientHeight < 150;
+      if (isNearBottom) {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+    
+    state.prevMessagesCount = newCount;
+  }, [messages, isLoading, isLoadingMore]);
+
+  // Handle scroll for infinite scroll (load more)
   const handleScroll = useCallback(() => {
     const container = messagesContainerRef.current;
     if (!container || isLoadingMore || !hasMore) return;
 
-    // Load more when scrolled near top
     if (container.scrollTop < 100) {
+      scrollStateRef.current.prevScrollHeight = container.scrollHeight;
       loadMore();
     }
   }, [hasMore, isLoadingMore, loadMore]);
 
-  // Group messages by date
-  const groupedMessages = messages.reduce(
-    (groups, message) => {
-      const date = message.created_at
-        ? new Date(message.created_at).toDateString()
-        : "Unknown";
-
-      if (!groups[date]) {
-        groups[date] = [];
-      }
-      groups[date].push(message);
-      return groups;
-    },
-    {} as Record<string, typeof messages>
-  );
-
-  const handleAddFriend = () => {
+  const handleAddFriend = useCallback(() => {
     if (friendshipData?.otherUser && onAddFriend) {
       onAddFriend(friendshipData.otherUser.id);
     }
-  };
+  }, [friendshipData?.otherUser, onAddFriend]);
 
   return (
     <TooltipProvider>
@@ -172,8 +214,13 @@ export function ChatWindow({
             <Button size="icon" variant="ghost" className="h-9 w-9">
               <Video className="h-4 w-4" />
             </Button> */}
+            {isGroup ? (
+              <ChatDropdownGroup onLeave={onLeave} />
+            ) : (
+              <ChatDropdownDirect userId={friendshipData!.otherUser!.id} />
+            )}
 
-            <DropdownMenu>
+            {/* <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="icon" variant="ghost" className="h-9 w-9">
                   <MoreVertical className="h-4 w-4" />
@@ -190,7 +237,7 @@ export function ChatWindow({
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
-            </DropdownMenu>
+            </DropdownMenu> */}
           </div>
         </div>
 
@@ -205,61 +252,70 @@ export function ChatWindow({
             />
           )}
 
-        {/* Messages area */}
-        <div
-          ref={messagesContainerRef}
-          onScroll={handleScroll}
-          className="flex-1 overflow-y-auto px-4 py-4"
-        >
-          {isLoading ? (
-            <ChatWindowSkeleton />
-          ) : error ? (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <p className="text-destructive mb-2">Không thể tải tin nhắn</p>
-              <p className="text-sm text-muted-foreground">{error.message}</p>
-            </div>
-          ) : messages.length === 0 ? (
-            <ChatWindowEmpty isGroup={isGroup} />
-          ) : (
-            <>
-              {/* Load more indicator */}
-              {isLoadingMore && (
-                <div className="flex justify-center py-4">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                </div>
-              )}
-
-              {/* Messages grouped by date */}
-              {Object.entries(groupedMessages).map(([date, dateMessages]) => (
-                <div key={date}>
-                  <MessageDateSeparator date={date} />
-                  <div className="space-y-3">
-                    {dateMessages.map((message, index) => {
-                      const isOwn = message.sender_id === currentUserId;
-                      const prevMessage = dateMessages[index - 1];
-                      const showAvatar =
-                        !isOwn &&
-                        (!prevMessage ||
-                          prevMessage.sender_id !== message.sender_id);
-
-                      return (
-                        <MessageBubble
-                          key={"tempId" in message ? message.tempId : message.id}
-                          message={message}
-                          isOwn={isOwn}
-                          showAvatar={showAvatar}
-                          onRetry={retryMessage}
-                        />
-                      );
-                    })}
+        {/* Messages area wrapper - relative container for scroll button positioning */}
+        <div className="flex-1 relative overflow-hidden">
+          {/* Scrollable messages container */}
+          <div
+            ref={messagesContainerRef}
+            onScroll={handleScroll}
+            className="absolute inset-0 overflow-y-auto px-4 py-4"
+          >
+            {isLoading ? (
+              <ChatWindowSkeleton />
+            ) : error ? (
+              <div className="flex flex-col items-center justify-center h-full text-center">
+                <p className="text-destructive mb-2">Không thể tải tin nhắn</p>
+                <p className="text-sm text-muted-foreground">{error.message}</p>
+              </div>
+            ) : messages.length === 0 ? (
+              <ChatWindowEmpty isGroup={isGroup} />
+            ) : (
+              <>
+                {/* Load more indicator */}
+                {isLoadingMore && (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                   </div>
-                </div>
-              ))}
+                )}
 
-              {/* Scroll anchor */}
-              <div ref={messagesEndRef} />
-            </>
-          )}
+                {/* Messages grouped by date */}
+                {Object.entries(groupedMessages).map(([date, dateMessages]) => (
+                  <div key={date}>
+                    <MessageDateSeparator date={date} />
+                    <div className="space-y-3">
+                      {dateMessages.map((message, index) => {
+                        const isOwn = message.sender_id === currentUserId;
+                        const prevMessage = dateMessages[index - 1];
+                        const showAvatar =
+                          !isOwn &&
+                          (!prevMessage ||
+                            prevMessage.sender_id !== message.sender_id);
+
+                        return (
+                          <MessageBubble
+                            key={"tempId" in message ? message.tempId : message.id}
+                            message={message}
+                            isOwn={isOwn}
+                            showAvatar={showAvatar}
+                            onRetry={retryMessage}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Scroll anchor */}
+                <div ref={messagesEndRef} />
+              </>
+            )}
+          </div>
+
+          {/* Scroll to bottom button - positioned outside scrollable area */}
+          <ScrollButton 
+            containerRef={messagesContainerRef} 
+            scrollAnchorRef={messagesEndRef}
+          />
         </div>
 
         {/* Message input */}

@@ -4,7 +4,13 @@ import { Button } from "@repo/ui/components/button";
 import { Textarea } from "@repo/ui/components/textarea";
 import { cn } from "@repo/ui/lib/utils";
 import { Send } from "lucide-react";
-import { KeyboardEvent,useEffect, useRef, useState } from "react";
+import {
+  KeyboardEvent,
+  SetStateAction,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 interface MessageInputProps {
   onSend: (content: string) => Promise<void>;
@@ -56,7 +62,7 @@ export function MessageInput({
       console.error("Failed to send message:", error);
     } finally {
       setIsSending(false);
-        textareaRef.current?.focus();
+      textareaRef.current?.focus();
     }
   };
 
@@ -71,7 +77,9 @@ export function MessageInput({
   const canSend = content.trim().length > 0 && !disabled && !isSending;
 
   return (
-    <div className={cn("p-4 border-t bg-background/95 backdrop-blur", className)}>
+    <div
+      className={cn("p-4 border-t bg-background/95 backdrop-blur", className)}
+    >
       <div className="flex items-end gap-2">
         {/* Attachment button (future feature) */}
         {/* <Button
@@ -87,15 +95,16 @@ export function MessageInput({
         {/* Input */}
         <div className="flex-1 relative">
           <Textarea
-          
             ref={textareaRef}
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={(e: { target: { value: SetStateAction<string> } }) =>
+              setContent(e.target.value)
+            }
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             // disabled={disabled || isSending}
             className={cn(
-              "resize-none overflow-hidden min-h-[44px] max-h-[150px] pr-12 py-3",
+              "resize-none overflow-hidden min-h-11 max-h-[150px] pr-12 py-3",
               "rounded-2xl",
               "focus-visible:ring-1"
             )}
@@ -127,7 +136,7 @@ export function MessageInput({
               : "bg-muted scale-90"
           )}
         >
-         <Send className="h-5 w-5" />
+          <Send className="h-5 w-5" />
           {/* {isSending ? (
             <Loader2 className="h-5 w-5 animate-spin" />
           ) : (

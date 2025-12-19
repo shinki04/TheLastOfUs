@@ -1,7 +1,11 @@
 "use client";
 
 import { Tables } from "@repo/shared/types/database.types";
-import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/avatar";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@repo/ui/components/avatar";
 import { Badge } from "@repo/ui/components/badge";
 import { Button } from "@repo/ui/components/button";
 import {
@@ -15,8 +19,8 @@ import {
 import { Input } from "@repo/ui/components/input";
 import { Label } from "@repo/ui/components/label";
 import { cn } from "@repo/ui/lib/utils";
-import { Check,Loader2, Search, UserPlus, Users, X } from "lucide-react";
-import { useMemo,useState } from "react";
+import { Check, Loader2, Search, UserPlus, Users, X } from "lucide-react";
+import { useMemo, useState } from "react";
 
 interface CreateConversationDialogProps {
   open: boolean;
@@ -87,7 +91,7 @@ export function CreateConversationDialog({
   };
 
   const handleCreateGroup = async () => {
-    if (!groupName.trim() || selectedUsers.length === 0) return;
+    if (!groupName.trim() || selectedUsers.length < 2) return;
 
     try {
       await onCreateGroup(groupName.trim(), selectedUsers);
@@ -212,6 +216,7 @@ export function CreateConversationDialog({
                 id="group-name"
                 placeholder="Nhập tên nhóm..."
                 value={groupName}
+                required
                 onChange={(e) => setGroupName(e.target.value)}
               />
             </div>

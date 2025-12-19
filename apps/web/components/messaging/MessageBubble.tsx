@@ -1,8 +1,15 @@
 "use client";
 
 import { Tables } from "@repo/shared/types/database.types";
-import type { MessageWithSender, OptimisticMessage } from "@repo/shared/types/messaging";
-import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/avatar";
+import type {
+  MessageWithSender,
+  OptimisticMessage,
+} from "@repo/shared/types/messaging";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@repo/ui/components/avatar";
 import { Button } from "@repo/ui/components/button";
 import {
   Tooltip,
@@ -10,6 +17,7 @@ import {
   TooltipTrigger,
 } from "@repo/ui/components/tooltip";
 import { cn } from "@repo/ui/lib/utils";
+import { formatMessageTime } from "@repo/utils/formatDate";
 import { format, isToday, isYesterday } from "date-fns";
 import { vi } from "date-fns/locale";
 import { AlertCircle, Check, Loader2, RotateCcw } from "lucide-react";
@@ -37,20 +45,6 @@ export function MessageBubble({
   const status = isOptimistic ? message.status : "sent";
   const sender = message.sender as Tables<"profiles"> | undefined;
 
-  // Format time
-  const formatTime = (dateStr: string | null | undefined) => {
-    if (!dateStr) return "";
-    const date = new Date(dateStr);
-
-    if (isToday(date)) {
-      return format(date, "HH:mm");
-    }
-    if (isYesterday(date)) {
-      return `Hôm qua ${format(date, "HH:mm")}`;
-    }
-    return format(date, "dd/MM HH:mm");
-  };
-
   const handleRetry = () => {
     if (isOptimistic && message.tempId && onRetry) {
       onRetry(message.tempId);
@@ -68,7 +62,10 @@ export function MessageBubble({
       {showAvatar && !isOwn ? (
         <Avatar className="h-8 w-8 shrink-0">
           {sender?.avatar_url ? (
-            <AvatarImage src={sender.avatar_url} alt={sender.display_name || ""} />
+            <AvatarImage
+              src={sender.avatar_url}
+              alt={sender.display_name || ""}
+            />
           ) : null}
           <AvatarFallback className="text-xs">
             {(sender?.display_name || sender?.username || "U")
@@ -87,11 +84,13 @@ export function MessageBubble({
           isOwn
             ? "bg-primary text-primary-foreground rounded-br-md"
             : "bg-muted rounded-bl-md",
-          status === "failed" && "bg-destructive/10 border border-destructive/50",
+          status === "failed" &&
+            "bg-destructive/10 border border-destructive/50",
           status === "sending" && "opacity-70"
         )}
       >
         {/* Sender name for group chats (if not own message) */}
+
         {!isOwn && sender && (
           <p className="text-xs font-medium text-muted-foreground mb-0.5">
             {sender.display_name || sender.username}
@@ -117,7 +116,7 @@ export function MessageBubble({
                 isOwn ? "text-primary-foreground/70" : "text-muted-foreground"
               )}
             >
-              {formatTime(message.created_at)}
+              {formatMessageTime(message.created_at)}
             </span>
           )}
 
@@ -128,7 +127,9 @@ export function MessageBubble({
                 <Loader2
                   className={cn(
                     "h-3 w-3 animate-spin",
-                    isOwn ? "text-primary-foreground/70" : "text-muted-foreground"
+                    isOwn
+                      ? "text-primary-foreground/70"
+                      : "text-muted-foreground"
                   )}
                 />
               )}
@@ -136,7 +137,9 @@ export function MessageBubble({
                 <Check
                   className={cn(
                     "h-3 w-3",
-                    isOwn ? "text-primary-foreground/70" : "text-muted-foreground"
+                    isOwn
+                      ? "text-primary-foreground/70"
+                      : "text-muted-foreground"
                   )}
                 />
               )}

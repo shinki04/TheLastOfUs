@@ -2,7 +2,8 @@
 
 import { PostResponse } from "@repo/shared/types/post";
 import { Skeleton } from "@repo/ui/components/skeleton";
-import React, { useCallback, useEffect, useRef } from "react";
+import { useIntersectionObserver } from "@uidotdev/usehooks";
+import React, { useEffect } from "react";
 
 import PostCard from "@/components/posts/PostCard";
 import { useInfinitePostsQuery } from "@/hooks/useInfinitePosts";
@@ -20,42 +21,17 @@ export function InfinitePostsList() {
     error,
   } = useInfinitePostsQuery();
 
-  const observerTarget = useRef<HTMLDivElement>(null);
+  const [ref, entry] = useIntersectionObserver({
+    threshold: 0,
+    root: null,
+    rootMargin: "0px",
+  });
 
-  // Intersection Observer để detect khi scroll đến bottom
   useEffect(() => {
-    if (!observerTarget.current || !hasNextPage || isFetchingNextPage) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        // Nếu element đầu tiên đang hiển thị và có trang tiếp theo và không đang tải
-
-        if (entries[0]!.isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage(); // Tải trang tiếp theo
-        }
-      },
-      { threshold: 0.1 } // Kích hoạt khi 10% element hiển thị
-    );
-    // Bắt đầu quan sát element target
-    observer.observe(observerTarget.current);
-    // Dọn dẹp khi component unmount
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-
-  const handleScroll = useCallback(
-    (e: React.UIEvent<HTMLDivElement>) => {
-      const target = e.currentTarget;
-
-      // Tính toán xem có đang gần cuối trang không (cách dưới 200px)
-      const isNearBottom =
-        target.scrollHeight - (target.scrollTop + target.clientHeight) < 200;
-
-      if (isNearBottom && hasNextPage && !isFetchingNextPage) {
-        fetchNextPage();
-      }
-    },
-    [hasNextPage, isFetchingNextPage, fetchNextPage]
-  );
+    if (entry?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [entry, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   if (isLoading) {
     return (
@@ -83,10 +59,7 @@ export function InfinitePostsList() {
   const posts = data?.pages.flatMap((page) => page.posts) ?? [];
 
   return (
-    <div
-      className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto pr-2"
-      onScroll={handleScroll}
-    >
+    <div className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
       {posts.length === 0 ? (
         <div className="flex items-center justify-center py-12">
           <p className="text-gray-500">Chưa có bài viết nào</p>
@@ -101,7 +74,7 @@ export function InfinitePostsList() {
           ))}
 
           {/* Observer target cho Intersection Observer */}
-          <div ref={observerTarget} className="h-8" />
+          <div ref={ref} className="h-8" />
 
           {/* Loading state khi fetch next page */}
           {isFetchingNextPage && (

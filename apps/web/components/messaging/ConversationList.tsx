@@ -6,7 +6,7 @@ import { Input } from "@repo/ui/components/input";
 import { Skeleton } from "@repo/ui/components/skeleton";
 import { cn } from "@repo/ui/lib/utils";
 import { Plus, Search } from "lucide-react";
-import { useMemo,useState } from "react";
+import { useMemo, useState } from "react";
 
 import { ConversationItem, ConversationListEmpty } from "./ConversationItem";
 
@@ -85,7 +85,9 @@ export function ConversationList({
           <Input
             placeholder="Tìm kiếm cuộc trò chuyện..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setSearchQuery(e.target.value)
+            }
             className="pl-9"
           />
         </div>

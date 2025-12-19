@@ -1,20 +1,25 @@
 "use client";
 
 import { Tables } from "@repo/shared/types/database.types";
-import { cn } from "@repo/ui/lib/utils";
+import { ConversationWithDetails } from "@repo/shared/types/messaging";
 import { MessageCircle } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { ChatWindow } from "@/components/messaging/ChatWindow";
 import { ConversationList } from "@/components/messaging/ConversationList";
 import { CreateConversationDialog } from "@/components/messaging/CreateConversationDialog";
 import { useConversation, useConversations } from "@/hooks/useConversations";
+import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
+import { cn } from "@/lib/utils";
+
+// ...
 
 interface MessagesClientProps {
   currentUser: Tables<"profiles">;
   initialFriends: Tables<"profiles">[];
+  initialConversation?: ConversationWithDetails | null;
 }
 
 /**
@@ -24,11 +29,17 @@ interface MessagesClientProps {
 export function MessagesClient({
   currentUser,
   initialFriends,
+  initialConversation,
 }: MessagesClientProps) {
   const router = useRouter();
-  const [activeConversationId, setActiveConversationId] = useState<
-    string | null
-  >(null);
+  const searchParams = useSearchParams();
+  const conversationIdParam = searchParams.get("conversationId");
+
+  // Derive active conversation ID from URL (primary source of truth) or initial prop
+  const activeConversationId = useMemo(() => {
+    return conversationIdParam || initialConversation?.id || null;
+  }, [conversationIdParam, initialConversation?.id]);
+  
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   // Fetch conversations
@@ -41,22 +52,40 @@ export function MessagesClient({
     isCreatingGroup,
   } = useConversations();
 
-  // Fetch active conversation details
+  // Global real-time notifications (messages, future: other notifications)
+  useRealtimeNotifications({
+    currentUserId: currentUser.id,
+    activeConversationId,
+  });
+
+  // Fetch active conversation details (Client Side)
+  // We use the hook for realtime updates and consistent API
+  // BUT we initialize query data with 'initialConversation' if matches!
   const { conversation: activeConversation, leave } = useConversation(
     activeConversationId || ""
   );
+  
+  // NOTE: optimization - we could hydrate the query cache with initialConversation here
+  // but for simplicity we assume `initialConversation` is passed as fallback if hook is loading?
+  // Actually, useConversation uses useQuery. We can't easily inject initialData conditionally without passing it to hook.
+  // For now, let's rely on the fact that if we have initialConversation, we can render efficiently.
+  // But `activeConversation` from hook might be undefined initially if cache empty.
+  // Let's use `activeConversation || (activeConversationId === initialConversation?.id ? initialConversation : undefined)`?
+  
+  const displayConversation = activeConversation || (activeConversationId === initialConversation?.id ? initialConversation : null);
 
   // Handle selecting a conversation
   const handleSelectConversation = useCallback((id: string) => {
-    setActiveConversationId(id);
-  }, []);
+    // URL is source of truth, router.push updates activeConversationId via useMemo
+    router.push(`/messages?conversationId=${id}`);
+  }, [router]);
 
   // Handle creating direct conversation
   const handleCreateDirect = useCallback(
     async (userId: string) => {
       try {
         const conv = await createDirect(userId);
-        setActiveConversationId(conv.id);
+        handleSelectConversation(conv.id);
         setIsCreateDialogOpen(false);
         toast.success("Đã tạo cuộc trò chuyện mới");
       } catch (error) {
@@ -64,7 +93,7 @@ export function MessagesClient({
         throw error;
       }
     },
-    [createDirect]
+    [createDirect, handleSelectConversation]
   );
 
   // Handle creating group conversation
@@ -72,7 +101,7 @@ export function MessagesClient({
     async (name: string, memberIds: string[]) => {
       try {
         const conv = await createGroup({ name, memberIds });
-        setActiveConversationId(conv.id);
+        handleSelectConversation(conv.id);
         setIsCreateDialogOpen(false);
         toast.success("Đã tạo nhóm mới");
       } catch (error) {
@@ -82,27 +111,27 @@ export function MessagesClient({
         throw error;
       }
     },
-    [createGroup]
+    [createGroup, handleSelectConversation]
   );
 
+  // ... rest of handlers ...
   // Handle leaving conversation
   const handleLeave = useCallback(async () => {
     if (!activeConversationId) return;
 
     try {
       await leave();
-      setActiveConversationId(null);
+      // Clear URL param - this updates activeConversationId via useMemo
+      router.push("/messages");
       toast.success("Đã rời khỏi nhóm");
     } catch (error) {
       toast.error("Không thể rời nhóm");
     }
-  }, [activeConversationId, leave]);
+  }, [activeConversationId, leave, router]);
 
   // Handle adding friend from chat banner
   const handleAddFriend = useCallback(
     (userId: string) => {
-      // This will be handled by the FriendButton component
-      // For now, we can just navigate to profile
       router.push(`/profile/${userId}`);
     },
     [router]
@@ -132,9 +161,10 @@ export function MessagesClient({
         <div
           className={cn("flex-1", !activeConversationId && "hidden md:flex")}
         >
-          {activeConversation ? (
+          {displayConversation && activeConversationId ? (
             <ChatWindow
-              conversation={activeConversation}
+              key={activeConversationId} // Force remount on change
+              conversation={displayConversation}
               currentUserId={currentUser.id}
               currentUser={currentUser}
               onLeave={handleLeave}
@@ -146,8 +176,8 @@ export function MessagesClient({
           )}
         </div>
       </div>
-
-      {/* Create conversation dialog */}
+      
+      {/* ... dialogs ... */}
       <CreateConversationDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}

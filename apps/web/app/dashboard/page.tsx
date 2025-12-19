@@ -52,6 +52,9 @@ export default async function DashboardPage() {
         <Link href={`/profile/95a3fadb-5f4f-497f-b826-e9a66e8e4655`}>
           <Button>DucTrung Profile</Button>
         </Link>
+        <Link href={"/messages"}>
+          <Button>Message</Button>
+        </Link>
         {/* <AddPost currentUser={user} /> */}
         <AddPost currentUser={user} />
         <ListPosts />

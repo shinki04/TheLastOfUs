@@ -3,6 +3,8 @@ import {
   format,
   isWithinInterval,
   subDays,
+  isToday,
+  isYesterday,
 } from "date-fns";
 import { vi } from "date-fns/locale";
 
@@ -23,4 +25,18 @@ export const formatPostDate = (createdAt: string) => {
 
   // Nếu quá 1 tuần, hiển thị ngày tháng năm
   return format(postDate, "dd/MM/yyyy", { locale: vi });
+};
+
+// Format time
+export const formatMessageTime = (dateStr: string | null | undefined) => {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+
+  if (isToday(date)) {
+    return format(date, "HH:mm");
+  }
+  if (isYesterday(date)) {
+    return `Hôm qua ${format(date, "HH:mm")}`;
+  }
+  return format(date, "dd/MM HH:mm");
 };

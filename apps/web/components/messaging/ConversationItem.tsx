@@ -66,10 +66,11 @@ export function ConversationItem({
         ? "Bạn"
         : (lastMessage.sender as Tables<"profiles">)?.display_name || "Ai đó";
 
+    const messageContent = lastMessage.content || "";
     const content =
-      lastMessage.content.length > 30
-        ? `${lastMessage.content.substring(0, 30)}...`
-        : lastMessage.content;
+      messageContent.length > 30
+        ? `${messageContent.substring(0, 30)}...`
+        : messageContent;
 
     if (isGroup) {
       return `${senderName}: ${content}`;
@@ -118,6 +119,7 @@ export function ConversationItem({
 
       {/* Content */}
       <div className="flex-1 min-w-0 text-left">
+      
         <div className="flex items-center justify-between gap-2">
           <span
             className={cn(

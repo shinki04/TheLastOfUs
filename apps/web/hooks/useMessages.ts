@@ -78,8 +78,16 @@ export function useMessages({
       ...serverMessages,
       ...optimisticMessages.filter((m) => m.status !== "sent"),
     ];
-    // Sort by created_at
+    // Sort by created_at, but always keep 'sending' messages at the end
     return combined.sort((a, b) => {
+      const aIsSending = "status" in a && a.status === "sending";
+      const bIsSending = "status" in b && b.status === "sending";
+      
+      // If one is sending and the other is not, sending goes to the end
+      if (aIsSending && !bIsSending) return 1;
+      if (!aIsSending && bIsSending) return -1;
+      
+      // If both are sending or both are not sending, sort by created_at
       const dateA = new Date(a.created_at || 0).getTime();
       const dateB = new Date(b.created_at || 0).getTime();
       return dateA - dateB;
@@ -207,13 +215,19 @@ export function useMessages({
           prev.filter((m) => m.tempId !== tempId)
         );
         setServerMessages((prev) => {
-          if (!prev.find((m) => m.id === serverMessage.id)) {
-            return [
-              ...prev,
-              { ...serverMessage, sender: currentUser } as MessageWithSender,
-            ];
+          if (prev.find((m) => m.id === serverMessage.id)) {
+            return prev; // Already exists
           }
-          return prev;
+          // Add and sort by created_at to maintain order
+          const newMessages = [
+            ...prev,
+            { ...serverMessage, sender: currentUser } as MessageWithSender,
+          ];
+          return newMessages.sort((a, b) => {
+            const dateA = new Date(a.created_at || 0).getTime();
+            const dateB = new Date(b.created_at || 0).getTime();
+            return dateA - dateB;
+          });
         });
       } catch (err) {
         // Broadcast failure
@@ -275,13 +289,18 @@ export function useMessages({
           prev.filter((m) => m.tempId !== tempId)
         );
         setServerMessages((prev) => {
-          if (!prev.find((m) => m.id === serverMessage.id)) {
-            return [
-              ...prev,
-              { ...serverMessage, sender: currentUser } as MessageWithSender,
-            ];
+          if (prev.find((m) => m.id === serverMessage.id)) {
+            return prev; // Already exists
           }
-          return prev;
+          const newMessages = [
+            ...prev,
+            { ...serverMessage, sender: currentUser } as MessageWithSender,
+          ];
+          return newMessages.sort((a, b) => {
+            const dateA = new Date(a.created_at || 0).getTime();
+            const dateB = new Date(b.created_at || 0).getTime();
+            return dateA - dateB;
+          });
         });
       } catch (err) {
         setOptimisticMessages((prev) =>
@@ -354,10 +373,15 @@ export function useMessages({
               prev.filter((m) => m.tempId !== payload.tempId)
             );
             setServerMessages((prev) => {
-              if (!prev.find((m) => m.id === payload.message?.id)) {
-                return [...prev, payload.message as MessageWithSender];
+              if (prev.find((m) => m.id === payload.message?.id)) {
+                return prev; // Already exists
               }
-              return prev;
+              const newMessages = [...prev, payload.message as MessageWithSender];
+              return newMessages.sort((a, b) => {
+                const dateA = new Date(a.created_at || 0).getTime();
+                const dateB = new Date(b.created_at || 0).getTime();
+                return dateA - dateB;
+              });
             });
           }
           // Mark as read
