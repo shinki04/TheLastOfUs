@@ -6,7 +6,7 @@ import Tus from "@uppy/tus";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@repo/supabase/client";
 
 export const useUppyWithSupabase = (bucketName: string, instanceId?: string) => {
   const supabase = createClient();

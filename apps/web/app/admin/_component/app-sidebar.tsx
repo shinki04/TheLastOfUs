@@ -10,7 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-} from "@repo/ui/componentssidebar";
+} from "@repo/ui/components/sidebar";
 import Link from "next/link";
 import * as React from "react";
 
@@ -18,7 +18,7 @@ import { NavUser } from "@/components/nav-user";
 import { SearchForm } from "@/components/search-form";
 import { VersionSwitcher } from "@/components/version-switcher";
 import { AdminSidebarData } from "@/constants/admin-sidebar";
-import { User } from "@/types/user";
+import { User } from "@repo/shared/types/user";
 
 // Định nghĩa interface riêng
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
@@ -31,7 +31,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
       <SidebarHeader>
         <VersionSwitcher
           versions={AdminSidebarData.versions}
-          defaultVersion={AdminSidebarData.versions[0]}
+          defaultVersion={AdminSidebarData.versions[0] ?? "1.0.0"}
         />
         <SearchForm />
       </SidebarHeader>

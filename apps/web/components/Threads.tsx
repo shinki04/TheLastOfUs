@@ -1,4 +1,4 @@
-/* eslint-disable prefer-const */
+ 
 "use client";
 import { Color,Mesh, Program, Renderer, Triangle } from "ogl";
 import React, { useEffect, useRef } from "react";
@@ -135,7 +135,7 @@ const Threads: React.FC<ThreadsProps> = ({
   ...rest
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const animationFrameId = useRef<number>();
+  const animationFrameId = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -180,17 +180,19 @@ const Threads: React.FC<ThreadsProps> = ({
     window.addEventListener("resize", resize);
     resize();
 
-    let currentMouse = [0.5, 0.5];
-    let targetMouse = [0.5, 0.5];
+    const currentMouse = [0.5, 0.5];
+    const targetMouse = [0.5, 0.5];
 
     function handleMouseMove(e: MouseEvent) {
       const rect = container.getBoundingClientRect();
       const x = (e.clientX - rect.left) / rect.width;
       const y = 1.0 - (e.clientY - rect.top) / rect.height;
-      targetMouse = [x, y];
+      targetMouse[0] = x;
+      targetMouse[1] = y;
     }
     function handleMouseLeave() {
-      targetMouse = [0.5, 0.5];
+      targetMouse[0] = 0.5;
+      targetMouse[1] = 0.5;
     }
     if (enableMouseInteraction) {
       container.addEventListener("mousemove", handleMouseMove);
@@ -200,10 +202,10 @@ const Threads: React.FC<ThreadsProps> = ({
     function update(t: number) {
       if (enableMouseInteraction) {
         const smoothing = 0.05;
-        currentMouse[0] += smoothing * (targetMouse[0] - currentMouse[0]);
-        currentMouse[1] += smoothing * (targetMouse[1] - currentMouse[1]);
-        program.uniforms.uMouse.value[0] = currentMouse[0];
-        program.uniforms.uMouse.value[1] = currentMouse[1];
+        currentMouse[0] = (currentMouse[0] ?? 0.5) + smoothing * ((targetMouse[0] ?? 0.5) - (currentMouse[0] ?? 0.5));
+        currentMouse[1] = (currentMouse[1] ?? 0.5) + smoothing * ((targetMouse[1] ?? 0.5) - (currentMouse[1] ?? 0.5));
+        program.uniforms.uMouse.value[0] = currentMouse[0] ?? 0.5;
+        program.uniforms.uMouse.value[1] = currentMouse[1] ?? 0.5;
       } else {
         program.uniforms.uMouse.value[0] = 0.5;
         program.uniforms.uMouse.value[1] = 0.5;

@@ -30,9 +30,17 @@ import { TeamSwitcher } from "@/components/team-switcher";
 // This is sample data.
 const data = {
   user: {
-    name: "shadcn",
+    id: "sample-user-id",
+    username: "shadcn",
+    display_name: "shadcn",
     email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    avatar_url: "/avatars/shadcn.jpg",
+    description: null,
+    global_role: "student" as const,
+    friend_count: 0,
+    settings: {},
+    create_at: null,
+    updated_at: null,
   },
   teams: [
     {

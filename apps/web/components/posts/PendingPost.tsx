@@ -13,15 +13,20 @@ function PendingPost() {
   //TODO Sửa lại kiểu PostResponse
   const optimisticPosts = queueItems.map((item) => ({
     id: item.id,
-    post_id: item.post_id,
-    author_id: item.user_id,
+    created_at: item.created_at || new Date().toISOString(),
+    author: {
+      id: item.user_id,
+      username: "loading...",
+      display_name: "loading...",
+      avatar_url: null,
+      global_role: "student" as const,
+    },
     content: item.content,
     privacy_level: item.privacy_level,
-    media_urls: [], // Will be filled after processing
+    media_urls: [] as string[], // Will be filled after processing
     like_count: 0,
     comment_count: 0,
     share_count: 0,
-    created_at: item.created_at,
     updated_at: item.updated_at,
   }));
   return (

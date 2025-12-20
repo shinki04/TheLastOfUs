@@ -3,7 +3,7 @@
 import { Tables } from "@repo/shared/types/database.types";
 import { revalidatePath } from "next/cache";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@repo/supabase/server";
 
 // Types
 export type Friendship = Tables<"friendships">;

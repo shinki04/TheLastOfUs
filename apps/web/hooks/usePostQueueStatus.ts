@@ -9,7 +9,7 @@ import {
   deleteQueueStatus,
   getQueueStatusByUser,
 } from "@/app/actions/post-queue";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@repo/supabase/client";
 
 import { useGetCurrentUser } from "./useAuth";
 

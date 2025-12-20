@@ -7,7 +7,7 @@ import { getRedisClient } from "@repo/redis/redis";
 import { Post, PostResponse, privacyPost } from "@repo/shared/types/post";
 import { PostQueueDeletePayload } from "@repo/shared/types/postQueue";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@repo/supabase/server";
 
 export interface CreatePostInput {
   content: string;

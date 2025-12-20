@@ -2,7 +2,7 @@ import React from "react";
 
 import LoggedForm from "@/components/auth/LoggedForm";
 import LoginForm from "@/components/auth/LoginForm";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@repo/supabase/server";
 
 async function LoginPage() {
   // Check user logged in

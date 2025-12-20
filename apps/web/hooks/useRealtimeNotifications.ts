@@ -1,10 +1,10 @@
 "use client";
 
-import type { RealtimePostgresInsertPayload } from "@supabase/supabase-js";
+import type { RealtimePostgresInsertPayload } from "@repo/supabase/types";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@repo/supabase/client";
 
 import { conversationKeys } from "./useConversations";
 

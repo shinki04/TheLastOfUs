@@ -8,7 +8,7 @@ import type {
   UpdatePostJobPayload,
 } from "@repo/shared/types/postQueue";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@repo/supabase/server";
 
 export type TCreateQueue = {
   userId: string;

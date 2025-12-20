@@ -1,0 +1,30 @@
+{
+    "name": "@repo/supabase",
+    "version": "0.0.1",
+    "private": true,
+    "exports": {
+        "./client": "./src/client.ts",
+        "./server": "./src/server.ts",
+        "./service": "./src/service.ts",
+        "./middleware": "./src/middleware.ts",
+        "./image-loader": "./src/image-loader.ts",
+        "./types": "./src/types.ts"
+    },
+    "dependencies": {
+        "@supabase/ssr": "^0.8.0",
+        "@supabase/supabase-js": "^2.87.1"
+    },
+    "devDependencies": {
+        "@repo/shared": "workspace:*",
+        "@repo/typescript-config": "workspace:*",
+        "typescript": "^5"
+    },
+    "peerDependencies": {
+        "next": ">=14.0.0"
+    },
+    "peerDependenciesMeta": {
+        "next": {
+            "optional": true
+        }
+    }
+}

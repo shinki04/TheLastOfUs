@@ -15,8 +15,7 @@
         "amqplib": "^0.10.9",
         "dotenv": "^17.2.3",
         "ioredis": "^5.8.2",
-        "@supabase/ssr": "^0.7.0",
-        "@supabase/supabase-js": "^2.76.1"
+        "@repo/supabase": "workspace:*"
     },
     "devDependencies": {
         "eslint": "^9.32.0",

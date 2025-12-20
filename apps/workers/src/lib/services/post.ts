@@ -8,7 +8,7 @@ import {
 } from "@repo/shared/types/postQueue";
 import { urlToPath } from "@repo/utils/getPathSupabase";
 
-import { createServiceClient } from "../supabase/services_roles";
+import { createServiceClient } from "@repo/supabase/service";
 import {
   removeHashtagsForPost,
   saveHashtagsFromContent,

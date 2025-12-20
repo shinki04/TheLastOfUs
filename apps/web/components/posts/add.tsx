@@ -22,7 +22,7 @@ import { toast } from "sonner";
 import { createQueueStatus } from "@/app/actions/post-queue";
 import { useCreatePostMutation } from "@/hooks/usePost";
 import { useUppyWithSupabase } from "@/hooks/useUppy"; // hook đã sửa ở trên
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@repo/supabase/client";
 import {
   createPostSchema,
   validateContent,

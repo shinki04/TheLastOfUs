@@ -1,7 +1,7 @@
 import { getRedisClient } from "@repo/redis/redis";
 import { extractHashtags } from "@repo/utils/hashtagUtils";
 
-import { createServiceClient } from "../supabase/services_roles";
+import { createServiceClient } from "@repo/supabase/service";
 
 interface HashtagWithCount {
   id: string;

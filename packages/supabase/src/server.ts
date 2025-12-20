@@ -2,6 +2,10 @@ import { Database } from "@repo/shared/types/database.types";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
+/**
+ * Creates a Supabase server client for Next.js Server Components and Server Actions.
+ * This uses cookies for session management.
+ */
 export async function createClient() {
   const cookieStore = await cookies();
 
@@ -28,3 +32,5 @@ export async function createClient() {
     }
   );
 }
+
+export type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;

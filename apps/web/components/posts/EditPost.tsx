@@ -34,7 +34,7 @@ import {
   getRemovedFiles,
   loadRemoteFilesToUppy,
 } from "@/lib/fileUtils";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@repo/supabase/client";
 import { validateContent } from "@/lib/validations/addPost-schema";
 
 import AlertDialog from "../AlertDialog";

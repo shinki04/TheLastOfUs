@@ -3,6 +3,6 @@ pre-commit:
   commands:
     check:
       # Chỉ match file trong apps/web và apps/worker
-      glob: "apps/{web,worker}/**/*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}"
+      glob: "apps/{web,worker,admin}/**/*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}"
       run: pnpm eslint --fix {staged_files}
       stage_fixed: true

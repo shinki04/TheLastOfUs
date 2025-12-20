@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-import { User } from "@/types/user";
+import { User } from "@repo/shared/types/user";
 
 // Define types for state & actions
 interface UserState {
