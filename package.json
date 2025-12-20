@@ -14,13 +14,10 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "eslint": "^9.39.1",
+    "@repo/eslint-config": "workspace:*",
     "lefthook": "^2.0.4",
     "turbo": "latest",
-    "typescript": "5.9.2",
-    "@typescript-eslint/eslint-plugin": "^8.46.4",
-    "eslint-config-next": "16.0.0",
-    "eslint-plugin-unused-imports": "^4.3.0"
+    "typescript": "5.9.2"
   },
   "engines": {
     "node": ">=20"
