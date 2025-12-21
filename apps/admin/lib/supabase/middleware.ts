@@ -63,11 +63,11 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Check role admin nếu truy cập /admin
-  if (request.nextUrl.pathname.startsWith("/admin")) {
+  if (request.nextUrl.pathname.startsWith("/")) {
     const role = user?.app_metadata?.global_role; // custom claims
     if (role !== "admin") {
       const url = request.nextUrl.clone();
-      url.pathname = "/dashboard"; // redirect nếu không phải admin
+      url.pathname = "/login"; // redirect nếu không phải admin
       const res = NextResponse.redirect(url);
 
       // Set cookie tạm để gửi message

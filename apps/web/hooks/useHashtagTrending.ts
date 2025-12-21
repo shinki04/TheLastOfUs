@@ -1,9 +1,8 @@
 "use client";
 
+import { createClient } from "@repo/supabase/client";
 import type { RealtimeChannel } from "@repo/supabase/types";
 import { useCallback,useEffect, useState } from "react";
-
-import { createClient } from "@repo/supabase/client";
 
 interface HashtagWithCount {
   id: string;

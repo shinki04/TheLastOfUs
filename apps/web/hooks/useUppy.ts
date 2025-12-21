@@ -1,12 +1,11 @@
 "use client";
 
+import { createClient } from "@repo/supabase/client";
 import Uppy from "@uppy/core";
 import Vietnamese from "@uppy/locales/lib/vi_VN";
 import Tus from "@uppy/tus";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-
-import { createClient } from "@repo/supabase/client";
 
 export const useUppyWithSupabase = (bucketName: string, instanceId?: string) => {
   const supabase = createClient();

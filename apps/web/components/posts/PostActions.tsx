@@ -1,4 +1,10 @@
+"use client";
+
+import { Button } from "@repo/ui/components/button";
+import { cn } from "@repo/ui/lib/utils";
 import { Heart, MessageCircle, Share2 } from "lucide-react";
+
+import { usePostInteractions } from "@/hooks/usePostInteractions";
 
 // PostStats Component
 interface PostStatsProps {
@@ -13,11 +19,13 @@ export function PostStats({
   shareCount,
 }: PostStatsProps) {
   return (
-    <div className="flex items-center justify-between text-xs text-gray-500 border-y border-gray-200 py-2 mb-3">
-      <span>{likeCount} lượt thích</span>
-      <div className="flex space-x-4">
-        <span>{commentCount} bình luận</span>
-        <span>{shareCount} chia sẻ</span>
+    <div className="flex items-center justify-between text-xs text-muted-foreground py-2">
+      <div className="flex gap-1">
+          {likeCount > 0 && <span>{likeCount} lượt thích</span>}
+      </div>
+      <div className="flex gap-3">
+        {commentCount > 0 && <span>{commentCount} bình luận</span>}
+        {shareCount > 0 && <span>{shareCount} chia sẻ</span>}
       </div>
     </div>
   );
@@ -25,30 +33,58 @@ export function PostStats({
 
 // PostActions Component
 interface PostActionsProps {
-  isLiked: boolean;
-  onLikeToggle: () => void;
+  post: {
+      id: string;
+      like_count: number;
+      comment_count: number;
+      share_count: number;
+      is_liked_by_viewer: boolean;
+  };
+  onCommentClick?: () => void;
+  className?: string;
+  showStats?: boolean; // Option to hide internal stats if displayed externally
 }
 
-export function PostActions({ isLiked, onLikeToggle }: PostActionsProps) {
+export function PostActions({ post, onCommentClick, className, showStats = false }: PostActionsProps) {
+  const { isLiked, likeCount, toggleLike, share } = usePostInteractions(post.id, {
+    isLiked: post.is_liked_by_viewer,
+    count: post.like_count
+  });
+
   return (
-    <div className="flex items-center justify-around text-gray-600">
-      <button
-        onClick={onLikeToggle}
-        className={`flex items-center space-x-2 py-2 px-3 rounded hover:bg-gray-100 transition-colors ${
-          isLiked ? "text-red-500" : ""
-        }`}
-      >
-        <Heart className="w-4 h-4" fill={isLiked ? "currentColor" : "none"} />
-        <span className="text-sm">Thích</span>
-      </button>
-      <button className="flex items-center space-x-2 py-2 px-3 rounded hover:bg-gray-100 transition-colors">
-        <MessageCircle className="w-4 h-4" />
-        <span className="text-sm">Bình luận</span>
-      </button>
-      <button className="flex items-center space-x-2 py-2 px-3 rounded hover:bg-gray-100 transition-colors">
-        <Share2 className="w-4 h-4" />
-        <span className="text-sm">Chia sẻ</span>
-      </button>
+    <div className={cn("flex flex-col", className)}>
+      {showStats && (
+           <PostStats likeCount={likeCount} commentCount={post.comment_count} shareCount={post.share_count} />
+      )}
+      
+      <div className="flex items-center justify-between border-t py-1 mt-1">
+          <Button 
+            variant="ghost" 
+            className="flex-1 gap-2 hover:bg-muted/50 transition-colors" 
+            onClick={() => toggleLike()}
+          >
+              <Heart className={cn("w-5 h-5 transition-colors", isLiked && "fill-red-500 text-red-500")} />
+              <span className={cn("text-sm font-medium", isLiked && "text-red-500")}>Thích</span>
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            className="flex-1 gap-2 hover:bg-muted/50 transition-colors" 
+            onClick={onCommentClick}
+          >
+              <MessageCircle className="w-5 h-5" />
+              <span className="text-sm font-medium">Bình luận</span>
+          </Button>
+
+          <Button 
+            variant="ghost" 
+            className="flex-1 gap-2 hover:bg-muted/50 transition-colors" 
+            onClick={() => share()}
+          >
+              <Share2 className="w-5 h-5" />
+              <span className="text-sm font-medium">Chia sẻ</span>
+          </Button>
+      </div>
     </div>
   );
 }

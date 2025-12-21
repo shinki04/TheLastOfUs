@@ -1,6 +1,7 @@
 "use client";
 
 import { PostQueueItem } from "@repo/shared/types/postQueue";
+import { createClient } from "@repo/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -9,7 +10,6 @@ import {
   deleteQueueStatus,
   getQueueStatusByUser,
 } from "@/app/actions/post-queue";
-import { createClient } from "@repo/supabase/client";
 
 import { useGetCurrentUser } from "./useAuth";
 

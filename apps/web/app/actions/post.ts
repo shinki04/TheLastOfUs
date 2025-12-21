@@ -6,7 +6,6 @@ import { getPostCacheService } from "@repo/redis/postCacheService";
 import { getRedisClient } from "@repo/redis/redis";
 import { Post, PostResponse, privacyPost } from "@repo/shared/types/post";
 import { PostQueueDeletePayload } from "@repo/shared/types/postQueue";
-
 import { createClient } from "@repo/supabase/server";
 
 export interface CreatePostInput {
@@ -108,11 +107,38 @@ export async function fetchPosts(
     throw new Error(`Failed to fetch posts: ${error.message}`);
   }
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let postsWithLikeStatus = data || [];
+
+  if (user && data && data.length > 0) {
+    const postIds = data.map((p) => p.id);
+    const { data: likes } = await supabase
+      .from("post_likes")
+      .select("post_id")
+      .eq("user_id", user.id)
+      .in("post_id", postIds);
+
+    const likedPostIds = new Set(likes?.map((l) => l.post_id) || []);
+
+    postsWithLikeStatus = data.map((post) => ({
+      ...post,
+      is_liked_by_viewer: likedPostIds.has(post.id),
+    }));
+  } else {
+     postsWithLikeStatus = (data || []).map((post) => ({
+      ...post,
+      is_liked_by_viewer: false,
+    }));
+  }
+
   // Check if there are more posts after current page
   const hasMore = offset + itemsPerPage < total;
 
   const result = {
-    posts: data || [],
+    posts: postsWithLikeStatus,
     hasMore,
     total,
     currentPage: page,
@@ -213,7 +239,26 @@ export async function fetchPostById(postId: string) {
     if (error) {
       throw new Error(`Failed to fetch post: ${error.message}`);
     }
-    return data;
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    let isLikedByViewer = false;
+    if (user && data) {
+      const { data: like } = await supabase
+        .from("post_likes")
+        .select("id")
+        .eq("post_id", postId)
+        .eq("user_id", user.id)
+        .single();
+      isLikedByViewer = !!like;
+    }
+
+    return {
+      ...data,
+      is_liked_by_viewer: isLikedByViewer,
+    };
   } catch (error: unknown) {
     if (error instanceof Error) {
       console.error("Caught an Error object:", error.message);
@@ -290,11 +335,38 @@ export async function fetchPostByAuthor(
     throw new Error(`Failed to fetch posts: ${error.message}`);
   }
 
+  const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+  let postsWithLikeStatus = data || [];
+
+  if (user && data && data.length > 0) {
+    const postIds = data.map((p) => p.id);
+    const { data: likes } = await supabase
+      .from("post_likes")
+      .select("post_id")
+      .eq("user_id", user.id)
+      .in("post_id", postIds);
+
+    const likedPostIds = new Set(likes?.map((l) => l.post_id) || []);
+
+    postsWithLikeStatus = data.map((post) => ({
+      ...post,
+      is_liked_by_viewer: likedPostIds.has(post.id),
+    }));
+  } else {
+      postsWithLikeStatus = (data || []).map((post) => ({
+      ...post,
+      is_liked_by_viewer: false,
+    }));
+  }
+
   // Check if there are more posts after current page
   const hasMore = offset + itemsPerPage < total;
 
   const result = {
-    posts: data || [],
+    posts: postsWithLikeStatus,
     hasMore,
     total,
     currentPage: page,

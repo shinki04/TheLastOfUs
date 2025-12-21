@@ -20,5 +20,6 @@ export type PostResponse = {
   like_count: number | null;
   comment_count: number | null;
   share_count: number | null;
+  is_liked_by_viewer?: boolean;
   privacy_level: privacyPost;
 };

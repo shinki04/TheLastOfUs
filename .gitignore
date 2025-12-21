@@ -58,3 +58,4 @@ temp/*
 sequence-diagram/*
 .idea
 *.tsbuildinfo
+models/*

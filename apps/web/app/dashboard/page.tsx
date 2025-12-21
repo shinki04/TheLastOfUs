@@ -26,7 +26,7 @@ export default async function DashboardPage() {
   //   queryFn: () => getCurrentUser(),
   //   staleTime: 10000,
   // });
-
+  console.log("DashboardPage");
   const [user] = await Promise.all([
     await queryClient.fetchQuery({
       queryKey: ["user"],

@@ -4,6 +4,7 @@
 import "@uppy/react/css/style.css";
 
 import { PostResponse,privacyPost } from "@repo/shared/types/post";
+import { createClient } from "@repo/supabase/client";
 import { Button } from "@repo/ui/components/button";
 import {
   Dialog,
@@ -34,7 +35,6 @@ import {
   getRemovedFiles,
   loadRemoteFilesToUppy,
 } from "@/lib/fileUtils";
-import { createClient } from "@repo/supabase/client";
 import { validateContent } from "@/lib/validations/addPost-schema";
 
 import AlertDialog from "../AlertDialog";

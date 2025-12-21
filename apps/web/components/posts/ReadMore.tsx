@@ -51,40 +51,49 @@ const useTruncatedElement = ({
 interface NoteProps {
   content?: string;
   className?: string;
+  gradientClass?: string;
 }
 
-export default function ReadMore({ content, className = "" }: NoteProps) {
+export default function ReadMore({
+  content,
+  className = "",
+  gradientClass = "bg-gradient-to-t from-card via-card/90 to-transparent",
+}: NoteProps) {
   const ref = useRef<HTMLParagraphElement>(null);
   const { isTruncated, isReadingMore, setIsReadingMore } = useTruncatedElement({
     ref: ref as React.RefObject<HTMLElement | null>,
   });
 
   return (
-    <div className={className}>
+    <div className={`relative ${className}`}>
       <p
         ref={ref}
-        className={`wrap-break-word text-xl ${
-          !isReadingMore ? "line-clamp-3" : ""
+        className={`wrap-break-word whitespace-pre-line text-[15px] leading-relaxed text-foreground transition-all duration-200 ${
+          !isReadingMore ? "max-h-[4.8rem] overflow-hidden" : ""
         }`}
       >
         {content}
       </p>
 
       {isTruncated && !isReadingMore && (
-        <button
-          onClick={() => setIsReadingMore(true)}
-          className="mt-2 text-blue-600 hover:text-blue-800 font-medium"
+        <div
+          className={`absolute bottom-0 left-0 w-full h-12 flex items-end justify-center pb-0 ${gradientClass}`}
         >
-          Read more
-        </button>
+          <button
+            onClick={() => setIsReadingMore(true)}
+            className="text-xs font-semibold text-primary hover:text-primary/90 bg-card/95 px-3 py-1 rounded-full shadow-sm backdrop-blur-[2px] border transition-transform hover:scale-105 active:scale-95"
+          >
+            Xem thêm
+          </button>
+        </div>
       )}
 
       {isReadingMore && isTruncated && (
         <button
           onClick={() => setIsReadingMore(false)}
-          className="mt-2 text-blue-600 hover:text-blue-800 font-medium"
+          className="mt-2 text-sm font-medium text-muted-foreground hover:text-primary"
         >
-          Show less
+          Thu gọn
         </button>
       )}
     </div>

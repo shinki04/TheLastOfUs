@@ -1,9 +1,8 @@
 "use server";
 
 import { Tables, TablesInsert } from "@repo/shared/types/database.types";
-import { revalidatePath } from "next/cache";
-
 import { createClient } from "@repo/supabase/server";
+import { revalidatePath } from "next/cache";
 
 // Types
 export type Conversation = Tables<"conversations">;

@@ -15,7 +15,8 @@ import FileLightbox from "./FileLightbox";
 import MediaGalleryModal from "./MediaGalleryModal";
 import MediaLightbox from "./MediaLightbox";
 import PostMediaGallery from "./MediaPreview";
-import { PostActions, PostStats } from "./PostActions";
+import { PostActions } from "./PostActions";
+import PostDetailDialog from "./PostDetailDialog";
 import PostHeader from "./PostHeader";
 import ReadMore from "./ReadMore";
 
@@ -28,8 +29,8 @@ export default function PostCard({ post, isPending = false }: PostCardProps) {
   const { mutate: mutateDelete } = useDeletePost();
   const currentUser = useGetCurrentUser();
 
-  const [isLiked, setIsLiked] = React.useState(false);
   const [showGalleryModal, setShowGalleryModal] = React.useState(false);
+  const [showDetailDialog, setShowDetailDialog] = React.useState(false);
   const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
   const [openAlert, setOpenAlert] = React.useState(false);
   const [openEditDialog, setOpenEditDialog] = React.useState(false);
@@ -107,6 +108,7 @@ export default function PostCard({ post, isPending = false }: PostCardProps) {
           <PostHeader
             author={post.author}
             createdAt={post.created_at!}
+            updatedAt={post.updated_at}
             privacyLevel={post.privacy_level}
             isOwner={isOwner}
             onDelete={() => setOpenAlert(true)}
@@ -117,22 +119,30 @@ export default function PostCard({ post, isPending = false }: PostCardProps) {
             <ReadMore content={post.content} />
           </div>
           <PostMediaGallery
-            mediaUrls={post.media_urls}
+            mediaUrls={post.media_urls || []}
             onMediaClick={handleMediaClick}
           />
 
-          <PostStats
-            likeCount={post.like_count || 0}
-            commentCount={post.comment_count || 0}
-            shareCount={post.share_count || 0}
-          />
-
           <PostActions
-            isLiked={isLiked}
-            onLikeToggle={() => setIsLiked(!isLiked)}
+            post={{
+                id: post.id,
+                like_count: post.like_count || 0,
+                comment_count: post.comment_count || 0,
+                share_count: post.share_count || 0,
+                is_liked_by_viewer: !!post.is_liked_by_viewer
+            }}
+            onCommentClick={() => setShowDetailDialog(true)}
+            showStats={true}
           />
         </div>
       </Card>
+
+      <PostDetailDialog 
+        post={post}
+        open={showDetailDialog}
+        onOpenChange={setShowDetailDialog}
+        currentUser={currentUser.data}
+      />
 
       {showGalleryModal && (
         <MediaGalleryModal

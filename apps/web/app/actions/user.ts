@@ -1,10 +1,9 @@
 "use server";
 import { getRedisClient } from "@repo/redis/redis";
 import { User } from "@repo/shared/types/user";
+import { createClient } from "@repo/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-
-import { createClient } from "@repo/supabase/server";
 
 // Constants
 const CACHE_KEYS = {

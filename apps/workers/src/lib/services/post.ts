@@ -6,9 +6,10 @@ import {
   PostQueueStatus,
   UpdatePostJobPayload,
 } from "@repo/shared/types/postQueue";
+import { createServiceClient } from "@repo/supabase/service";
 import { urlToPath } from "@repo/utils/getPathSupabase";
 
-import { createServiceClient } from "@repo/supabase/service";
+import { sentimentModel } from "../models/sentimentModel";
 import {
   removeHashtagsForPost,
   saveHashtagsFromContent,
@@ -76,6 +77,8 @@ export async function processPostCreation(payload: PostJobPayload) {
     }
 
     // Step 1: Using AI for check
+    const sentiment = await sentimentModel(payload.content);
+    console.log("Sentiment: ", sentiment);
 
     // Step 2: Create post in database
     console.log("📝 Creating post in database...");
@@ -86,6 +89,7 @@ export async function processPostCreation(payload: PostJobPayload) {
         content: payload.content,
         privacy_level: payload.privacyLevel,
         media_urls: payload.media_urls || [],
+        moderation_status: "approved",
       })
       .select()
       .single();

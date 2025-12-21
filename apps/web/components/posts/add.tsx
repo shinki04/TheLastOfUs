@@ -4,6 +4,7 @@ import "@uppy/react/css/style.css";
 
 import { privacyPost } from "@repo/shared/types/post";
 import type { User } from "@repo/shared/types/user";
+import { createClient } from "@repo/supabase/client";
 import { Button } from "@repo/ui/components/button";
 import { Card } from "@repo/ui/components/card";
 import {
@@ -22,7 +23,6 @@ import { toast } from "sonner";
 import { createQueueStatus } from "@/app/actions/post-queue";
 import { useCreatePostMutation } from "@/hooks/usePost";
 import { useUppyWithSupabase } from "@/hooks/useUppy"; // hook đã sửa ở trên
-import { createClient } from "@repo/supabase/client";
 import {
   createPostSchema,
   validateContent,

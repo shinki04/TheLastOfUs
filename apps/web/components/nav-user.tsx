@@ -1,5 +1,6 @@
 "use client";
 
+import { User } from "@repo/shared/types/user";
 import {
   Avatar,
   AvatarFallback,
@@ -22,7 +23,6 @@ import {
 import { ChevronsUpDown, LogOut } from "lucide-react";
 
 import { signOut } from "@/app/auth/action";
-import { User } from "@repo/shared/types/user";
 
 export function NavUser({ user }: { user: User }) {
   const { isMobile } = useSidebar();

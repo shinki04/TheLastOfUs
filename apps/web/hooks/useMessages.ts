@@ -6,6 +6,7 @@ import type {
   MessageWithSender,
   OptimisticMessage,
 } from "@repo/shared/types/messaging";
+import { createClient } from "@repo/supabase/client";
 import type { RealtimeChannel } from "@repo/supabase/types";
 import { useCallback, useEffect, useMemo,useRef, useState } from "react";
 
@@ -14,7 +15,6 @@ import {
   markAsRead,
   sendMessage as sendMessageAction,
 } from "@/app/actions/messaging";
-import { createClient } from "@repo/supabase/client";
 
 interface UseMessagesOptions {
   conversationId: string;

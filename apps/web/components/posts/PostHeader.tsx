@@ -20,6 +20,7 @@ interface PostHeaderProps {
   };
 
   createdAt: string;
+  updatedAt?: string | null;
   privacyLevel: "public" | "friends" | "private";
   isOwner: boolean;
   onDelete: () => void;
@@ -44,12 +45,16 @@ const PRIVACY_CONFIG = {
 export default function PostHeader({
   author,
   createdAt,
+  updatedAt,
   privacyLevel,
   isOwner,
   onDelete,
   onUpdate,
 }: PostHeaderProps) {
-  const formattedDate = formatPostDate(createdAt);
+  const displayTime = updatedAt || createdAt;
+  const formattedDate = formatPostDate(displayTime);
+  const isEdited = !!updatedAt && updatedAt !== createdAt;
+  
   const privacy = PRIVACY_CONFIG[privacyLevel];
   const PrivacyIcon = privacy.icon;
 
@@ -70,7 +75,10 @@ export default function PostHeader({
             {author?.display_name || author?.username}
           </p>
           <div className="flex flex-row items-center gap-1">
-            <p className="text-xs text-gray-500">{formattedDate}</p>
+            <p className="text-xs text-gray-500">
+                {formattedDate}
+                {isEdited && <span className="italic ml-1">(đã chỉnh sửa)</span>}
+            </p>
             <label title={privacy.alt}>
               <PrivacyIcon width={15} color="#9e9e9e" />
             </label>

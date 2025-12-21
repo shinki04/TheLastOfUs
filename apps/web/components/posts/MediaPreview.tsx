@@ -1,3 +1,5 @@
+"use client";
+
 import { FileSpreadsheet, FileText, FileType } from "lucide-react";
 import Image from "next/image";
 
