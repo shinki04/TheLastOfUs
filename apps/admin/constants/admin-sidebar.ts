@@ -1,13 +1,13 @@
 import {
   FileText,
   Flag,
+  Grid,
   Hash,
   Home,
+  type LucideIcon,
   MessageSquare,
   Shield,
   Users,
-  Grid,
-  type LucideIcon,
 } from "lucide-react";
 
 // Route constants
@@ -29,10 +29,15 @@ export const ADMIN_ROUTES = {
   REPORTS_MANAGE: "/dashboard/reports/manage",
   // Hashtags
   HASHTAGS: "/dashboard/hashtags",
+  HASHTAGS_GROWTH: "/dashboard/hashtags/growth",
   HASHTAGS_MANAGE: "/dashboard/hashtags/manage",
   // Groups
   GROUPS: "/dashboard/groups",
   GROUPS_MANAGE: "/dashboard/groups/manage",
+  // Moderation
+  MODERATION: "/dashboard/moderation",
+  MODERATION_ALL: "/dashboard/moderation/all",
+  MODERATION_KEYWORDS: "/dashboard/moderation/keywords",
   // Access Control
   ACCESS_CONTROL: "/dashboard/access-control",
   ACCESS_CONTROL_ROLES: "/dashboard/access-control/roles",
@@ -100,10 +105,20 @@ export const SIDEBAR_NAV_ITEMS: NavItem[] = [
     ],
   },
   {
+    title: "Moderation",
+    icon: Shield,
+    items: [
+      { title: "Analytics", url: ADMIN_ROUTES.MODERATION },
+      { title: "All Actions", url: ADMIN_ROUTES.MODERATION_ALL },
+      { title: "Keywords", url: ADMIN_ROUTES.MODERATION_KEYWORDS },
+    ],
+  },
+  {
     title: "Hashtags",
     icon: Hash,
     items: [
       { title: "Analytics", url: ADMIN_ROUTES.HASHTAGS },
+      { title: "Growth Analytics", url: ADMIN_ROUTES.HASHTAGS_GROWTH },
       { title: "Manage Hashtags", url: ADMIN_ROUTES.HASHTAGS_MANAGE },
     ],
   },

@@ -29,13 +29,14 @@ interface UseMessagesReturn {
   messages: (MessageWithSender | OptimisticMessage)[];
   isLoading: boolean;
   error: Error | null;
-  sendMessage: (content: string) => Promise<void>;
+  sendMessage: (content: string, replyTo?: { id: string; content: string | null; sender?: { display_name: string | null } }) => Promise<void>;
   retryMessage: (tempId: string) => Promise<void>;
   editMessage: (messageId: string, newContent: string) => Promise<void>;
   recallMessage: (messageId: string) => Promise<void>;
   loadMore: () => Promise<void>;
   hasMore: boolean;
   isLoadingMore: boolean;
+  hasFetchedOnce: boolean;
 }
 
 // Broadcast event types
@@ -74,6 +75,7 @@ export function useMessages({
   const [error, setError] = useState<Error | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasFetchedOnce, setHasFetchedOnce] = useState(false);
 
   const channelRef = useRef<RealtimeChannel | null>(null);
   const cursorRef = useRef<string | undefined>(undefined);
@@ -130,6 +132,7 @@ export function useMessages({
       console.error("Error fetching messages:", err);
     } finally {
       setIsLoading(false);
+      setHasFetchedOnce(true);
     }
   }, [conversationId, enabled]);
 
@@ -160,13 +163,13 @@ export function useMessages({
 
   // Send message with Broadcast for instant delivery
   const sendMessage = useCallback(
-    async (content: string) => {
+    async (content: string, replyTo?: { id: string; content: string | null; sender?: { display_name: string | null } }) => {
       if (!content.trim() || !channelRef.current) return;
 
       const tempId = generateTempId();
       const now = new Date().toISOString();
 
-      // Create optimistic message
+      // Create optimistic message with reply info if replying
       const optimisticMessage: OptimisticMessage = {
         tempId,
         conversation_id: conversationId,
@@ -178,6 +181,12 @@ export function useMessages({
         sender: currentUser,
         is_deleted: false,
         is_edited: false,
+        reply_to: replyTo ? {
+          id: replyTo.id,
+          content: replyTo.content,
+          sender_id: null,
+          sender: replyTo.sender ? { display_name: replyTo.sender.display_name } as Tables<"profiles"> : undefined,
+        } : undefined,
       };
 
       // Add to local optimistic list immediately
@@ -201,7 +210,8 @@ export function useMessages({
           conversationId,
           content,
           "text",
-          tempId
+          tempId,
+          replyTo?.id
         );
 
         // Broadcast success - update status
@@ -216,7 +226,7 @@ export function useMessages({
           } as BroadcastMessage,
         });
 
-        // Update local state: remove optimistic, add server message
+        // Update local state: remove optimistic, add server message with reply_to preserved
         setOptimisticMessages((prev) =>
           prev.filter((m) => m.tempId !== tempId)
         );
@@ -224,10 +234,19 @@ export function useMessages({
           if (prev.find((m) => m.id === serverMessage.id)) {
             return prev; // Already exists
           }
-          // Add and sort by created_at to maintain order
+          // Preserve reply_to from optimistic message via replyTo param
           const newMessages = [
             ...prev,
-            { ...serverMessage, sender: currentUser } as MessageWithSender,
+            {
+              ...serverMessage,
+              sender: currentUser,
+              reply_to: replyTo ? {
+                id: replyTo.id,
+                content: replyTo.content,
+                sender_id: null,
+                sender: replyTo.sender ? { display_name: replyTo.sender.display_name } as Tables<"profiles"> : undefined,
+              } : undefined,
+            } as MessageWithSender,
           ];
           return newMessages.sort((a, b) => {
             const dateA = new Date(a.created_at || 0).getTime();
@@ -598,5 +617,6 @@ export function useMessages({
     loadMore,
     hasMore,
     isLoadingMore,
+    hasFetchedOnce,
   };
 }

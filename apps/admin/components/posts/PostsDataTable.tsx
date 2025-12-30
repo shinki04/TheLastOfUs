@@ -1,5 +1,6 @@
 "use client";
 
+import AlertDialog from "@repo/ui/components/AlertDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/avatar";
 import { Badge } from "@repo/ui/components/badge";
 import { Button } from "@repo/ui/components/button";
@@ -33,6 +34,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
+  FileText,
   Flag,
   Heart,
   Image as ImageIcon,
@@ -41,13 +43,11 @@ import {
   Search,
   Trash2,
   Video,
-  FileText,
   XCircle,
 } from "lucide-react";
 import * as React from "react";
 
-import { deletePostAdmin, flagPost, getAllPosts, rejectPost, approvePost } from "@/app/actions/admin-posts";
-import AlertDialog from "@repo/ui/components/AlertDialog";
+import { approvePost,deletePostAdmin, flagPost, getAllPosts, rejectPost } from "@/app/actions/admin-posts";
 import { useRefresh } from "@/components/common/RefreshContext";
 import { FlagDialog } from "@/components/FlagDialog";
 import { RejectDialog } from "@/components/RejectDialog";
@@ -628,7 +628,6 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
         description="This will permanently delete this post and all its associated data. This action cannot be undone."
         confirmText="Delete Post"
         onConfirm={handleDelete}
-        loading={actionLoading}
       />
 
       {/* Flag Dialog */}

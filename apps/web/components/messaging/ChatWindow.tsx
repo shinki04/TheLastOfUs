@@ -18,6 +18,7 @@ import {
   useLayoutEffect,
   useMemo,
   useRef,
+  useState,
 } from "react";
 
 import { useConversationFriendship } from "@/hooks/useConversations";
@@ -68,6 +69,13 @@ export function ChatWindow({
     isInitialLoad: true,
   });
 
+  // Reply state
+  const [replyingTo, setReplyingTo] = useState<{
+    id: string;
+    content: string | null;
+    senderName: string | null;
+  } | null>(null);
+
   const {
     messages,
     isLoading,
@@ -79,6 +87,7 @@ export function ChatWindow({
     loadMore,
     hasMore,
     isLoadingMore,
+    hasFetchedOnce,
   } = useMessages({
     conversationId: conversation.id,
     currentUserId,
@@ -158,9 +167,12 @@ export function ChatWindow({
       return;
     }
 
-    // Handle initial load - scroll to bottom
-    if (state.isInitialLoad && !isLoading) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+    // Handle initial load - scroll to bottom after first fetch completes
+    if (state.isInitialLoad && hasFetchedOnce && !isLoading) {
+      // Use requestAnimationFrame to ensure DOM is fully rendered
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+      });
       state.isInitialLoad = false;
       state.prevMessagesCount = messages.length;
       return;
@@ -178,7 +190,7 @@ export function ChatWindow({
     }
 
     state.prevMessagesCount = newCount;
-  }, [messages, isLoading, isLoadingMore]);
+  }, [messages, isLoading, isLoadingMore, hasFetchedOnce]);
 
   // Handle scroll for infinite scroll (load more)
   const handleScroll = useCallback(() => {
@@ -196,6 +208,23 @@ export function ChatWindow({
       onAddFriend(friendshipData.otherUser.id);
     }
   }, [friendshipData?.otherUser, onAddFriend]);
+
+  // Reply handlers
+  const handleReply = useCallback((message: typeof messages[0]) => {
+    const sender = message.sender;
+    const messageId = "id" in message ? message.id : "";
+    if (!messageId) return; // Don't reply to optimistic messages without id
+    
+    setReplyingTo({
+      id: messageId,
+      content: message.content || null,
+      senderName: sender?.display_name || sender?.username || null,
+    });
+  }, []);
+
+  const handleCancelReply = useCallback(() => {
+    setReplyingTo(null);
+  }, []);
 
   return (
     <TooltipProvider>
@@ -278,7 +307,7 @@ export function ChatWindow({
             onScroll={handleScroll}
             className="absolute inset-0 overflow-y-auto px-4 py-4"
           >
-            {isInitialLoading || isLoading ? (
+            {isInitialLoading || isLoading || !hasFetchedOnce ? (
               <ChatWindowSkeleton />
             ) : error ? (
               <div className="flex flex-col items-center justify-center h-full text-center">
@@ -320,6 +349,7 @@ export function ChatWindow({
                             onRetry={retryMessage}
                             onEditMessage={editMessage}
                             onRecallMessage={recallMessage}
+                            onReply={handleReply}
                           />
                         );
                       })}
@@ -341,7 +371,12 @@ export function ChatWindow({
         </div>
 
         {/* Message input */}
-        <MessageInput onSend={sendMessage} disabled={isLoading} />
+        <MessageInput
+          onSend={sendMessage}
+          disabled={isLoading}
+          replyTo={replyingTo}
+          onCancelReply={handleCancelReply}
+        />
       </div>
     </TooltipProvider>
   );

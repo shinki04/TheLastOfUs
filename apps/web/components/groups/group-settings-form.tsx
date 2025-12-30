@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@repo/ui/components/select";
 import { Textarea } from "@repo/ui/components/textarea";
-import { Camera, Globe, Lock, Trash2, Upload, Users } from "lucide-react";
+import { Camera, EyeOff,Globe, Lock, Trash2, Upload, Users } from "lucide-react";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { useRouter } from "next/navigation";
 import { useRef,useState } from "react";
@@ -57,6 +57,8 @@ export function GroupSettingsForm({ group }: GroupSettingsFormProps) {
     description: group.description || "",
     privacy_level: group.privacy_level || "public",
     membership_mode: group.membership_mode || "auto",
+    allow_anonymous_posts: group.allow_anonymous_posts || false,
+    allow_anonymous_comments: group.allow_anonymous_comments || false,
   });
 
   const validateImageFile = (file: File): string | null => {
@@ -180,6 +182,8 @@ export function GroupSettingsForm({ group }: GroupSettingsFormProps) {
         description: formData.description,
         privacy_level: formData.privacy_level as "public" | "private",
         membership_mode: formData.membership_mode as "auto" | "request",
+        allow_anonymous_posts: formData.allow_anonymous_posts,
+        allow_anonymous_comments: formData.allow_anonymous_comments,
       });
 
       if (result?.error) {
@@ -367,6 +371,46 @@ export function GroupSettingsForm({ group }: GroupSettingsFormProps) {
                     <SelectItem value="request">Cần duyệt</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+
+            {/* Anonymous Settings */}
+            <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <EyeOff className="w-4 h-4" />
+                <span className="text-sm font-medium">Cài đặt ẩn danh</span>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="allow_anonymous_posts">Cho phép đăng bài ẩn danh</Label>
+                  <p className="text-xs text-muted-foreground">Thành viên có thể đăng bài mà không hiển thị tên</p>
+                </div>
+                <input
+                  type="checkbox"
+                  id="allow_anonymous_posts"
+                  checked={formData.allow_anonymous_posts}
+                  onChange={(e) =>
+                    setFormData({ ...formData, allow_anonymous_posts: e.target.checked })
+                  }
+                  className="h-5 w-5 rounded border-gray-300"
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="allow_anonymous_comments">Cho phép bình luận ẩn danh</Label>
+                  <p className="text-xs text-muted-foreground">Thành viên có thể bình luận mà không hiển thị tên</p>
+                </div>
+                <input
+                  type="checkbox"
+                  id="allow_anonymous_comments"
+                  checked={formData.allow_anonymous_comments}
+                  onChange={(e) =>
+                    setFormData({ ...formData, allow_anonymous_comments: e.target.checked })
+                  }
+                  className="h-5 w-5 rounded border-gray-300"
+                />
               </div>
             </div>
 

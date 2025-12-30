@@ -174,3 +174,23 @@ export async function getCommentStats(period: "daily" | "weekly" | "monthly" | "
       count,
     }));
 }
+
+// Get comment distribution (top-level vs replies)
+export async function getCommentDistribution(): Promise<{ label: string; count: number }[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("post_comments")
+    .select("parent_id");
+
+  if (error) throw error;
+
+  const comments = data ?? [];
+  const topLevel = comments.filter(c => !c.parent_id).length;
+  const replies = comments.filter(c => c.parent_id).length;
+
+  return [
+    { label: "Top-level", count: topLevel },
+    { label: "Replies", count: replies },
+  ];
+}

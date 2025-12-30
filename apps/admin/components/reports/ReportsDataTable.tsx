@@ -4,6 +4,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/avatar"
 import { Badge } from "@repo/ui/components/badge";
 import { Button } from "@repo/ui/components/button";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@repo/ui/components/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -26,10 +32,20 @@ import {
   TableHeader,
   TableRow,
 } from "@repo/ui/components/table";
-import { CheckCircle, ChevronLeft, ChevronRight, Eye, MoreHorizontal, XCircle } from "lucide-react";
+import { format } from "date-fns";
+import {
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  Eye,
+  Filter,
+  MoreHorizontal,
+  XCircle,
+} from "lucide-react";
 import * as React from "react";
 
-import { getAllReports, updateReportStatus } from "@/app/actions/admin-reports";
+import { getAllReports, ReportFilterStatusType, ReportFilterType, updateReportStatus } from "@/app/actions/admin-reports";
 import { useRefresh } from "@/components/common/RefreshContext";
 
 interface Report {
@@ -56,6 +72,8 @@ interface ReportsDataTableProps {
   };
 }
 
+const ROWS_PER_PAGE_OPTIONS = [10, 20, 50, 100] as const;
+
 const statusColors: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   pending: "default",
   reviewed: "secondary",
@@ -70,38 +88,71 @@ const typeColors: Record<string, string> = {
   message: "bg-orange-100 text-orange-800",
 };
 
+// Helper function to generate page numbers with ellipsis
+function generatePageNumbers(current: number, total: number): (number | "...")[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+
+  const pages: (number | "...")[] = [];
+  
+  if (current <= 4) {
+    for (let i = 1; i <= 5; i++) pages.push(i);
+    pages.push("...");
+    pages.push(total);
+  } else if (current >= total - 3) {
+    pages.push(1);
+    pages.push("...");
+    for (let i = total - 4; i <= total; i++) pages.push(i);
+  } else {
+    pages.push(1);
+    pages.push("...");
+    for (let i = current - 1; i <= current + 1; i++) pages.push(i);
+    pages.push("...");
+    pages.push(total);
+  }
+  
+  return pages;
+}
+
 export function ReportsDataTable({ initialData }: ReportsDataTableProps) {
   const [reports, setReports] = React.useState<Report[]>(initialData?.reports as Report[] ?? []);
   const [loading, setLoading] = React.useState(!initialData);
   const [page, setPage] = React.useState(1);
   const [totalPages, setTotalPages] = React.useState(initialData?.totalPages ?? 1);
-  const [statusFilter, setStatusFilter] = React.useState<string>("all");
+  const [totalCount, setTotalCount] = React.useState(initialData?.total ?? 0);
+  const [rowsPerPage, setRowsPerPage] = React.useState(20);
+  const [statusFilter, setStatusFilter] = React.useState<ReportFilterStatusType>("all");
+  const [typeFilter, setTypeFilter] = React.useState<ReportFilterType>("all");
   const [isInitialLoad, setIsInitialLoad] = React.useState(true);
+  const [selectedReport, setSelectedReport] = React.useState<Report | null>(null);
   const { refreshKey } = useRefresh();
 
   const fetchReports = React.useCallback(async () => {
     setLoading(true);
     try {
-      const result = await getAllReports(page, 20, {
+      const result = await getAllReports(page, rowsPerPage, {
         status: statusFilter !== "all" ? statusFilter : undefined,
+        type: typeFilter !== "all" ? typeFilter : undefined,
       });
       setReports(result.reports as unknown as Report[]);
       setTotalPages(result.totalPages);
+      setTotalCount(result.total);
     } catch (error) {
       console.error("Failed to fetch reports:", error);
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter]);
+  }, [page, rowsPerPage, statusFilter, typeFilter]);
 
   React.useEffect(() => {
-    if (isInitialLoad && initialData && statusFilter === "all") {
+    if (isInitialLoad && initialData && statusFilter === "all" && typeFilter === "all") {
       setIsInitialLoad(false);
       return;
     }
     
     fetchReports();
-  }, [fetchReports, refreshKey, isInitialLoad, initialData, statusFilter]);
+  }, [fetchReports, refreshKey, isInitialLoad, initialData, statusFilter, typeFilter]);
 
   const handleStatusChange = async (reportId: string, newStatus: string) => {
     try {
@@ -114,126 +165,388 @@ export function ReportsDataTable({ initialData }: ReportsDataTableProps) {
     }
   };
 
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="reviewed">Reviewed</SelectItem>
-            <SelectItem value="resolved">Resolved</SelectItem>
-            <SelectItem value="dismissed">Dismissed</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+  const handleRowsPerPageChange = (value: string) => {
+    setRowsPerPage(Number(value));
+    setPage(1);
+  };
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Reporter</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead className="min-w-[200px]">Reason</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="w-[70px]"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
+  return (
+    <>
+      <div className="space-y-4">
+        {/* Filters Row */}
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Filters:</span>
+          </div>
+
+          <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v as ReportFilterStatusType); setPage(1); }}>
+            <SelectTrigger className="w-[140px] h-9">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="reviewed">Reviewed</SelectItem>
+              <SelectItem value="resolved">Resolved</SelectItem>
+              <SelectItem value="dismissed">Dismissed</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={typeFilter} onValueChange={(v) => { setTypeFilter(v as ReportFilterType); setPage(1); }}>
+            <SelectTrigger className="w-[140px] h-9">
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="post">Post</SelectItem>
+              <SelectItem value="comment">Comment</SelectItem>
+              <SelectItem value="user">User</SelectItem>
+              <SelectItem value="message">Message</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <div className="ml-auto flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Rows:</span>
+            <Select value={String(rowsPerPage)} onValueChange={handleRowsPerPageChange}>
+              <SelectTrigger className="w-[70px] h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ROWS_PER_PAGE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={String(opt)}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
-                  <div className="flex justify-center">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
-                  </div>
-                </TableCell>
+                <TableHead>Reporter</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Reported ID</TableHead>
+                <TableHead className="min-w-[200px]">Reason</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
-            ) : reports.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                  No reports found
-                </TableCell>
-              </TableRow>
-            ) : (
-              reports.map((report) => (
-                <TableRow key={report.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-7 w-7">
-                        <AvatarImage src={report.reporter?.avatar_url || undefined} />
-                        <AvatarFallback className="text-xs">
-                          {(report.reporter?.display_name || "U")[0]?.toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm">{report.reporter?.display_name || "Anonymous"}</span>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-24 text-center">
+                    <div className="flex justify-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${typeColors[report.reported_type] || "bg-gray-100"}`}>
-                      {report.reported_type}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <p className="font-medium text-sm">{report.reason}</p>
-                    {report.description && (
-                      <p className="text-xs text-muted-foreground line-clamp-1">{report.description}</p>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={statusColors[report.status ?? ""] || "outline"}>
-                      {report.status ?? "Unknown"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {report.created_at ? new Date(report.created_at).toLocaleDateString() : "-"}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Update Status</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleStatusChange(report.id, "reviewed")}>
-                          <Eye className="h-4 w-4 mr-2" />
-                          Mark as Reviewed
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleStatusChange(report.id, "resolved")}>
-                          <CheckCircle className="h-4 w-4 mr-2" />
-                          Mark as Resolved
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleStatusChange(report.id, "dismissed")}>
-                          <XCircle className="h-4 w-4 mr-2" />
-                          Dismiss
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                </TableRow>
+              ) : reports.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                    No reports found
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              ) : (
+                reports.map((report) => (
+                  <TableRow 
+                    key={report.id}
+                    className="cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => setSelectedReport(report)}
+                  >
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-7 w-7">
+                          <AvatarImage src={report.reporter?.avatar_url || undefined} />
+                          <AvatarFallback className="text-xs">
+                            {(report.reporter?.display_name || "U")[0]?.toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm">{report.reporter?.display_name || "Anonymous"}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${typeColors[report.reported_type] || "bg-gray-100"}`}>
+                        {report.reported_type}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-xs font-mono text-muted-foreground">
+                        {report.reported_id.slice(0, 8)}...
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <p className="font-medium text-sm">{report.reason}</p>
+                      {report.description && (
+                        <p className="text-xs text-muted-foreground line-clamp-1">{report.description}</p>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={statusColors[report.status ?? ""] || "outline"}>
+                        {report.status ?? "Unknown"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {report.created_at ? format(new Date(report.created_at), "MMM d, HH:mm") : "-"}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedReport(report);
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Update Status</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleStatusChange(report.id, "reviewed")}>
+                              <Eye className="h-4 w-4 mr-2" />
+                              Mark as Reviewed
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleStatusChange(report.id, "resolved")}>
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Mark as Resolved
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleStatusChange(report.id, "dismissed")}>
+                              <XCircle className="h-4 w-4 mr-2" />
+                              Dismiss
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
 
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">Page {page} of {totalPages}</p>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+        {/* Pagination */}
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">
+            Page {page} of {totalPages || 1}
+          </span>
+          <div className="flex items-center space-x-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(1)}
+              disabled={page <= 1}
+            >
+              First
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page <= 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            
+            {generatePageNumbers(page, totalPages).map((pageNum, idx) => (
+              pageNum === "..." ? (
+                <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">...</span>
+              ) : (
+                <Button
+                  key={pageNum}
+                  variant={pageNum === page ? "default" : "outline"}
+                  size="sm"
+                  className="w-9"
+                  onClick={() => setPage(pageNum as number)}
+                >
+                  {pageNum}
+                </Button>
+              )
+            ))}
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(totalPages)}
+              disabled={page >= totalPages}
+            >
+              Last
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Report Detail Dialog */}
+      <ReportDetailDialog
+        report={selectedReport}
+        open={!!selectedReport}
+        onOpenChange={(open) => !open && setSelectedReport(null)}
+        onStatusChange={handleStatusChange}
+      />
+    </>
+  );
+}
+
+interface ReportDetailDialogProps {
+  report: Report | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onStatusChange: (reportId: string, status: string) => void;
+}
+
+function ReportDetailDialog({ report, open, onOpenChange, onStatusChange }: ReportDetailDialogProps) {
+  if (!report) return null;
+
+  const getTargetUrl = (type: string, id: string) => {
+    switch (type) {
+      case "post":
+        return `/dashboard/posts/all?search=${id}`;
+      case "comment":
+        return `/dashboard/comments?search=${id}`;
+      case "user":
+        return `/dashboard/users?search=${id}`;
+      default:
+        return null;
+    }
+  };
+
+  const targetUrl = getTargetUrl(report.reported_type, report.reported_id);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            Report Details
+            <Badge variant={statusColors[report.status ?? ""] || "outline"}>
+              {report.status}
+            </Badge>
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Reporter Info */}
+          <div className="rounded-lg border p-4 space-y-3">
+            <h4 className="font-semibold text-sm">Reporter</h4>
+            <div className="flex items-center gap-3">
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={report.reporter?.avatar_url || undefined} />
+                <AvatarFallback>
+                  {(report.reporter?.display_name || "U")[0]?.toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-medium">{report.reporter?.display_name || "Anonymous"}</p>
+                {report.reporter?.username && (
+                  <p className="text-sm text-muted-foreground">@{report.reporter.username}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Reported Target */}
+          <div className="rounded-lg border p-4 space-y-3">
+            <h4 className="font-semibold text-sm">Reported Target</h4>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="text-muted-foreground">Type:</div>
+              <div>
+                <span className={`px-2 py-1 rounded text-xs font-medium ${typeColors[report.reported_type] || "bg-gray-100"}`}>
+                  {report.reported_type}
+                </span>
+              </div>
+              <div className="text-muted-foreground">ID:</div>
+              <div className="font-mono text-xs break-all">{report.reported_id}</div>
+            </div>
+            {targetUrl && (
+              <Button variant="outline" size="sm" className="w-full" asChild>
+                <a href={targetUrl}>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  View {report.reported_type}
+                </a>
+              </Button>
+            )}
+          </div>
+
+          {/* Reason & Description */}
+          <div className="rounded-lg border p-4 space-y-2">
+            <h4 className="font-semibold text-sm">Reason</h4>
+            <p className="text-sm font-medium">{report.reason}</p>
+            {report.description && (
+              <>
+                <h4 className="font-semibold text-sm pt-2">Description</h4>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{report.description}</p>
+              </>
+            )}
+          </div>
+
+          {/* Metadata */}
+          <div className="rounded-lg border p-4 space-y-3">
+            <h4 className="font-semibold text-sm">Metadata</h4>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="text-muted-foreground">Created At:</div>
+              <div>
+                {report.created_at ? format(new Date(report.created_at), "PPpp") : "-"}
+              </div>
+              <div className="text-muted-foreground">Report ID:</div>
+              <div className="font-mono text-xs break-all">{report.id}</div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-2 pt-2 border-t">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => {
+                onStatusChange(report.id, "reviewed");
+                onOpenChange(false);
+              }}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Reviewed
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => {
+                onStatusChange(report.id, "resolved");
+                onOpenChange(false);
+              }}
+            >
+              <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+              Resolved
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                onStatusChange(report.id, "dismissed");
+                onOpenChange(false);
+              }}
+            >
+              <XCircle className="h-4 w-4 mr-2" />
+              Dismiss
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

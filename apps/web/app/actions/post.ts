@@ -34,7 +34,7 @@ const cacheInvalidation = getCacheInvalidationService();
 export async function fetchPosts(
   page: number,
   itemsPerPage: number,
-  userId: string = "public" // For future use with user-specific feeds
+  // userId: string = "public" // For future use with user-specific feeds
 ) {
   // Try cache first
   // const cachedFeed = await feedCache.getCachedFeedPage(userId, page, itemsPerPage);
@@ -85,7 +85,7 @@ export async function fetchPosts(
       `
       id,
       created_at, 
-      author: author_id(
+      author: profiles!posts_author_id_fkey(
         id,
         username,
         display_name,
@@ -225,7 +225,7 @@ export async function fetchPostById(postId: string) {
         `
           id,
           created_at, 
-          author: author_id(
+          author: profiles!posts_author_id_fkey(
             id,
             username,
             display_name,
@@ -319,7 +319,7 @@ export async function fetchPostByAuthor(
       `
       id,
       created_at, 
-      author: author_id(
+          author: profiles!posts_author_id_fkey(
         id,
         username,
         display_name,

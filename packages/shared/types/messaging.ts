@@ -18,6 +18,7 @@ export interface OptimisticMessage extends Partial<Message> {
   error?: string;
   retryCount?: number;
   sender?: Tables<"profiles">;
+  reply_to?: ReplyToMessage;
 }
 
 // Conversation with extra details
@@ -31,9 +32,19 @@ export interface ConversationWithDetails extends Conversation {
   unreadCount?: number;
 }
 
-// Message with sender profile
+// Simplified reply message info for display
+export interface ReplyToMessage {
+  id: string;
+  content: string | null;
+  sender_id: string | null;
+  sender?: Tables<"profiles">;
+  is_deleted?: boolean | null;
+}
+
+// Message with sender profile and optional reply_to
 export interface MessageWithSender extends Message {
   sender?: Tables<"profiles">;
+  reply_to?: ReplyToMessage;
 }
 
 // For creating new messages

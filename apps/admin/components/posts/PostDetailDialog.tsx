@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@repo/ui/components/dialog";
+import { Skeleton } from "@repo/ui/components/skeleton";
 import {
   CheckCircle,
   Download,
@@ -22,11 +23,13 @@ import {
   Heart,
   MessageCircle,
   Trash2,
+  User,
   XCircle,
 } from "lucide-react";
 import Image from "next/image";
 import * as React from "react";
 
+import { getModerationActionForTarget, type ModerationActionDetail } from "@/app/actions/moderation";
 import { getFileInfo, getFileName, isDocumentType, isImageType, isVideoType } from "@/lib/mediaUtils";
 
 // Moderation status type matching database enum
@@ -163,6 +166,120 @@ function MediaItem({ url, index }: { url: string; index: number }) {
   return null;
 }
 
+// Component to display moderation details
+function ModerationDetails({ postId, status }: { postId: string; status: ModerationStatus }) {
+  const [moderationAction, setModerationAction] = React.useState<ModerationActionDetail | null>(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    if (status === "approved") {
+      setLoading(false);
+      return;
+    }
+
+    async function fetchModerationAction() {
+      setLoading(true);
+      try {
+        const action = await getModerationActionForTarget("post", postId);
+        setModerationAction(action);
+      } catch (error) {
+        console.error("Failed to fetch moderation action:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchModerationAction();
+  }, [postId, status]);
+
+  if (status === "approved" || loading) {
+    if (loading && status !== "approved") {
+      return (
+        <div className="rounded-lg border p-4 space-y-2">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-4 w-full" />
+        </div>
+      );
+    }
+    return null;
+  }
+
+  if (!moderationAction) return null;
+
+  const bgClass = status === "rejected" 
+    ? "border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950"
+    : "border-orange-200 bg-orange-50 dark:border-orange-900 dark:bg-orange-950";
+  
+  const textClass = status === "rejected"
+    ? "text-red-700 dark:text-red-400"
+    : "text-orange-700 dark:text-orange-400";
+
+  const icon = status === "rejected" ? <XCircle className="h-4 w-4" /> : <Flag className="h-4 w-4" />;
+
+  const getActionTypeLabel = (type: string | null) => {
+    switch (type) {
+      case "keyword_blocked": return "Từ khóa bị chặn";
+      case "ai_flagged": return "AI phát hiện";
+      case "admin_flagged": return "Admin đánh dấu";
+      case "admin_deleted": return "Admin xóa";
+      default: return type;
+    }
+  };
+
+  const getModeratorName = () => {
+    if (!moderationAction.moderator) return "Hệ thống";
+    return moderationAction.moderator.display_name || moderationAction.moderator.username || "Admin";
+  };
+
+  return (
+    <div className={`rounded-lg border p-4 space-y-3 ${bgClass}`}>
+      <div className="flex items-center justify-between">
+        <p className={`text-sm font-medium flex items-center gap-2 ${textClass}`}>
+          {icon}
+          {status === "rejected" ? "Chi tiết từ chối" : "Chi tiết đánh dấu"}
+        </p>
+        {moderationAction.action_type && (
+          <Badge variant="outline" className="text-xs">
+            {getActionTypeLabel(moderationAction.action_type)}
+          </Badge>
+        )}
+      </div>
+
+      {moderationAction.reason && (
+        <div>
+          <p className={`text-xs ${textClass} opacity-70`}>Lý do:</p>
+          <p className={`text-sm ${textClass}`}>{moderationAction.reason}</p>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between text-xs">
+        <div className="flex items-center gap-2">
+          <User className="h-3.5 w-3.5" />
+          <span className={textClass}>Bởi: {getModeratorName()}</span>
+        </div>
+        {moderationAction.created_at && (
+          <span className={textClass}>{formatDate(moderationAction.created_at)}</span>
+        )}
+      </div>
+
+      {(moderationAction.matched_keyword || moderationAction.ai_score !== null) && (
+        <div className="flex items-center gap-2 flex-wrap">
+          {moderationAction.matched_keyword && (
+            <Badge variant="destructive" className="text-xs">
+              Từ khóa: {moderationAction.matched_keyword}
+            </Badge>
+          )}
+          {moderationAction.ai_score !== null && (
+            <Badge variant="secondary" className="text-xs">
+              AI Score: {(moderationAction.ai_score * 100).toFixed(0)}%
+            </Badge>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function PostDetailDialog({
   post,
   open,
@@ -220,29 +337,9 @@ export function PostDetailDialog({
             </span>
           </div>
 
-          {/* Flag/Reject reason */}
-          {post.flag_reason && status === "flagged" && (
-            <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-900 dark:bg-orange-950">
-              <p className="text-sm font-medium text-orange-700 dark:text-orange-400 flex items-center gap-2">
-                <Flag className="h-4 w-4" />
-                Lý do đánh dấu
-              </p>
-              <p className="text-sm text-orange-600 dark:text-orange-400 mt-1">
-                {post.flag_reason}
-              </p>
-            </div>
-          )}
-
-          {post.flag_reason && status === "rejected" && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
-              <p className="text-sm font-medium text-red-700 dark:text-red-400 flex items-center gap-2">
-                <XCircle className="h-4 w-4" />
-                Lý do từ chối
-              </p>
-              <p className="text-sm text-red-600 dark:text-red-400 mt-1">
-                {post.flag_reason}
-              </p>
-            </div>
+          {/* Moderation Details - fetched from moderation_actions */}
+          {status !== "approved" && (
+            <ModerationDetails postId={post.id} status={status} />
           )}
 
           {/* Content */}
