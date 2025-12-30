@@ -328,6 +328,40 @@ export async function approveMember(groupId: string, targetUserId: string) {
 }
 
 /**
+ * Approve all pending members at once
+ */
+export async function approveAllMembers(groupId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  // Check actor has permission (admin or sub_admin only for bulk approval)
+  const { data: actor } = await supabase
+    .from("group_members")
+    .select("role")
+    .eq("group_id", groupId)
+    .eq("user_id", user.id)
+    .single();
+
+  const canApproveAll = ["admin", "sub_admin"].includes(actor?.role ?? "");
+  if (!canApproveAll) {
+    return { error: "Chỉ Admin hoặc Phó Admin mới có thể duyệt tất cả" };
+  }
+
+  const { data, error } = await supabase
+    .from("group_members")
+    .update({ status: "active" })
+    .eq("group_id", groupId)
+    .eq("status", "pending")
+    .select("user_id");
+
+  if (error) return { error: "Không thể duyệt thành viên" };
+
+  revalidatePath(`/groups`);
+  return { success: true, approvedCount: data?.length || 0 };
+}
+
+/**
  * Reject pending member
  */
 export async function rejectMember(groupId: string, targetUserId: string) {
@@ -369,6 +403,8 @@ const updateGroupSchema = z.object({
     description: z.string().optional(),
     privacy_level: z.enum(["public", "private"]).optional(),
     membership_mode: z.enum(["auto", "request"]).optional(),
+  allow_anonymous_posts: z.boolean().optional(),
+  allow_anonymous_comments: z.boolean().optional(),
 });
 
 export async function updateGroup(groupId: string, data: z.infer<typeof updateGroupSchema>) {
@@ -481,6 +517,8 @@ export interface GroupData {
   cover_url: string | null;
   privacy_level: string | null;
   membership_mode: string | null;
+  allow_anonymous_posts: boolean | null;
+  allow_anonymous_comments: boolean | null;
   created_by: string | null;
   created_at: string | null;
 }

@@ -1,13 +1,14 @@
 "use server";
 
+import { ReportStatus, ReportType } from "@repo/shared/types/report";
 import { createClient } from "@repo/supabase/server";
 import { revalidatePath } from "next/cache";
-
-type ReportStatusType = "pending" | "reviewed" | "resolved" | "dismissed";
+export type ReportFilterStatusType = ReportStatus | "all";
+export type ReportFilterType = ReportType | "all";
 
 interface ReportsFilter {
-  status?: string;
-  type?: string;
+  status?: ReportFilterStatusType;
+  type?: ReportFilterType;
 }
 
 // Get all reports with pagination
@@ -23,15 +24,32 @@ export async function getAllReports(
  
   let query = supabase
     .from("reports")
-    .select("*", { count: "exact" })
+    .select(
+      `
+    id,
+    reported_type,
+    reported_id,
+    reason,
+    description,
+    status,
+    created_at,
+    reporter:profiles!reports_reporter_id_fkey (
+      id,
+      username,
+      display_name,
+      avatar_url
+    )
+    `,
+      { count: "exact" }
+    )
     .order("created_at", { ascending: false })
     .range(start, end);
 
-  if (filters?.status) {
+  if (filters?.status && filters.status !== "all") {
     query = query.eq("status", filters.status);
   }
 
-  if (filters?.type) {
+  if (filters?.type && filters.type !== "all") {
     query = query.eq("reported_type", filters.type);
   }
 
@@ -70,7 +88,7 @@ export async function getReportById(id: string) {
 // Update report status
 export async function updateReportStatus(
   reportId: string,
-  status: ReportStatusType
+  status: Exclude<ReportFilterStatusType, "all">
 ) {
   const supabase = await createClient();
 

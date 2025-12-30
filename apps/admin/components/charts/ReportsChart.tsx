@@ -24,18 +24,13 @@ import {
 import { getReportStats } from "@/app/actions/admin-stats";
 import { useRefresh } from "@/components/analytics/RefreshContext";
 
+import { type ChartType, ChartTypeSelector, PeriodSelector, type TimePeriod } from "./ChartTypeSelector";
+
 const STATUS_COLORS: Record<string, string> = {
   pending: "var(--chart-1)",
   reviewed: "var(--chart-2)",
   resolved: "var(--chart-3)",
   dismissed: "var(--chart-4)",
-};
-
-const TYPE_COLORS: Record<string, string> = {
-  post: "var(--chart-1)",
-  comment: "var(--chart-2)",
-  user: "var(--chart-3)",
-  message: "var(--chart-4)",
 };
 
 const chartConfig: ChartConfig = {
@@ -53,6 +48,8 @@ export function ReportsChart() {
     total: number;
   }>({ byStatus: [], byType: [], total: 0 });
   const [loading, setLoading] = React.useState(true);
+  const [period, setPeriod] = React.useState<TimePeriod>("daily");
+  const [chartType, setChartType] = React.useState<ChartType>("pie");
 
   const fetchData = React.useCallback(async () => {
     setLoading(true);
@@ -68,102 +65,97 @@ export function ReportsChart() {
 
   React.useEffect(() => {
     fetchData();
-  }, [fetchData, refreshKey]);
+  }, [fetchData, refreshKey, period]);
 
   if (loading) {
     return (
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-32" />
-            <Skeleton className="h-4 w-24" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-[350px] w-full" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-32" />
-            <Skeleton className="h-4 w-24" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-[250px] w-full" />
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-4 w-24" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-[350px] w-full" />
+        </CardContent>
+      </Card>
     );
   }
 
+  const renderChart = () => {
+    if (data.byStatus.length === 0) {
+      return (
+        <div className="flex h-[350px] items-center justify-center text-muted-foreground">
+          No reports yet
+        </div>
+      );
+    }
+
+    if (chartType === "pie") {
+      return (
+        <ChartContainer config={chartConfig} className="h-[350px] w-full">
+          <PieChart>
+            <Pie
+              data={data.byStatus}
+              dataKey="count"
+              nameKey="status"
+              cx="50%"
+              cy="50%"
+              outerRadius={100}
+              label={({ status, count }) => `${status}: ${count}`}
+            >
+              {data.byStatus.map((entry) => (
+                <Cell
+                  key={entry.status}
+                  fill={STATUS_COLORS[entry.status] ?? "var(--chart-5)"}
+                />
+              ))}
+            </Pie>
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <Legend />
+          </PieChart>
+        </ChartContainer>
+      );
+    }
+
+    return (
+      <ChartContainer config={chartConfig} className="h-[350px] w-full">
+        <BarChart data={data.byStatus}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="status" />
+          <YAxis />
+          <ChartTooltip content={<ChartTooltipContent />} />
+          <Bar dataKey="count" radius={4}>
+            {data.byStatus.map((entry) => (
+              <Cell
+                key={entry.status}
+                fill={STATUS_COLORS[entry.status] ?? "var(--chart-5)"}
+              />
+            ))}
+          </Bar>
+        </BarChart>
+      </ChartContainer>
+    );
+  };
+
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      <Card>
-        <CardHeader>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
           <CardTitle>Reports by Status</CardTitle>
           <CardDescription>Total: {data.total} reports</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {data.byStatus.length === 0 ? (
-            <div className="flex h-[350px] items-center justify-center text-muted-foreground">
-              No reports yet
-            </div>
-          ) : (
-            <ChartContainer config={chartConfig} className="h-[350px] w-full">
-              <PieChart>
-                <Pie
-                  data={data.byStatus}
-                  dataKey="count"
-                  nameKey="status"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  label={({ status, count }) => `${status}: ${count}`}
-                >
-                  {data.byStatus.map((entry) => (
-                    <Cell
-                      key={entry.status}
-                      fill={STATUS_COLORS[entry.status] ?? "var(--chart-5)"}
-                    />
-                  ))}
-                </Pie>
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Legend />
-              </PieChart>
-            </ChartContainer>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Reports by Type</CardTitle>
-          <CardDescription>What&apos;s being reported</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {data.byType.length === 0 ? (
-            <div className="flex h-[350px] items-center justify-center text-muted-foreground">
-              No reports yet
-            </div>
-          ) : (
-            <ChartContainer config={chartConfig} className="h-[350px] w-full">
-              <BarChart data={data.byType}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="type" />
-                <YAxis />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="count" radius={4}>
-                  {data.byType.map((entry) => (
-                    <Cell
-                      key={entry.type}
-                      fill={TYPE_COLORS[entry.type] ?? "var(--chart-5)"}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ChartContainer>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <PeriodSelector value={period} onChange={setPeriod} />
+          <ChartTypeSelector 
+            value={chartType} 
+            onChange={setChartType}
+            availableTypes={["pie", "bar"]}
+          />
+        </div>
+      </CardHeader>
+      <CardContent>
+        {renderChart()}
+      </CardContent>
+    </Card>
   );
 }

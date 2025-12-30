@@ -469,7 +469,7 @@ export async function getMessages(
     throw new Error("Not a member of this conversation");
   }
 
-  // Optimized query: select only needed fields
+  // Optimized query: select only needed fields + reply_to for reply feature
   let query = supabase
     .from("messages")
     .select(
@@ -480,13 +480,18 @@ export async function getMessages(
       content,
       message_type,
       created_at,
+      updated_at,
       is_edited,
       is_deleted,
-      sender:profiles!sender_id(
+      media_urls,
+      reply_to_id,
+      sender:profiles!sender_id(*),
+      reply_to:messages!reply_to_id(
         id,
-        display_name,
-        username,
-        avatar_url
+        content,
+        sender_id,
+        is_deleted,
+        sender:profiles!sender_id(*)
       )
     `
     )
@@ -506,7 +511,7 @@ export async function getMessages(
     throw new Error("Failed to fetch messages");
   }
 
-  // Return in chronological order
+  // Return in chronological order - cast is safe as we selected all required fields
   return (data || []).reverse() as MessageWithSender[];
 }
 
@@ -517,7 +522,8 @@ export async function sendMessage(
   conversationId: string,
   content: string,
   messageType: MessageType = "text",
-  tempId?: string // For optimistic UI matching
+  tempId?: string, // For optimistic UI matching
+  replyToId?: string // For reply feature
 ): Promise<Message> {
   const currentUserId = await getCurrentUserId();
   const supabase = await createClient();
@@ -546,6 +552,7 @@ export async function sendMessage(
       sender_id: currentUserId,
       content: content.trim(),
       message_type: messageType,
+      reply_to_id: replyToId || null,
     })
     .select()
     .single();

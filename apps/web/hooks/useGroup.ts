@@ -4,6 +4,7 @@ import { useInfiniteQuery,useMutation, useQuery, useQueryClient } from "@tanstac
 import { toast } from "sonner";
 
 import {
+  approveAllMembers,
   approveMember,
   getGroupMembers,
   getGroupPosts,
@@ -202,6 +203,19 @@ export function useGroupMemberActions(groupId: string) {
     onError: () => toast.error("Lỗi khi chuyển quyền admin"),
   });
 
+  const approveAllMembersMutation = useMutation({
+    mutationFn: () => approveAllMembers(groupId),
+    onSuccess: (result) => {
+      if (result?.error) {
+        toast.error(result.error);
+      } else {
+        toast.success(`Đã duyệt ${result.approvedCount} thành viên`);
+        invalidateMembers();
+      }
+    },
+    onError: () => toast.error("Lỗi khi duyệt tất cả thành viên"),
+  });
+
   return {
     updateRole: updateRoleMutation.mutate,
     isUpdatingRole: updateRoleMutation.isPending,
@@ -217,5 +231,8 @@ export function useGroupMemberActions(groupId: string) {
 
     transferAdmin: transferAdminMutation.mutate,
     isTransferring: transferAdminMutation.isPending,
+
+    approveAllMembers: approveAllMembersMutation.mutate,
+    isApprovingAll: approveAllMembersMutation.isPending,
   };
 }

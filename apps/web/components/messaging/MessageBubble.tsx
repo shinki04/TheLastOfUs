@@ -29,8 +29,9 @@ import { cn } from "@repo/ui/lib/utils";
 import { formatMessageTime } from "@repo/utils/formatDate";
 import { format, isToday, isYesterday } from "date-fns";
 import { vi } from "date-fns/locale";
-import { AlertCircle, AlertTriangle, Check, Edit2, Flag, Loader2, MoreVertical, RotateCcw, Trash2, X } from "lucide-react";
-import { useState } from "react";
+import { motion } from "framer-motion";
+import { AlertCircle, AlertTriangle, Check, Edit2, Flag, Loader2, MoreVertical, Reply, RotateCcw, Trash2, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { ReportDialog } from "@/components/reports/ReportDialog";
@@ -44,6 +45,7 @@ interface MessageBubbleProps {
   onRetry?: (tempId: string) => void;
   onEditMessage?: (messageId: string, newContent: string) => Promise<void>;
   onRecallMessage?: (messageId: string) => Promise<void>;
+  onReply?: (message: MessageWithSender | OptimisticMessage) => void;
 }
 
 /**
@@ -58,6 +60,7 @@ export function MessageBubble({
   onRetry,
   onEditMessage,
   onRecallMessage,
+  onReply,
 }: MessageBubbleProps) {
   const isOptimistic = "tempId" in message;
   const status = isOptimistic ? message.status : "sent";
@@ -68,8 +71,21 @@ export function MessageBubble({
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [showRecallDialog, setShowRecallDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isHighlighted, setIsHighlighted] = useState(false);
   
   const messageId = "id" in message ? message.id : undefined;
+
+  // Listen for highlight events from other messages
+  useEffect(() => {
+    const handleHighlight = (e: CustomEvent<string>) => {
+      if (messageId && e.detail === messageId) {
+        setIsHighlighted(true);
+        setTimeout(() => setIsHighlighted(false), 2000);
+      }
+    };
+    window.addEventListener("highlight-message" as string, handleHighlight as EventListener);
+    return () => window.removeEventListener("highlight-message" as string, handleHighlight as EventListener);
+  }, [messageId]);
 
   const handleRetry = () => {
     if (isOptimistic && message.tempId && onRetry) {
@@ -113,11 +129,16 @@ export function MessageBubble({
 
   return (
     <>
-      <div
+      <motion.div
+        id={messageId ? `message-${messageId}` : undefined}
         className={cn(
-          "flex items-end gap-2 group",
+          "flex items-end gap-2 group rounded-lg",
           isOwn ? "flex-row-reverse" : "flex-row"
         )}
+        animate={{
+          backgroundColor: isHighlighted ? "rgba(234, 179, 8, 0.3)" : "transparent",
+        }}
+        transition={{ duration: 0.3 }}
       >
         {/* Avatar */}
         {showAvatar && !isOwn ? (
@@ -155,6 +176,39 @@ export function MessageBubble({
             <p className="text-xs font-medium text-muted-foreground mb-0.5">
               {sender.display_name || sender.username}
             </p>
+          )}
+
+          {/* Replied message quote - click to scroll to parent */}
+          {message.reply_to && message.reply_to.id && !message.is_deleted && (
+            <div 
+              className={cn(
+                "mb-2 p-2 rounded-lg border-l-2 cursor-pointer hover:opacity-80 transition-opacity",
+                isOwn ? "bg-primary-foreground/10 border-primary-foreground/50" : "bg-background/50 border-muted-foreground/50"
+              )}
+              onClick={() => {
+                // Find and scroll to parent message
+                const parentElement = document.getElementById(`message-${message.reply_to!.id}`);
+                if (parentElement) {
+                  parentElement.scrollIntoView({ behavior: "smooth", block: "center" });
+                  // Dispatch custom event to trigger highlight
+                  window.dispatchEvent(new CustomEvent("highlight-message", { detail: message.reply_to!.id }));
+                }
+              }}
+            >
+              <p className={cn(
+                "text-[10px] font-medium mb-0.5",
+                isOwn ? "text-primary-foreground/70" : "text-muted-foreground"
+              )}>
+                {message.reply_to.sender?.display_name || message.reply_to.sender?.username || "Người dùng"}
+              </p>
+              <p className={cn(
+                "text-xs line-clamp-2",
+                isOwn ? "text-primary-foreground/80" : "text-muted-foreground",
+                message.reply_to.is_deleted && "italic"
+              )}>
+                {message.reply_to.is_deleted ? "Tin nhắn đã thu hồi" : message.reply_to.content}
+              </p>
+            </div>
           )}
 
           {/* Message content or edit input */}
@@ -289,7 +343,16 @@ export function MessageBubble({
                 <MoreVertical className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align={isOwn ? "end" : "start"}>
+            <DropdownMenuContent 
+              align={isOwn ? "end" : "start"}
+              onCloseAutoFocus={(e) => e.preventDefault()}
+            >
+              {/* Reply button - always available */}
+              <DropdownMenuItem onClick={() => onReply?.(message)}>
+                <Reply className="h-4 w-4 mr-2" />
+                Trả lời
+              </DropdownMenuItem>
+              
               {isOwn ? (
                 <>
                   <DropdownMenuItem onClick={() => setIsEditing(true)}>
@@ -319,7 +382,7 @@ export function MessageBubble({
 
         {/* Spacer for own messages */}
         {isOwn && <div className="w-8 shrink-0" />}
-      </div>
+      </motion.div>
 
       {/* Report Dialog */}
       {messageId && (

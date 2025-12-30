@@ -80,9 +80,21 @@ export function MemberList({ groupId, currentUserRole }: MemberListProps) {
       {/* Pending Requests Section */}
       {canManage && pendingMembers.length > 0 && (
         <div className="bg-card rounded-xl border p-4">
-          <h3 className="font-semibold mb-4">
-            Yêu cầu tham gia ({pendingMembers.length})
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold">
+              Yêu cầu tham gia ({pendingMembers.length})
+            </h3>
+            {["admin", "sub_admin"].includes(currentUserRole || "") && pendingMembers.length > 1 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => actions.approveAllMembers()}
+                disabled={actions.isApprovingAll}
+              >
+                {actions.isApprovingAll ? "Đang duyệt..." : "Duyệt tất cả"}
+              </Button>
+            )}
+          </div>
           <div className="space-y-3">
             {pendingMembers.map((member) => (
               <div

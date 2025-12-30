@@ -5,8 +5,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@repo/ui/components/card";
-import { GroupsDataTable } from "@/components/groups/GroupsDataTable";
+
 import { getGroups } from "@/app/actions/admin-groups";
+import { GroupsDataTable } from "@/components/groups/GroupsDataTable";
 
 export default async function GroupsPage({
   searchParams,

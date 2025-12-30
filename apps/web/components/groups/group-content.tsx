@@ -3,26 +3,26 @@
 import { GroupMemberRole } from "@repo/shared/types/group";
 import { PostResponse } from "@repo/shared/types/post";
 import { BLANK_AVATAR } from "@repo/shared/types/user";
-import { createClient } from "@repo/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/avatar";
 import { Badge } from "@repo/ui/components/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/card";
 import { Tabs, TabsContent,TabsList, TabsTrigger } from "@repo/ui/components/tabs";
 import { formatPostDate } from "@repo/utils/formatDate";
-import { useQueryClient } from "@tanstack/react-query";
 import { useIntersectionObserver } from "@uidotdev/usehooks";
 import { Calendar, Crown, Globe, Loader2,Lock, Shield, ShieldCheck, User as UserIcon, Users } from "lucide-react";
 import Link from "next/link";
 import { useEffect,useState } from "react";
 
 import type { GroupMember, GroupWithDetails } from "@/app/actions/group";
+import { BlockedKeywordsForm } from "@/components/groups/blocked-keywords-form";
 import { GroupSettingsForm } from "@/components/groups/group-settings-form";
 import { MemberList } from "@/components/groups/member-list";
 import AddPost from "@/components/posts/add";
 import PendingPost from "@/components/posts/PendingPost";
 import PostCard from "@/components/posts/PostCard";
 import { useGetCurrentUser } from "@/hooks/useAuth";
-import {useInfiniteGroupPosts } from "@/hooks/useGroup";
+import { useInfiniteGroupPosts } from "@/hooks/useGroup";
+import { canManageGroup } from "@/lib/utils/group-permissions";
 
 interface GroupContentProps {
   group: GroupWithDetails;
@@ -70,8 +70,6 @@ export function GroupContent({
 
   const [activeTab, setActiveTab] = useState(canViewPosts ? "discussion" : "overview");
 
-  const queryClient = useQueryClient();
-  const supabase = createClient();
   const [loadMoreRef, entry] = useIntersectionObserver({
     threshold: 0.1,
     root: null,
@@ -85,7 +83,7 @@ export function GroupContent({
     hasNextPage,
     isFetchingNextPage,
     isLoading,
-    isRefetching,
+    
   } = useInfiniteGroupPosts(group.id); // Hook internally enabled/disabled logic? No, let's just use it, RLS blocks if needed.
   // Actually hook is always enabled in previous code.
 
@@ -149,7 +147,9 @@ export function GroupContent({
         <TabsTrigger value="overview">Tổng quan</TabsTrigger>
         <TabsTrigger value="members">Tất cả thành viên</TabsTrigger>
         <TabsTrigger value="about">Giới thiệu</TabsTrigger>
-        {isAdmin && <TabsTrigger value="settings">Cài đặt</TabsTrigger>}
+        {canManageGroup(myRole) && (
+          <TabsTrigger value="manage">Quản lý</TabsTrigger>
+        )}
       </TabsList>
 
       {/* Discussion Tab (Only if allowed) */}
@@ -325,18 +325,44 @@ export function GroupContent({
                 </span>
               </div>
             </div>
-          </CardContent>
+        </CardContent>
         </Card>
       </TabsContent>
 
-      {/* Settings Tab (Admin only) */}
-      {isAdmin && (
-        <TabsContent value="settings">
-          <GroupSettingsForm group={group} />
+      {/* Manage Tab (Admin/Sub-admin/Moderator only) */}
+      {canManageGroup(myRole) && (
+        <TabsContent value="manage">
+          <div className="space-y-6">
+            {/* Member Moderation */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Kiểm duyệt thành viên</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <MemberList groupId={group.id} currentUserRole={myRole} />
+              </CardContent>
+            </Card>
+
+            {/* Blocked Keywords */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Quản lý từ cấm</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <BlockedKeywordsForm groupId={group.id} canManage={true} />
+              </CardContent>
+            </Card>
+
+            {/* Settings (Admin only) */}
+            {isAdmin && (
+              <div className="max-w-2xl">
+                <GroupSettingsForm group={group} />
+              </div>
+            )}
+          </div>
         </TabsContent>
       )}
     </Tabs>
   );
 }
-
 

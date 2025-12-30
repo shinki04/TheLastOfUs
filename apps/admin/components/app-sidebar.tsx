@@ -28,6 +28,7 @@ import { usePathname } from "next/navigation";
 import * as React from "react";
 
 import { APP_INFO, SIDEBAR_NAV_ITEMS } from "@/constants/admin-sidebar";
+
 import { NavUser } from "./nav-user";
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {

@@ -26,7 +26,7 @@ import {
 import { getTopHashtags } from "@/app/actions/admin-hashtags";
 import { useRefresh } from "@/components/analytics/RefreshContext";
 
-import { type ChartType, ChartTypeSelector } from "./ChartTypeSelector";
+import { type ChartType, ChartTypeSelector, PeriodSelector, type TimePeriod } from "./ChartTypeSelector";
 
 const COLORS = [
   "var(--chart-1)",
@@ -46,6 +46,7 @@ const chartConfig: ChartConfig = {
 export function HashtagTrendsChart() {
   const { refreshKey } = useRefresh();
   const [chartType, setChartType] = React.useState<ChartType>("bar");
+  const [period, setPeriod] = React.useState<TimePeriod>("daily");
   const [data, setData] = React.useState<{ name: string; post_count: number }[]>([]);
   const [loading, setLoading] = React.useState(true);
 
@@ -76,7 +77,7 @@ export function HashtagTrendsChart() {
               nameKey="name"
               cx="50%"
               cy="50%"
-              outerRadius={80}
+              outerRadius={100}
               label={({ name }) => `#${name}`}
             >
               {data.map((_, index) => (
@@ -133,6 +134,7 @@ export function HashtagTrendsChart() {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Top Hashtags</CardTitle>
         <div className="flex items-center gap-2">
+          <PeriodSelector value={period} onChange={setPeriod} />
           <ChartTypeSelector
             value={chartType}
             onChange={setChartType}

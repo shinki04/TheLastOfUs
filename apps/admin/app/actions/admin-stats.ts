@@ -279,3 +279,22 @@ export async function getReportStats() {
     total: data?.length ?? 0,
   };
 }
+
+// Get user role stats for distribution chart
+export async function getUserRoleStats(): Promise<{ role: string; count: number }[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("global_role");
+
+  if (error) throw error;
+
+  const roles = (data ?? []).reduce((acc: Record<string, number>, row) => {
+    const role = row.global_role || "user";
+    acc[role] = (acc[role] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  return Object.entries(roles).map(([role, count]) => ({ role, count }));
+}
