@@ -141,16 +141,21 @@ export async function getConversations(): Promise<ConversationWithDetails[]> {
       );
       let unreadCount = 0;
 
-      if (currentMember?.last_read_at) {
-        const { count } = await supabase
-          .from("messages")
-          .select("id", { count: "exact", head: true })
-          .eq("conversation_id", conv.id)
-          .gt("created_at", currentMember.last_read_at)
-          .neq("sender_id", currentUserId);
+      // Calculate unread: messages from others after last_read_at
+      // If last_read_at is null, treat it as "never read" - count all messages from others
+      let query = supabase
+        .from("messages")
+        .select("id", { count: "exact", head: true })
+        .eq("conversation_id", conv.id)
+        .neq("sender_id", currentUserId)
+        .eq("is_deleted", false);
 
-        unreadCount = count || 0;
+      if (currentMember?.last_read_at) {
+        query = query.gt("created_at", currentMember.last_read_at);
       }
+
+      const { count } = await query;
+      unreadCount = count || 0;
 
       return {
         ...conv,
@@ -578,14 +583,13 @@ export async function markAsRead(conversationId: string): Promise<void> {
   const currentUserId = await getCurrentUserId();
   const supabase = await createClient();
 
-  const { error } = await supabase
-    .from("conversation_members")
-    .update({ last_read_at: new Date().toISOString() })
-    .eq("conversation_id", conversationId)
-    .eq("user_id", currentUserId);
+  const { error } = await supabase.rpc("mark_conversation_as_read", {
+    conversation_id: conversationId,
+  });
 
   if (error) {
     console.error("Error marking as read:", error);
+    throw new Error(`Failed to mark as read: ${error.message}`);
   }
 }
 

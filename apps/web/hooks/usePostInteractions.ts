@@ -145,7 +145,8 @@ export function useComments(
     // Fetch ... (existing)
     const { 
         data: commentsData, 
-        isLoading, 
+        isLoading,
+        error,
         fetchNextPage, 
         hasNextPage, 
         isFetchingNextPage,
@@ -212,9 +213,9 @@ export function useComments(
 
     // Add Comment
     const { mutate: sendComment, isPending: isSending } = useMutation({
-        mutationFn: ({ content, parentId }: { content: string; parentId?: string }) => 
-            addComment(postId, content, parentId),
-        onMutate: async ({ content, parentId }) => {
+        mutationFn: ({ content, parentId, isAnonymous }: { content: string; parentId?: string; isAnonymous?: boolean }) =>
+            addComment(postId, content, parentId, isAnonymous),
+        onMutate: async ({ content, parentId, isAnonymous }) => {
              await queryClient.cancelQueries({ queryKey });
              
              const previousComments = queryClient.getQueryData(queryKey);
@@ -234,6 +235,7 @@ export function useComments(
                      like_count: 0,
                      reply_count: 0,
                      is_liked: false,
+                     is_anonymous: isAnonymous ?? false,
                      author: {
                          id: currentUser.id,
                          username: currentUser.username,
@@ -341,6 +343,7 @@ export function useComments(
     return {
         commentsData,
         isLoading,
+        error,
         sendComment,
         isSending,
         removeComment,
