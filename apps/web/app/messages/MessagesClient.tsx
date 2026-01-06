@@ -1,7 +1,7 @@
 "use client";
 
 import { Tables } from "@repo/shared/types/database.types";
-import { ConversationWithDetails } from "@repo/shared/types/messaging";
+import { ConversationWithDetails, MessageWithSender } from "@repo/shared/types/messaging";
 import { MessageCircle } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
@@ -20,6 +20,7 @@ interface MessagesClientProps {
   currentUser: Tables<"profiles">;
   initialFriends: Tables<"profiles">[];
   initialConversation?: ConversationWithDetails | null;
+  initialMessages?: MessageWithSender[];
 }
 
 /**
@@ -30,6 +31,7 @@ export function MessagesClient({
   currentUser,
   initialFriends,
   initialConversation,
+  initialMessages = [],
 }: MessagesClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -188,6 +190,7 @@ export function MessagesClient({
               currentUserId={currentUser.id}
               currentUser={currentUser}
               isInitialLoading={isOptimisticLoading}
+              initialMessages={displayActiveId === initialConversation?.id ? initialMessages : undefined}
               onLeave={handleLeave}
               onAddFriend={handleAddFriend}
               className="w-full"
