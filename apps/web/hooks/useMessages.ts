@@ -6,6 +6,7 @@ import type {
   MessageWithSender,
   OptimisticMessage,
 } from "@repo/shared/types/messaging";
+import type { PendingFile } from "@repo/shared/types/messaging";
 import { createClient } from "@repo/supabase/client";
 import type { RealtimeChannel } from "@repo/supabase/types";
 import { useCallback, useEffect, useMemo,useRef, useState } from "react";
@@ -16,6 +17,7 @@ import {
   recallMessage as recallMessageAction,
   sendMessage as sendMessageAction,
 } from "@/app/actions/messaging";
+
 
 interface UseMessagesOptions {
   conversationId: string;
@@ -28,7 +30,7 @@ interface UseMessagesReturn {
   messages: (MessageWithSender | OptimisticMessage)[];
   isLoading: boolean;
   error: Error | null;
-  sendMessage: (content: string, replyTo?: { id: string; content: string | null; sender?: { display_name: string | null } }) => Promise<void>;
+  sendMessage: (content: string, replyTo?: { id: string; content: string | null; sender?: { display_name: string | null } }, files?: File[]) => Promise<void>;
   retryMessage: (tempId: string) => Promise<void>;
   editMessage: (messageId: string, newContent: string) => Promise<void>;
   recallMessage: (messageId: string) => Promise<void>;
@@ -167,21 +169,103 @@ export function useMessages({
     }
   }, [conversationId, hasMore, isLoadingMore]);
 
+  // Upload files helper
+  const uploadFilesAndGetUrls = useCallback(async (files: File[]): Promise<{ urls: string[]; pendingFiles: PendingFile[] }> => {
+    const pendingFiles: PendingFile[] = files.map((file) => {
+      const id = `file-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      let localPreview: string | undefined;
+      if (file.type.startsWith("image/") || file.type.startsWith("video/")) {
+        localPreview = URL.createObjectURL(file);
+      }
+      return {
+        id,
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        localPreview,
+        progress: 0,
+        status: "uploading" as const,
+      };
+    });
+
+    // Upload each file directly to Supabase storage
+    const uploadPromises = files.map(async (file, idx) => {
+      const timestamp = Date.now();
+      const randomStr = Math.random().toString(36).substring(2, 9);
+      const extension = file.name.split(".").pop() || "";
+      const objectName = `${conversationId}/${timestamp}-${randomStr}.${extension}`;
+
+      const { data: { session } } = await supabase.auth.getSession();
+
+      // Use standard upload for smaller files, or we could integrate Uppy here
+      const { error } = await supabase.storage
+        .from("messages")
+        .upload(objectName, file, {
+          contentType: file.type,
+          upsert: false,
+        });
+
+      if (error) {
+        console.error("Upload failed for", file.name, error);
+        throw new Error(`Upload failed: ${file.name}`);
+      }
+
+      const { data: urlData } = supabase.storage.
+        from("messages")
+        .getPublicUrl(objectName);
+
+      return urlData.publicUrl;
+    });
+
+    const urls = await Promise.all(uploadPromises);
+
+    // Revoke blob URLs after upload
+    pendingFiles.forEach((pf) => {
+      if (pf.localPreview) {
+        URL.revokeObjectURL(pf.localPreview);
+      }
+    });
+
+    return { urls, pendingFiles };
+  }, [conversationId, supabase]);
+
   // Send message with Broadcast for instant delivery
   const sendMessage = useCallback(
-    async (content: string, replyTo?: { id: string; content: string | null; sender?: { display_name: string | null } }) => {
-      if (!content.trim() || !channelRef.current) return;
+    async (content: string, replyTo?: { id: string; content: string | null; sender?: { display_name: string | null } }, files?: File[]) => {
+      // Allow sending if there's content OR files
+      if ((!content.trim() && (!files || files.length === 0)) || !channelRef.current) return;
 
       const tempId = generateTempId();
       const now = new Date().toISOString();
+
+      // Create pending files for display
+      let pendingFilesForDisplay: PendingFile[] = [];
+      if (files && files.length > 0) {
+        pendingFilesForDisplay = files.map((file) => {
+          const id = `file-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+          let localPreview: string | undefined;
+          if (file.type.startsWith("image/") || file.type.startsWith("video/")) {
+            localPreview = URL.createObjectURL(file);
+          }
+          return {
+            id,
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            localPreview,
+            progress: 0,
+            status: "uploading" as const,
+          };
+        });
+      }
 
       // Create optimistic message with reply info if replying
       const optimisticMessage: OptimisticMessage = {
         tempId,
         conversation_id: conversationId,
         sender_id: currentUserId,
-        content: content.trim(),
-        message_type: "text",
+        content: content.trim() || (files?.length ? "Đang gửi file..." : ""),
+        message_type: files?.length ? "file" : "text",
         created_at: now,
         status: "sending",
         sender: currentUser,
@@ -193,6 +277,7 @@ export function useMessages({
           sender_id: null,
           sender: replyTo.sender ? { display_name: replyTo.sender.display_name } as Tables<"profiles"> : undefined,
         } : undefined,
+        pendingFiles: pendingFilesForDisplay,
       };
 
       // Add to local optimistic list immediately
@@ -210,14 +295,54 @@ export function useMessages({
         } as BroadcastMessage,
       });
 
-      // Save to database in background
+      // Upload files first if any, then save message to DB
       try {
+        let mediaUrls: string[] | undefined;
+
+        if (files && files.length > 0) {
+          // Upload files to Supabase storage
+          const uploadPromises = files.map(async (file) => {
+            const timestamp = Date.now();
+            const randomStr = Math.random().toString(36).substring(2, 9);
+            const extension = file.name.split(".").pop() || "";
+            const objectName = `${conversationId}/${timestamp}-${randomStr}.${extension}`;
+
+            const { error } = await supabase.storage
+              .from("messages")
+              .upload(objectName, file, {
+                contentType: file.type,
+                upsert: false,
+              });
+
+            if (error) {
+              console.error("Upload failed for", file.name, error);
+              throw new Error(`Upload failed: ${file.name}`);
+            }
+
+            const { data: urlData } = supabase.storage
+              .from("messages")
+              .getPublicUrl(objectName);
+
+            return urlData.publicUrl;
+          });
+
+          mediaUrls = await Promise.all(uploadPromises);
+
+          // Revoke blob URLs after upload
+          pendingFilesForDisplay.forEach((pf) => {
+            if (pf.localPreview) {
+              URL.revokeObjectURL(pf.localPreview);
+            }
+          });
+        }
+
         const serverMessage = await sendMessageAction(
           conversationId,
           content,
-          "text",
+          files?.length ? "file" : "text",
           tempId,
-          replyTo?.id
+          replyTo?.id,
+          mediaUrls
         );
 
         // Broadcast success - update status
@@ -290,7 +415,7 @@ export function useMessages({
         console.error("Error sending message:", err);
       }
     },
-    [conversationId, currentUserId, currentUser, generateTempId]
+    [conversationId, currentUserId, currentUser, generateTempId, supabase]
   );
 
   // Retry failed message

@@ -10,6 +10,7 @@ export type PostResponse = {
   author: {
     id: string;
     username: string;
+    slug?: string;
     display_name: string;
     avatar_url: string | null;
     global_role: "admin" | "moderator" | "student" | "lecturer";

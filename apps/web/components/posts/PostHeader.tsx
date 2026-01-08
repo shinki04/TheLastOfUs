@@ -25,6 +25,7 @@ interface PostHeaderProps {
   author: {
     id: string;
     username: string | null;
+    slug?: string ;
     display_name?: string | null;
     avatar_url?: string | null;
     global_role: Global_Roles | null;
@@ -70,7 +71,7 @@ export default function PostHeader({
   const shouldHideIdentity = isAnonymous && !isGlobalAdmin;
   const displayName = shouldHideIdentity ? "Thành viên ẩn danh" : (author?.display_name || author?.username);
   const displayAvatar = shouldHideIdentity ? ANONYMOUS_AVATAR : (author?.avatar_url || "/next.svg");
-  const profileLink = shouldHideIdentity ? null : `/profile/${author?.username}`;
+  const profileLink = shouldHideIdentity ? null : `/profile/${author?.slug}`;
 
   return (
     <div className="flex items-center justify-between mb-3">
