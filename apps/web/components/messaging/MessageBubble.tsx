@@ -37,6 +37,8 @@ import { toast } from "sonner";
 import { ReportDialog } from "@/components/reports/ReportDialog";
 import { useModerationReason } from "@/hooks/useModerationReason";
 
+import { MediaAttachment } from "./MediaAttachment";
+
 interface MessageBubbleProps {
   message: MessageWithSender | OptimisticMessage;
   isOwn: boolean;
@@ -254,9 +256,40 @@ export function MessageBubble({
           ) : message.is_deleted ? (
             <DeletedMessageContent messageId={message.id} />
           ) : (
-            <p className="text-sm whitespace-pre-wrap break-words">
-              {message.content}
-            </p>
+            <>
+              {/* Text content */}
+              {message.content && (
+                <p className="text-sm whitespace-pre-wrap break-words">
+                  {message.content}
+                </p>
+              )}
+
+              {/* Pending files (uploading) */}
+              {"pendingFiles" in message && message.pendingFiles && message.pendingFiles.length > 0 && (
+                <div className="flex flex-col gap-2 mt-2">
+                  {message.pendingFiles.map((pf) => (
+                    <MediaAttachment
+                      key={pf.id}
+                      pendingFile={pf}
+                      isOwn={isOwn}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Completed media attachments */}
+              {message.media_urls && message.media_urls.length > 0 && (
+                <div className="flex flex-col gap-2 mt-2">
+                  {message.media_urls.map((url, idx) => (
+                    <MediaAttachment
+                      key={`${url}-${idx}`}
+                      url={url}
+                      isOwn={isOwn}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
           )}
 
           {/* Timestamp and status */}

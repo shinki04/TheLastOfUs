@@ -11,6 +11,21 @@ export type MessageType = "text" | "image" | "file" | "system";
 // Message status for optimistic UI
 export type MessageStatus = "sending" | "sent" | "failed";
 
+// File upload status
+export type FileUploadStatus = "uploading" | "done" | "failed";
+
+// Pending file for upload tracking
+export interface PendingFile {
+  id: string;           // Uppy file ID
+  name: string;
+  size: number;
+  type: string;         // MIME type
+  localPreview?: string; // blob URL for images/videos
+  progress: number;     // 0-100
+  url?: string;         // Final URL after upload
+  status: FileUploadStatus;
+}
+
 // Extended message type for optimistic UI
 export interface OptimisticMessage extends Partial<Message> {
   tempId: string; // Temporary ID for matching after server response
@@ -19,6 +34,9 @@ export interface OptimisticMessage extends Partial<Message> {
   retryCount?: number;
   sender?: Tables<"profiles">;
   reply_to?: ReplyToMessage;
+  // File upload state
+  uploadProgress?: number; // Overall progress 0-100
+  pendingFiles?: PendingFile[];
 }
 
 // Conversation with extra details

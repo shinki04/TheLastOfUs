@@ -195,7 +195,11 @@ export function ChatWindow({
   }, []);
 
   // Wrapper for sendMessage that scrolls immediately
-  const handleSendMessage = useCallback(async (...args: Parameters<typeof sendMessage>) => {
+  const handleSendMessage = useCallback(async (
+    content: string,
+    replyTo?: { id: string; content: string | null; sender?: { display_name: string | null } },
+    files?: File[]
+  ) => {
     // Scroll to bottom IMMEDIATELY when user sends
     virtuosoRef.current?.scrollToIndex({
       index: virtualizedItems.length, // Use length (not length-1) to account for new message being added
@@ -203,7 +207,7 @@ export function ChatWindow({
     });
     
     // Then actually send the message
-    return sendMessage(...args);
+    return sendMessage(content, replyTo, files);
   }, [sendMessage, virtualizedItems.length]);
 
   // Scroll to bottom helper

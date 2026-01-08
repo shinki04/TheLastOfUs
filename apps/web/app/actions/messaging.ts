@@ -457,12 +457,14 @@ export async function sendMessage(
   content: string,
   messageType: MessageType = "text",
   tempId?: string, // For optimistic UI matching
-  replyToId?: string // For reply feature
+  replyToId?: string, // For reply feature
+  mediaUrls?: string[] // For file attachments
 ): Promise<Message> {
   const currentUserId = await getCurrentUserId();
   const supabase = await createClient();
 
-  if (!content.trim()) {
+  // Allow empty content if there are media attachments
+  if (!content.trim() && (!mediaUrls || mediaUrls.length === 0)) {
     throw new Error("Message content is required");
   }
 
@@ -478,15 +480,27 @@ export async function sendMessage(
     throw new Error("Not a member of this conversation");
   }
 
+  // Determine message type based on content
+  let finalMessageType: MessageType = messageType;
+  if (mediaUrls && mediaUrls.length > 0) {
+    // Check if all files are images
+    const allImages = mediaUrls.every((url) => {
+      const ext = url.split(".").pop()?.toLowerCase();
+      return ["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(ext || "");
+    });
+    finalMessageType = allImages ? "image" : "file";
+  }
+
   // Insert message
   const { data, error } = await supabase
     .from("messages")
     .insert({
       conversation_id: conversationId,
       sender_id: currentUserId,
-      content: content.trim(),
-      message_type: messageType,
+      content: content.trim() || (mediaUrls?.length ? "Đã gửi file" : ""),
+      message_type: finalMessageType,
       reply_to_id: replyToId || null,
+      media_urls: mediaUrls || null,
     })
     .select()
     .single();
