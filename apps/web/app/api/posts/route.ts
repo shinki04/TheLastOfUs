@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch from database
-    const response = await fetchPosts(page, itemsPerPage, userId!);
+    const response = await fetchPosts(page, itemsPerPage);
 
     return NextResponse.json(response, {
       headers: {

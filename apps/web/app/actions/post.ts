@@ -88,6 +88,7 @@ export async function fetchPosts(
       author: profiles!posts_author_id_fkey(
         id,
         username,
+        slug,
         display_name,
         avatar_url,
         global_role
