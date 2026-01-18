@@ -324,9 +324,6 @@ importers:
       js-cookie:
         specifier: ^3.0.5
         version: 3.0.5
-      lucide:
-        specifier: ^0.548.0
-        version: 0.548.0
       lucide-react:
         specifier: ^0.548.0
         version: 0.548.0(react@19.2.3)

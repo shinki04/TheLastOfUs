@@ -1,30 +1,32 @@
 "use client";
 
+import type { OptimisticMessage } from "@repo/shared/types/messaging";
 import { createClient } from "@repo/supabase/client";
 import { create } from "zustand";
 
 import { sendMessage as sendMessageAction } from "@/app/actions/messaging";
 
 /**
- * Pending upload item - simplified tracking
+ * Pending upload item - stores full optimistic message for persistence across tab switches
  */
 interface PendingUpload {
     id: string;
     conversationId: string;
     tempMessageId: string;
+    optimisticMessage: OptimisticMessage;
 }
 
 /**
- * Global upload store state
+ * Global upload store state - persists across component unmounts
  */
 interface UploadState {
-    // Map of conversationId -> pending uploads
+    // Map of conversationId -> pending uploads with optimistic messages
     pendingUploads: Map<string, PendingUpload[]>;
-    // Map of tempMessageId -> upload progress
+    // Map of tempMessageId -> upload progress (0-100)
     uploadProgress: Map<string, number>;
-    // Map of tempMessageId -> uploaded URL
+    // Map of tempMessageId -> uploaded URLs when complete
     completedUrls: Map<string, string[]>;
-    // Map of tempMessageId -> error
+    // Map of tempMessageId -> error message if failed
     uploadErrors: Map<string, string>;
 
     // Actions
@@ -34,6 +36,7 @@ interface UploadState {
     failUpload: (tempMessageId: string, error: string) => void;
     removeUpload: (tempMessageId: string) => void;
     getUploadsForConversation: (conversationId: string) => PendingUpload[];
+    getOptimisticMessagesForConversation: (conversationId: string) => OptimisticMessage[];
     getProgress: (tempMessageId: string) => number;
     getCompletedUrls: (tempMessageId: string) => string[] | undefined;
     getError: (tempMessageId: string) => string | undefined;
@@ -118,6 +121,11 @@ export const useUploadStore = create<UploadState>()((set, get) => ({
 
     getUploadsForConversation: (conversationId) => {
         return get().pendingUploads.get(conversationId) || [];
+    },
+
+    getOptimisticMessagesForConversation: (conversationId) => {
+        const uploads = get().pendingUploads.get(conversationId) || [];
+        return uploads.map((u) => u.optimisticMessage);
     },
 
     getProgress: (tempMessageId) => {

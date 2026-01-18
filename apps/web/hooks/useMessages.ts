@@ -89,6 +89,26 @@ export function useMessages({
   currentUserIdRef.current = currentUserId;
   conversationIdRef.current = conversationId;
 
+  // Sync with global upload store on mount - restore optimistic messages for ongoing uploads
+  useEffect(() => {
+    const syncFromStore = async () => {
+      const { useUploadStore } = await import("@/stores/uploadStore");
+      const storedMessages = useUploadStore.getState().getOptimisticMessagesForConversation(conversationId);
+      if (storedMessages.length > 0) {
+        setOptimisticMessages((prev) => {
+          // Merge stored messages with local, avoiding duplicates
+          const existingTempIds = new Set(prev.map(m => m.tempId));
+          const newMessages = storedMessages.filter(m => !existingTempIds.has(m.tempId));
+          return [...prev, ...newMessages];
+        });
+      }
+    };
+
+    if (enabled && conversationId) {
+      syncFromStore();
+    }
+  }, [conversationId, enabled]);
+
   // Combine server and optimistic messages
   const messages = useMemo(() => {
     const combined = [
@@ -303,8 +323,16 @@ export function useMessages({
 
       // Handle file uploads in background (won't be cancelled when switching conversations)
       if (files && files.length > 0) {
-        // Import and use the global upload manager
-        const { uploadManager } = await import("@/stores/uploadStore");
+        // Import and use the global upload manager and store
+        const { uploadManager, useUploadStore } = await import("@/stores/uploadStore");
+
+        // Save optimistic message to global store for persistence across tab switches
+        useUploadStore.getState().addUpload({
+          id: tempId,
+          conversationId,
+          tempMessageId: tempId,
+          optimisticMessage,
+        });
 
         // Start background upload - this continues even if user switches conversations
         uploadManager.uploadFiles(
@@ -736,9 +764,56 @@ export function useMessages({
         console.log("[Broadcast] Channel status:", status);
       });
 
-    // Channel 2: Postgres changes for AI/admin actions
+    // Channel 2: Postgres changes for new messages and updates
     const dbChannel = supabase
       .channel(`db:messages:${conversationId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        async (payload) => {
+          console.log("[DB Insert] New message:", payload.new.id);
+
+          // Check if this is a message we uploaded (from background upload)
+          const newMessage = payload.new as MessageWithSender;
+          const tempId = newMessage.id; // Check if exists in optimistic
+
+          // Remove from optimistic messages if it was pending
+          setOptimisticMessages((prev) => {
+            // Find and remove any optimistic message that might match this
+            // Background uploads use tempId in the message, check for it
+            return prev.filter((m) => {
+              // If the optimistic message content matches the new message
+              if (m.content === newMessage.content && m.sender_id === newMessage.sender_id) {
+                return false; // Remove it
+              }
+              return true;
+            });
+          });
+
+          // Add to server messages if not already there
+          setServerMessages((prev) => {
+            if (prev.find((m) => m.id === newMessage.id)) {
+              return prev; // Already exists
+            }
+            // Fetch sender profile for the message
+            const newMessages = [...prev, newMessage];
+            return newMessages.sort((a, b) => {
+              const dateA = new Date(a.created_at || 0).getTime();
+              const dateB = new Date(b.created_at || 0).getTime();
+              return dateA - dateB;
+            });
+          });
+
+          // Also remove from global upload store
+          const { useUploadStore } = await import("@/stores/uploadStore");
+          useUploadStore.getState().removeUpload(newMessage.id);
+        }
+      )
       .on(
         "postgres_changes",
         {
