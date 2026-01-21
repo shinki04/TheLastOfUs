@@ -61,20 +61,20 @@ function generatePageNumbers(current: number, total: number): (number | "...")[]
 const ROWS_PER_PAGE_OPTIONS = [10, 20, 50, 100] as const;
 
 const TARGET_TYPES = [
-  { value: "all", label: "All Targets" },
-  { value: "post", label: "Posts" },
-  { value: "comment", label: "Comments" },
-  { value: "message", label: "Messages" },
-  { value: "group", label: "Groups" },
+  { value: "all", label: "Tất cả đối tượng" },
+  { value: "post", label: "Bài viết" },
+  { value: "comment", label: "Bình luận" },
+  { value: "message", label: "Tin nhắn" },
+  { value: "group", label: "Nhóm" },
 ] as const;
 
 const ACTION_TYPES = [
-  { value: "all", label: "All Actions" },
-  { value: "keyword_blocked", label: "Keyword Blocked" },
-  { value: "ai_flagged", label: "AI Flagged" },
-  { value: "admin_flagged", label: "Admin Flagged" },
-  { value: "admin_deleted", label: "Admin Deleted" },
-  { value: "user_recalled", label: "User Recalled" },
+  { value: "all", label: "Tất cả hành động" },
+  { value: "keyword_blocked", label: "Chặn từ khóa" },
+  { value: "ai_flagged", label: "AI gắn cờ" },
+  { value: "admin_flagged", label: "Admin gắn cờ" },
+  { value: "admin_deleted", label: "Admin xóa" },
+  { value: "user_recalled", label: "Người dùng thu hồi" },
 ] as const;
 
 export interface ModerationTableFilters {
@@ -112,38 +112,38 @@ export function ModerationTable({
   };
 
   if (loading) {
-    return <div className="w-full h-48 flex items-center justify-center">Loading...</div>;
+    return <div className="w-full h-48 flex items-center justify-center">Đang tải...</div>;
   }
 
   const getActionBadge = (type: string | null) => {
     switch (type) {
       case "keyword_blocked":
-        return <Badge variant="destructive">Blocked</Badge>;
+        return <Badge variant="destructive">Chặn</Badge>;
       case "ai_flagged":
-        return <Badge className="bg-yellow-500 text-white">AI Flagged</Badge>;
+        return <Badge className="bg-yellow-500 text-white">AI gắn cờ</Badge>;
       case "admin_deleted":
-        return <Badge variant="destructive">Deleted</Badge>;
+        return <Badge variant="destructive">Xóa</Badge>;
       case "admin_flagged":
-        return <Badge className="bg-orange-500 text-white">Admin Flagged</Badge>;
+        return <Badge className="bg-orange-500 text-white">Admin gắn cờ</Badge>;
       case "user_recalled":
-        return <Badge variant="secondary">Recalled</Badge>;
+        return <Badge variant="secondary">Thu hồi</Badge>;
       default:
-        return <Badge variant="secondary">{type ?? "Unknown"}</Badge>;
+        return <Badge variant="secondary">{type ?? "Không rõ"}</Badge>;
     }
   };
 
   const getTargetTypeBadge = (type: string | null) => {
     switch (type) {
       case "post":
-        return <Badge variant="outline" className="border-blue-500 text-blue-600">Post</Badge>;
+        return <Badge variant="outline" className="border-blue-500 text-blue-600">Bài viết</Badge>;
       case "comment":
-        return <Badge variant="outline" className="border-green-500 text-green-600">Comment</Badge>;
+        return <Badge variant="outline" className="border-green-500 text-green-600">Bình luận</Badge>;
       case "message":
-        return <Badge variant="outline" className="border-purple-500 text-purple-600">Message</Badge>;
+        return <Badge variant="outline" className="border-purple-500 text-purple-600">Tin nhắn</Badge>;
       case "group":
-        return <Badge variant="outline" className="border-orange-500 text-orange-600">Group</Badge>;
+        return <Badge variant="outline" className="border-orange-500 text-orange-600">Nhóm</Badge>;
       default:
-        return <Badge variant="outline">{type ?? "Unknown"}</Badge>;
+        return <Badge variant="outline">{type ?? "Không rõ"}</Badge>;
     }
   };
 
@@ -154,7 +154,7 @@ export function ModerationTable({
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Filters:</span>
+            <span className="text-sm text-muted-foreground">Bộ lọc:</span>
           </div>
           
           <Select
@@ -186,7 +186,7 @@ export function ModerationTable({
           </Select>
 
           <div className="ml-auto flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Rows:</span>
+            <span className="text-sm text-muted-foreground">Dòng:</span>
             <Select
               value={String(filters.rowsPerPage)}
               onValueChange={(value) => handleFilterChange("rowsPerPage", Number(value))}
@@ -207,19 +207,19 @@ export function ModerationTable({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Time</TableHead>
-                <TableHead>Target</TableHead>
-                <TableHead>Action</TableHead>
-                <TableHead>Reason</TableHead>
-                <TableHead>Details</TableHead>
-                <TableHead className="w-[80px]">View</TableHead>
+                <TableHead>Thời gian</TableHead>
+                <TableHead>Đối tượng</TableHead>
+                <TableHead>Hành động</TableHead>
+                <TableHead>Lý do</TableHead>
+                <TableHead>Chi tiết</TableHead>
+                <TableHead className="w-[80px]">Xem</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {data.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
-                    No moderation actions found.
+                    Không tìm thấy hành động kiểm duyệt nào.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -278,7 +278,7 @@ export function ModerationTable({
         {/* Pagination */}
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">
-            Page {page} of {totalPages || 1}
+            Trang {page} / {totalPages || 1}
           </span>
           <div className="flex items-center space-x-1">
             <Button
@@ -287,7 +287,7 @@ export function ModerationTable({
               onClick={() => onPageChange(1)}
               disabled={page <= 1}
             >
-              First
+              Đầu
             </Button>
             <Button
               variant="outline"
@@ -328,7 +328,7 @@ export function ModerationTable({
               onClick={() => onPageChange(totalPages)}
               disabled={page >= totalPages}
             >
-              Last
+              Cuối
             </Button>
           </div>
         </div>

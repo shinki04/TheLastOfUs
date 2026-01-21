@@ -82,7 +82,7 @@ export function CommentsDataTable({ initialData }: CommentsDataTableProps) {
   }, [fetchComments, search, refreshKey, isInitialLoad, initialData]);
 
   const handleDelete = async (commentId: string) => {
-    if (!confirm("Are you sure you want to delete this comment?")) return;
+    if (!confirm("Bạn có chắc chắn muốn xóa bình luận này?")) return;
     try {
       await deleteCommentAdmin(commentId);
       setComments((prev) => prev.filter((c) => c.id !== commentId));
@@ -97,7 +97,7 @@ export function CommentsDataTable({ initialData }: CommentsDataTableProps) {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search comments..."
+            placeholder="Tìm kiếm bình luận..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -112,10 +112,10 @@ export function CommentsDataTable({ initialData }: CommentsDataTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Author</TableHead>
-              <TableHead className="min-w-[200px]">Comment</TableHead>
-              <TableHead className="min-w-[150px]">On Post</TableHead>
-              <TableHead>Created</TableHead>
+              <TableHead>Tác giả</TableHead>
+              <TableHead className="min-w-[200px]">Bình luận</TableHead>
+              <TableHead className="min-w-[150px]">Bài viết</TableHead>
+              <TableHead>Ngày tạo</TableHead>
               <TableHead className="w-[70px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -131,7 +131,7 @@ export function CommentsDataTable({ initialData }: CommentsDataTableProps) {
             ) : comments.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                  No comments found
+                  Không tìm thấy bình luận
                 </TableCell>
               </TableRow>
             ) : (
@@ -145,7 +145,7 @@ export function CommentsDataTable({ initialData }: CommentsDataTableProps) {
                           {(comment.author?.display_name || "U")[0]?.toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-sm">{comment.author?.display_name || "Unknown"}</span>
+                      <span className="text-sm">{comment.author?.display_name || "Không rõ"}</span>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -153,7 +153,7 @@ export function CommentsDataTable({ initialData }: CommentsDataTableProps) {
                   </TableCell>
                   <TableCell>
                     <p className="line-clamp-1 text-xs text-muted-foreground">
-                      {comment.post?.content?.slice(0, 50) || "Unknown post"}...
+                      {comment.post?.content?.slice(0, 50) || "Không rõ bài viết"}...
                     </p>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
@@ -172,7 +172,7 @@ export function CommentsDataTable({ initialData }: CommentsDataTableProps) {
                           className="text-destructive"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
-                          Delete Comment
+                          Xóa bình luận
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -186,7 +186,7 @@ export function CommentsDataTable({ initialData }: CommentsDataTableProps) {
 
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Page {page} of {totalPages}
+          Trang {page} / {totalPages}
         </p>
         <div className="flex gap-2">
           <Button

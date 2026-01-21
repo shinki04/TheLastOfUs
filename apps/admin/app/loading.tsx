@@ -23,7 +23,7 @@ export default function Loading() {
         transition={{ delay: 0.3 }}
         className="text-muted-foreground text-sm"
       >
-        Loading...
+        Đang tải...
       </motion.p>
     </div>
   );

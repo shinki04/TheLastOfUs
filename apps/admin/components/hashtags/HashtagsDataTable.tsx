@@ -75,7 +75,7 @@ export function HashtagsDataTable({ initialData }: HashtagsDataTableProps) {
   }, [fetchHashtags, search, refreshKey, isInitialLoad, initialData]);
 
   const handleDelete = async (hashtagId: string) => {
-    if (!confirm("Are you sure you want to delete this hashtag? This will remove it from all posts.")) return;
+    if (!confirm("Bạn có chắc chắn muốn xóa hashtag này? Điều này sẽ gỡ hashtag khỏi tất cả bài viết.")) return;
     try {
       await deleteHashtag(hashtagId);
       setHashtags((prev) => prev.filter((h) => h.id !== hashtagId));
@@ -90,7 +90,7 @@ export function HashtagsDataTable({ initialData }: HashtagsDataTableProps) {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search hashtags..."
+            placeholder="Tìm kiếm hashtag..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -106,8 +106,8 @@ export function HashtagsDataTable({ initialData }: HashtagsDataTableProps) {
           <TableHeader>
             <TableRow>
               <TableHead>Hashtag</TableHead>
-              <TableHead>Post Count</TableHead>
-              <TableHead>Created</TableHead>
+              <TableHead>Số bài viết</TableHead>
+              <TableHead>Ngày tạo</TableHead>
               <TableHead className="w-[70px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -123,7 +123,7 @@ export function HashtagsDataTable({ initialData }: HashtagsDataTableProps) {
             ) : hashtags.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                  No hashtags found
+                  Không tìm thấy hashtag
                 </TableCell>
               </TableRow>
             ) : (
@@ -136,7 +136,7 @@ export function HashtagsDataTable({ initialData }: HashtagsDataTableProps) {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="text-muted-foreground">{hashtag.post_count} posts</span>
+                    <span className="text-muted-foreground">{hashtag.post_count} bài viết</span>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {hashtag.created_at ? new Date(hashtag.created_at).toLocaleDateString() : "-"}
@@ -154,7 +154,7 @@ export function HashtagsDataTable({ initialData }: HashtagsDataTableProps) {
                           className="text-destructive"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
-                          Delete Hashtag
+                          Xóa hashtag
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -167,7 +167,7 @@ export function HashtagsDataTable({ initialData }: HashtagsDataTableProps) {
       </div>
 
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">Page {page} of {totalPages}</p>
+        <p className="text-sm text-muted-foreground">Trang {page} / {totalPages}</p>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
             <ChevronLeft className="h-4 w-4" />

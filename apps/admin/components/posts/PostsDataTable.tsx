@@ -322,18 +322,18 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
     const status = post.moderation_status || "approved";
     switch (status) {
       case "rejected":
-        return <Badge variant="destructive" className="text-xs">Rejected</Badge>;
+        return <Badge variant="destructive" className="text-xs">Từ chối</Badge>;
       case "flagged":
-        return <Badge variant="outline" className="text-xs border-orange-500 text-orange-500">Flagged</Badge>;
+        return <Badge variant="outline" className="text-xs border-orange-500 text-orange-500">Gắn cờ</Badge>;
       default:
-        return <Badge variant="secondary" className="text-xs">Active</Badge>;
+        return <Badge variant="secondary" className="text-xs">Hoạt động</Badge>;
     }
   };
 
   const getEmptyMessage = () => {
-    if (flaggedOnly) return "No flagged posts found";
-    if (rejectedOnly) return "No rejected posts found";
-    return "No posts found";
+    if (flaggedOnly) return "Không tìm thấy bài viết bị gắn cờ";
+    if (rejectedOnly) return "Không tìm thấy bài viết bị từ chối";
+    return "Không tìm thấy bài viết";
   };
 
   return (
@@ -345,7 +345,7 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search posts by content..."
+                placeholder="Tìm kiếm bài viết theo nội dung..."
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -355,11 +355,11 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
               />
             </div>
             <Badge variant="outline" className="h-9 px-3 whitespace-nowrap">
-              {loading ? "..." : `${totalCount} posts`}
+              {loading ? "..." : `${totalCount} bài viết`}
             </Badge>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Rows:</span>
+            <span className="text-sm text-muted-foreground">Dòng:</span>
             <Select value={String(rowsPerPage)} onValueChange={handleRowsPerPageChange}>
               <SelectTrigger className="w-[70px] h-9">
                 <SelectValue />
@@ -380,12 +380,12 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="w-[200px]">Author</TableHead>
-                <TableHead className="max-w-[300px]">Content</TableHead>
+                <TableHead className="w-[200px]">Tác giả</TableHead>
+                <TableHead className="max-w-[300px]">Nội dung</TableHead>
                 <TableHead className="w-[100px] text-center">Media</TableHead>
-                <TableHead className="w-[100px] text-center">Engagement</TableHead>
-                <TableHead className="w-[100px]">Status</TableHead>
-                <TableHead className="w-[140px]">Created</TableHead>
+                <TableHead className="w-[100px] text-center">Tương tác</TableHead>
+                <TableHead className="w-[100px]">Trạng thái</TableHead>
+                <TableHead className="w-[140px]">Ngày tạo</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
@@ -508,30 +508,30 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuLabel>Hành động</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setSelectedPost(post); }}>
                               <Eye className="h-4 w-4 mr-2" />
-                              View Details
+                              Xem chi tiết
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuLabel className="text-xs text-muted-foreground">Set Status</DropdownMenuLabel>
+                            <DropdownMenuLabel className="text-xs text-muted-foreground">Đặt trạng thái</DropdownMenuLabel>
                             {status !== "approved" && (
                               <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleApprove(post); }}>
                                 <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
-                                Approve
+                                Phê duyệt
                               </DropdownMenuItem>
                             )}
                             {status !== "flagged" && (
                               <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openFlagDialog(post); }}>
                                 <Flag className="h-4 w-4 mr-2 text-orange-500" />
-                                Flag for Review
+                                Gắn cờ để xem xét
                               </DropdownMenuItem>
                             )}
                             {status !== "rejected" && (
                               <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openRejectDialog(post); }}>
                                 <XCircle className="h-4 w-4 mr-2 text-destructive" />
-                                Reject
+                                Từ chối
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator />
@@ -540,7 +540,7 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
                               className="text-destructive"
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
-                              Delete Post
+                              Xóa bài viết
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -556,7 +556,7 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
         {/* Pagination */}
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Page {page} of {totalPages} ({totalCount} total)
+            Trang {page} / {totalPages} ({totalCount} tổng)
           </p>
           <div className="flex items-center gap-1">
             <Button
@@ -624,9 +624,9 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
           setShowDeleteDialog(open);
           if (!open) setPostToAction(null);
         }}
-        title="Delete Post?"
-        description="This will permanently delete this post and all its associated data. This action cannot be undone."
-        confirmText="Delete Post"
+        title="Xóa bài viết?"
+        description="Hành động này sẽ xóa vĩnh viễn bài viết và tất cả dữ liệu liên quan. Không thể hoàn tác."
+        confirmText="Xóa bài viết"
         onConfirm={handleDelete}
       />
 

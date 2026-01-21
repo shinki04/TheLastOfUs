@@ -70,7 +70,7 @@ export function FlagDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Flag className="h-5 w-5 text-orange-500" />
-            Flag Post
+            Đánh dấu bài viết
           </DialogTitle>
           <DialogDescription>
             Chọn lý do đánh dấu bài viết này để xem xét.

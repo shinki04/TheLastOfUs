@@ -78,7 +78,7 @@ export function GroupsDataTable({ initialData }: GroupsDataTableProps) {
       setTotalCount(result.total);
     } catch (error) {
       console.error("Failed to fetch groups:", error);
-      toast.error("Failed to fetch groups");
+      toast.error("Lỗi khi tải danh sách nhóm");
     } finally {
       setLoading(false);
     }
@@ -104,13 +104,13 @@ export function GroupsDataTable({ initialData }: GroupsDataTableProps) {
         if (result.error) {
             toast.error(result.error);
         } else {
-            toast.success("Group deleted successfully");
+            toast.success("Xóa nhóm thành công");
             setGroups((prev) => prev.filter((g) => g.id !== deleteId));
             setDeleteId(null);
             // Optionally refresh list if needed, but filtering locally is faster UI feedback
         }
     } catch (error) {
-        toast.error("An error occurred while deleting the group");
+        toast.error("Đã xảy ra lỗi khi xóa nhóm");
     } finally {
         setIsDeleting(false);
     }
@@ -147,7 +147,7 @@ export function GroupsDataTable({ initialData }: GroupsDataTableProps) {
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search groups..."
+                placeholder="Tìm kiếm nhóm..."
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -157,11 +157,11 @@ export function GroupsDataTable({ initialData }: GroupsDataTableProps) {
               />
             </div>
             <Badge variant="outline" className="h-9 px-3 whitespace-nowrap">
-              {loading ? "..." : `${totalCount} groups`}
+              {loading ? "..." : `${totalCount} nhóm`}
             </Badge>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Rows:</span>
+            <span className="text-sm text-muted-foreground">Dòng:</span>
             <Select value={String(rowsPerPage)} onValueChange={handleRowsPerPageChange}>
               <SelectTrigger className="w-[70px] h-9">
                 <SelectValue />
@@ -182,11 +182,11 @@ export function GroupsDataTable({ initialData }: GroupsDataTableProps) {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="w-[250px]">Name</TableHead>
+                <TableHead className="w-[250px]">Tên</TableHead>
                 <TableHead className="w-[200px]">Slug</TableHead>
-                <TableHead className="w-[150px]">Privacy</TableHead>
-                <TableHead className="w-[100px]">Members</TableHead>
-                <TableHead className="w-[150px]">Created At</TableHead>
+                <TableHead className="w-[150px]">Quyền rieng tư</TableHead>
+                <TableHead className="w-[100px]">Thành viên</TableHead>
+                <TableHead className="w-[150px]">Ngày tạo</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
@@ -205,7 +205,7 @@ export function GroupsDataTable({ initialData }: GroupsDataTableProps) {
               ) : groups.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
-                    No groups found
+                    Không tìm thấy nhóm nào
                   </TableCell>
                 </TableRow>
               ) : (
@@ -235,15 +235,15 @@ export function GroupsDataTable({ initialData }: GroupsDataTableProps) {
                             <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <span className="sr-only">Open menu</span>
+                                <span className="sr-only">Mở menu</span>
                                 <MoreHorizontal className="h-4 w-4" />
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuLabel>Hành động</DropdownMenuLabel>
                                 <DropdownMenuItem onClick={() => setDeleteId(group.id)} className="text-red-600 cursor-pointer">
                                     <Trash className="mr-2 h-4 w-4" />
-                                    Delete Group
+                                    Xóa nhóm
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                             </DropdownMenu>
@@ -259,7 +259,7 @@ export function GroupsDataTable({ initialData }: GroupsDataTableProps) {
         {/* Pagination */}
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Page {page} of {totalPages} ({totalCount} total)
+            Trang {page} / {totalPages} ({totalCount} tổng)
           </p>
           <div className="flex items-center gap-1">
             <Button
@@ -303,10 +303,10 @@ export function GroupsDataTable({ initialData }: GroupsDataTableProps) {
        <AlertDialog
         open={!!deleteId}
         onOpenChange={(open) => !open && setDeleteId(null)}
-        title="Are you absolutely sure?"
-        description="This action cannot be undone. This will permanently delete the group and remove all data associated with it."
+        title="Bạn có chắc chắn?"
+        description="Hành động này không thể hoàn tác. Điều này sẽ xóa vĩnh viễn nhóm và tất cả dữ liệu liên quan."
         onConfirm={confirmDelete}
-        confirmText={isDeleting ? "Deleting..." : "Delete"}
+        confirmText={isDeleting ? "Đang xóa..." : "Xóa"}
       />
     </>
   );

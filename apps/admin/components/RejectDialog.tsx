@@ -46,19 +46,19 @@ export function RejectDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <XCircle className="h-5 w-5 text-destructive" />
-            Reject Post
+            Từ chối bài viết
           </DialogTitle>
           <DialogDescription>
-            This post will be rejected and hidden from public view. The author will be notified.
+            Bài viết sẽ bị từ chối và ẩn khỏi chế độ công khai. Tác giả sẽ được thông báo.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="reason">Rejection Reason (optional)</Label>
+            <Label htmlFor="reason">Lý do từ chối (không bắt buộc)</Label>
             <Textarea
               id="reason"
-              placeholder="e.g., Violates community guidelines, Contains inappropriate content..."
+              placeholder="Ví dụ: Vi phạm quy tắc cộng đồng, Chứa nội dung không phù hợp..."
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={3}
@@ -72,7 +72,7 @@ export function RejectDialog({
             onClick={() => handleOpenChange(false)}
             disabled={loading}
           >
-            Cancel
+            Hủy
           </Button>
           <Button 
             variant="destructive" 
@@ -82,7 +82,7 @@ export function RejectDialog({
             {loading && (
               <div className="animate-spin mr-2 h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
             )}
-            Reject Post
+            Từ chối bài viết
           </Button>
         </DialogFooter>
       </DialogContent>
