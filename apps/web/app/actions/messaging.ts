@@ -98,6 +98,18 @@ export async function getConversations(): Promise<ConversationWithDetails[]> {
 }
 
 /**
+ * Get total unread message count across all conversations
+ */
+export async function getTotalUnreadCount(): Promise<number> {
+  try {
+    const conversations = await getConversations();
+    return conversations.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0);
+  } catch {
+    return 0;
+  }
+}
+
+/**
  * Get a single conversation by ID with members
  */
 export async function getConversation(

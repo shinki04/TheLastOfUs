@@ -104,8 +104,13 @@ export default function PostHeader({
             )}
             {group && (
               <>
-                <span className="text-muted-foreground font-normal mx-1">đã đăng trong</span>
-                <Link href={`/groups/${group.slug}`} className="hover:underline text-primary">
+                <span className="text-muted-foreground font-normal mx-1">
+                  đã đăng trong
+                </span>
+                <Link
+                  href={`/groups/${group.slug}`}
+                  className="hover:underline text-primary"
+                >
                   {group.name}
                 </Link>
               </>
@@ -113,7 +118,7 @@ export default function PostHeader({
           </div>
           <div className="flex flex-row items-center gap-1">
             <p className="text-xs text-gray-500">
-              {formattedDate}
+              {formattedDate} &middot;
               {isEdited && <span className="italic ml-1">(đã chỉnh sửa)</span>}
             </p>
             <label title={privacy.alt}>

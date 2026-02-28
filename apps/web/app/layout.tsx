@@ -27,7 +27,7 @@ export default function RootLayout({
       <body
         className={`min-h-screen text-foreground bg-background font-sans text-sm sm:text-base md:text-lg antialiased`}
       >
-        <main className=" mx-auto">
+        <main className="mx-auto min-h-screen flex flex-col">
           <Providers>{children}</Providers>
         </main>
       </body>

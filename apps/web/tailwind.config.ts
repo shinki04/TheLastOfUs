@@ -23,14 +23,10 @@ const config: Config = {
         // background: "hsl(var(--background))",
         // foreground: "hsl(var(--foreground))",
         dashboard: {
-          background: "#f8f6f6",
-          darkBackground: "#221010",
-          sidebar: "#ffffff",
-          darkSidebar: "#2a1515",
-          card: "#ffffff",
-          darkCard: "#2a1515",
-          border: "#e2e8f0",
-          darkBorder: "#1e293b",
+          background: "var(--dashboard-background)",
+          sidebar: "var(--dashboard-sidebar)",
+          card: "var(--dashboard-card)",
+          border: "var(--dashboard-border)",
         },
       },
       borderRadius: {

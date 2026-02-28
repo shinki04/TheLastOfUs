@@ -6,7 +6,6 @@ import { privacyPost } from "@repo/shared/types/post";
 import type { User } from "@repo/shared/types/user";
 import { createClient } from "@repo/supabase/client";
 import { Button } from "@repo/ui/components/button";
-import { Card } from "@repo/ui/components/card";
 import { Label } from "@repo/ui/components/label";
 import {
   Select,
@@ -36,9 +35,17 @@ interface AddPostProps {
   currentUser: User;
   groupId?: string;
   allowAnonymousPosts?: boolean;
+  onCancel?: () => void;
+  onSuccess?: () => void;
 }
 
-function AddPost({ currentUser, groupId, allowAnonymousPosts = false }: AddPostProps) {
+function AddPost({
+  currentUser,
+  groupId,
+  allowAnonymousPosts = false,
+  onCancel,
+  onSuccess,
+}: AddPostProps) {
   const router = useRouter();
   const supabase = createClient();
   const uppy = useUppyWithSupabase("posts", "add-post");
@@ -115,7 +122,7 @@ function AddPost({ currentUser, groupId, allowAnonymousPosts = false }: AddPostP
           groupId: groupId || null,
           mediaUrlsCount: mediaUrls.length,
         });
-        
+
         await createPostMutation.mutateAsync({
           queueId: res?.id,
           userId: currentUser.id,
@@ -130,7 +137,8 @@ function AddPost({ currentUser, groupId, allowAnonymousPosts = false }: AddPostP
         toast.success("Bài đăng đã vào danh sách chờ");
         form.reset();
         uppy.cancelAll();
-        
+        onSuccess?.();
+
         // Refresh page để load lại posts (đặc biệt cho group posts)
         if (groupId) {
           router.refresh();
@@ -138,7 +146,7 @@ function AddPost({ currentUser, groupId, allowAnonymousPosts = false }: AddPostP
       } catch (error: unknown) {
         console.error(error);
         toast.error(
-          error instanceof Error ? error.message : "Có lỗi xảy ra khi đăng bài"
+          error instanceof Error ? error.message : "Có lỗi xảy ra khi đăng bài",
         );
       }
     },
@@ -163,9 +171,9 @@ function AddPost({ currentUser, groupId, allowAnonymousPosts = false }: AddPostP
   // Uploads will continue even if user navigates away from this page
 
   return (
-    <Card className="rounded-lg shadow p-6 my-6">
+    <div className="">
       <UppyContextProvider uppy={uppy}>
-        <h2 className="text-xl font-semibold mb-4">Tạo bài viết mới</h2>
+        {/* <h2 className="text-xl font-semibold mb-4">Tạo bài viết mới</h2> */}
 
         <form
           onSubmit={(e) => {
@@ -192,7 +200,7 @@ function AddPost({ currentUser, groupId, allowAnonymousPosts = false }: AddPostP
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
                   rows={4}
-                  className="w-full px-3 py-2 resize-none"
+                  className="w-full px-3 py-2 resize-none shadow-none"
                   placeholder="Bạn đang nghĩ gì?..."
                 />
                 <div className="flex justify-between text-sm text-gray-500 mt-1">
@@ -230,7 +238,7 @@ function AddPost({ currentUser, groupId, allowAnonymousPosts = false }: AddPostP
                     value={field.state.value}
                     onValueChange={(v) => field.handleChange(v as privacyPost)}
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full shadow-none">
                       <SelectValue placeholder="Chọn quyền riêng tư" />
                     </SelectTrigger>
                     <SelectContent>
@@ -250,7 +258,10 @@ function AddPost({ currentUser, groupId, allowAnonymousPosts = false }: AddPostP
               <div className="flex items-center gap-2">
                 <EyeOff className="w-4 h-4 text-muted-foreground" />
                 <div>
-                  <Label htmlFor="anonymous-toggle" className="text-sm font-medium cursor-pointer">
+                  <Label
+                    htmlFor="anonymous-toggle"
+                    className="text-sm font-medium cursor-pointer"
+                  >
                     Đăng ẩn danh
                   </Label>
                   <p className="text-xs text-muted-foreground">
@@ -277,8 +288,12 @@ function AddPost({ currentUser, groupId, allowAnonymousPosts = false }: AddPostP
                     type="button"
                     variant="outline"
                     onClick={() => {
-                      form.reset();
-                      uppy.cancelAll();
+                      if (onCancel) {
+                        onCancel();
+                      } else {
+                        form.reset();
+                        uppy.cancelAll();
+                      }
                     }}
                     disabled={!canSubmit || isSubmitting}
                   >
@@ -286,6 +301,7 @@ function AddPost({ currentUser, groupId, allowAnonymousPosts = false }: AddPostP
                   </Button>
                   <Button
                     type="submit"
+                    className="bg-mainred hover:bg-mainred-hover text-white"
                     disabled={
                       !canSubmit || isSubmitting || createPostMutation.isPending
                     }
@@ -300,7 +316,7 @@ function AddPost({ currentUser, groupId, allowAnonymousPosts = false }: AddPostP
           </div>
         </form>
       </UppyContextProvider>
-    </Card>
+    </div>
   );
 }
 

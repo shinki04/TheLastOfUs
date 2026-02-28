@@ -22,7 +22,7 @@ interface TrendingHashtagsProps {
  * Hỗ trợ Supabase Realtime updates
  */
 export function TrendingHashtags({
-  limit = 10,
+  limit = 5,
   className,
   showRefresh = true,
   enableRealtime = true,
@@ -35,23 +35,28 @@ export function TrendingHashtags({
   if (error) {
     return (
       <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-        <p className="text-sm font-medium text-red-800">
-          Failed to load trending hashtags
-        </p>
+        <p className="text-sm font-medium text-red-800">Lỗi khi tải hashtag</p>
         <p className="text-xs text-red-600 mt-1">{error.message}</p>
       </div>
     );
   }
 
   return (
-    <div className={cn("rounded-lg border bg-card p-4", className)}>
+    <div
+      className={cn(
+        "rounded-xl border border-dashboard-border bg-dashboard-card p-4 shadow-sm",
+        className,
+      )}
+    >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-orange-500" />
-          <h3 className="font-semibold text-sm">Trending Hashtags</h3>
+          <TrendingUp className="w-5 h-5 text-red-500" />
+          <h3 className="font-bold text-base text-foreground">
+            Trending Hashtags
+          </h3>
           {isRealtime && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100/10 text-green-600 text-xs font-medium">
               <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
               Live
             </span>
@@ -63,7 +68,7 @@ export function TrendingHashtags({
             size="sm"
             onClick={refresh}
             disabled={loading}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 text-muted-foreground hover:text-primary transition-colors"
           >
             <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
           </Button>
@@ -71,84 +76,44 @@ export function TrendingHashtags({
       </div>
 
       {/* Hashtags List */}
-      <div className="space-y-2">
+      <div className="flex flex-wrap gap-2">
         {loading && hashtags.length === 0 ? (
           // Skeleton Loading
           Array.from({ length: limit }).map((_, i) => (
-            <div key={i} className="flex items-center justify-between py-2">
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-4 w-12" />
-            </div>
+            <Skeleton key={i} className="h-8 w-24 rounded-full" />
           ))
         ) : hashtags.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-4">
-            No hashtags yet
+          <p className="text-xs text-muted-foreground text-center py-4 w-full">
+            Chưa có hashtag nào
           </p>
         ) : (
-          hashtags.map((tag, index) => (
-            <HashtagRow key={tag.id} tag={tag} rank={index + 1} />
+          hashtags.map((tag) => (
+            <Link
+              key={tag.id}
+              href={`/explore/hashtag/${tag.name}`}
+              className="group flex items-center gap-1.5 rounded-full border border-border bg-accent/50 px-3 py-1.5 text-sm  text-accent-foreground transition-all hover:border-primary/20 hover:bg-primary/10 hover:text-primary"
+            >
+              <span>#{tag.name}</span>
+              {/* <span className="text-xs opacity-70 transition-colors group-hover:text-primary">
+                ({formatNumber(tag.post_count)})
+              </span> */}
+            </Link>
           ))
         )}
       </div>
 
       {/* Footer */}
-      {hashtags.length > 0 && (
-        <Link
-          href="/explore/hashtags"
-          className="inline-block text-xs text-primary hover:underline mt-3 pt-3 border-t"
-        >
-          View all hashtags →
-        </Link>
-      )}
+      {/* {hashtags.length > 0 && (
+        <div className="mt-4 border-t border-dashboard-border pt-4">
+          <Link
+            href="/explore/hashtags"
+            className="inline-block text-sm font-medium text-primary hover:underline"
+          >
+            Xem tất cả hashtag →
+          </Link>
+        </div>
+      )} */}
     </div>
-  );
-}
-
-/**
- * Component hiển thị một hashtag item
- */
-function HashtagRow({
-  tag,
-  rank,
-}: {
-  tag: { id: string; name: string; post_count: number };
-  rank: number;
-}) {
-  return (
-    <Link
-      href={`/explore/hashtag/${tag.name}`}
-      className="flex items-center justify-between py-2 px-2 rounded-md hover:bg-accent transition-colors group"
-    >
-      <div className="flex items-center gap-2 min-w-0">
-        {/* Rank Badge */}
-        <div
-          className={cn(
-            "flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold shrink-0",
-            rank === 1 && "bg-yellow-100 text-yellow-700",
-            rank === 2 && "bg-gray-100 text-gray-700",
-            rank === 3 && "bg-orange-100 text-orange-700",
-            rank > 3 && "bg-slate-100 text-slate-700"
-          )}
-        >
-          {rank}
-        </div>
-
-        {/* Hashtag Name */}
-        <div className="min-w-0">
-          <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">
-            #{tag.name}
-          </p>
-        </div>
-      </div>
-
-      {/* Post Count */}
-      <div className="flex items-center gap-1 shrink-0">
-        <span className="text-xs text-muted-foreground">
-          {formatNumber(tag.post_count)}
-        </span>
-        <span className="text-xs text-muted-foreground">posts</span>
-      </div>
-    </Link>
   );
 }
 

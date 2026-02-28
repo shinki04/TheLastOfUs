@@ -67,33 +67,31 @@ export function InfinitePostsList() {
   }
 
   return (
-    <div className="h-[calc(100vh-200px)]">
-      <Virtuoso
-        useWindowScroll
-        data={posts}
-        endReached={handleEndReached}
-        overscan={200}
-        components={{
-          Header: () => <PendingPost />,
-          Footer: () =>
-            isFetchingNextPage ? (
-              <div className="flex justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : !hasNextPage && posts.length > 0 ? (
-              <div className="flex items-center justify-center py-8">
-                <p className="text-gray-400 text-sm">
-                  Đã hiển thị tất cả bài viết
-                </p>
-              </div>
-            ) : null,
-        }}
-        itemContent={(index, post: PostResponse) => (
-          <div className="pb-4 pr-2">
-            <PostCard post={post} />
-          </div>
-        )}
-      />
-    </div>
+    <Virtuoso
+      useWindowScroll
+      data={posts}
+      endReached={handleEndReached}
+      overscan={200}
+      components={{
+        Header: () => <PendingPost />,
+        Footer: () =>
+          isFetchingNextPage ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : !hasNextPage && posts.length > 0 ? (
+            <div className="flex items-center justify-center py-8">
+              <p className="text-gray-400 text-sm">
+                Đã hiển thị tất cả bài viết
+              </p>
+            </div>
+          ) : null,
+      }}
+      itemContent={(index, post: PostResponse) => (
+        <div className="pb-4 pr-2">
+          <PostCard post={post} />
+        </div>
+      )}
+    />
   );
 }

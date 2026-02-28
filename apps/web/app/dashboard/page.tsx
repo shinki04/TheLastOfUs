@@ -1,19 +1,13 @@
-import { Button } from "@repo/ui/components/button";
 import {
   dehydrate,
   HydrationBoundary,
   QueryClient,
 } from "@tanstack/react-query";
-import Link from "next/link";
 import * as React from "react";
 
-import Tepm from "@/components/dashboard/temp";
-import AddPost from "@/components/posts/AddPost";
 import ListPosts from "@/components/posts/ListPosts";
-import PendingPost from "@/components/posts/PendingPost";
 
 import { getCurrentUser } from "../actions/user";
-import { signOut } from "../auth/action";
 
 // interface DashboardPageProps {
 //   propName: type;
@@ -38,9 +32,7 @@ export default async function DashboardPage() {
   return (
     <>
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <Button onClick={signOut}>Đăng xuất</Button>
-
-        <Tepm />
+        {/* <Button onClick={signOut}>Đăng xuất</Button>
         <Link href={`/profile/${user?.id}`}>
           <Button>My Profile</Button>
         </Link>
@@ -55,10 +47,10 @@ export default async function DashboardPage() {
         </Link>
         <Link href={"/messages"}>
           <Button>Message</Button>
-        </Link>
+        </Link> */}
         {/* <AddPost currentUser={user} /> */}
-        <AddPost currentUser={user} />
-        <PendingPost />
+        {/* <AddPost currentUser={user} /> */}
+        {/* <PendingPost /> */}
         <ListPosts />
       </HydrationBoundary>
     </>
