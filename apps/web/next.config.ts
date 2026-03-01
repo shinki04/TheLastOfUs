@@ -18,6 +18,14 @@ const nextConfig: NextConfig = {
         protocol: "https",
       },
     ],
+  }, async redirects() {
+    return [
+      {
+        source: '/',
+        destination: '/dashboard',
+        permanent: true,
+      },
+    ]
   },
 };
 

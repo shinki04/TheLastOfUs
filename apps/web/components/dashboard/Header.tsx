@@ -4,6 +4,7 @@ import * as React from "react";
 
 import { getCurrentUser } from "@/app/actions/user";
 
+import { FeedFilterTabs } from "./FeedFilterTabs";
 import { NotificationDropdown } from "./NotificationDropdown";
 import { UserDropdown } from "./UserDropdown";
 
@@ -32,26 +33,9 @@ export async function Header({ hideNavTabs }: HeaderProps = {}) {
 
       {!hideNavTabs ? (
         <div className="flex flex-col items-center flex-1 md:w-2/4 md:flex-initial max-w-2xl">
-          <div className="flex gap-6 mt-1 text-sm font-medium">
-            <a
-              className="text-mainred border-b-2 border-mainred pb-0.5"
-              href="#"
-            >
-              Tất cả
-            </a>
-            <a
-              className="text-slate-500 hover:text-mainred transition-colors pb-0.5"
-              href="#"
-            >
-              Người dùng
-            </a>
-            <a
-              className="text-slate-500 hover:text-mainred transition-colors pb-0.5"
-              href="#"
-            >
-              Nhóm
-            </a>
-          </div>
+          <React.Suspense fallback={<div className="h-7" />}>
+            <FeedFilterTabs />
+          </React.Suspense>
         </div>
       ) : (
         <div className="flex-1 text-center font-bold text-lg hidden md:block">

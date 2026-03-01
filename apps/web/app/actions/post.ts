@@ -1,10 +1,6 @@
 "use server";
 import { getPostRabbitMQClient } from "@repo/rabbitmq/PostRabbitMQ";
-import { getCacheInvalidationService } from "@repo/redis/cacheInvalidationService";
-import { getFeedCacheService } from "@repo/redis/feedCacheService";
-import { getPostCacheService } from "@repo/redis/postCacheService";
-import { getRedisClient } from "@repo/redis/redis";
-import { Post, PostResponse, privacyPost } from "@repo/shared/types/post";
+import { FeedFilter, Post, PostResponse, privacyPost } from "@repo/shared/types/post";
 import { PostQueueDeletePayload } from "@repo/shared/types/postQueue";
 import { createClient } from "@repo/supabase/server";
 
@@ -26,15 +22,10 @@ export interface FetchPostsResponse {
   currentPage: number;
 }
 
-const redis = getRedisClient();
-const feedCache = getFeedCacheService();
-const postCache = getPostCacheService();
-const cacheInvalidation = getCacheInvalidationService();
-
 export async function fetchPosts(
   page: number,
   itemsPerPage: number,
-  // userId: string = "public" // For future use with user-specific feeds
+  filter: FeedFilter = "all"
 ) {
   // Try cache first
   // const cachedFeed = await feedCache.getCachedFeedPage(userId, page, itemsPerPage);
@@ -56,75 +47,30 @@ export async function fetchPosts(
 
   const offset = (page - 1) * itemsPerPage;
 
-  // Get total count
-  const { count, error: countError } = await supabase
-    .from("posts")
-    .select("*", { count: "exact", head: true });
-
-  if (countError) {
-    throw new Error(`Failed to count posts: ${countError.message}`);
-  }
-
-  const total = count || 0;
-
-  // If offset is beyond total, return empty array
-  if (offset >= total && total > 0) {
-    return {
-      posts: [],
-      hasMore: false,
-      total,
-      currentPage: page,
-    };
-  }
-
-  // Fetch posts for current page
-  // Main feed excludes group posts (group_id is null)
-  const { data, error } = await supabase
-    .from("posts")
-    .select(
-      `
-      id,
-      created_at, 
-      author: profiles!posts_author_id_fkey(
-        id,
-        username,
-        slug,
-        display_name,
-        avatar_url,
-        global_role
-      ),
-      content,
-      media_urls,
-      updated_at,
-      like_count,
-      comment_count,
-      share_count,
-      privacy_level,
-      is_anonymous,
-      group_id,
-      group: groups!group_id(
-        id,
-        name,
-        slug
-      )
-      `
+  // Fetch posts and count for current page using RPC
+  const { data, count, error } = await supabase
+    .rpc(
+      "get_dashboard_posts" as never,
+      { p_filter: filter } as never,
+      { count: "exact" }
     )
-    .is("group_id", null)  // Exclude group posts from main feed
-    .range(offset, offset + itemsPerPage - 1)
-    .order("created_at", { ascending: false });
+    .range(offset, offset + itemsPerPage - 1);
 
   if (error) {
     throw new Error(`Failed to fetch posts: ${error.message}`);
   }
 
+  const typedData = (data as unknown as PostResponse[]) || [];
+  const total = count || 0;
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  let postsWithLikeStatus = data || [];
+  let postsWithLikeStatus = typedData;
 
-  if (user && data && data.length > 0) {
-    const postIds = data.map((p) => p.id);
+  if (user && typedData.length > 0) {
+    const postIds = typedData.map((p) => p.id);
     const { data: likes } = await supabase
       .from("post_likes")
       .select("post_id")
@@ -133,12 +79,12 @@ export async function fetchPosts(
 
     const likedPostIds = new Set(likes?.map((l) => l.post_id) || []);
 
-    postsWithLikeStatus = data.map((post) => ({
+    postsWithLikeStatus = typedData.map((post) => ({
       ...post,
       is_liked_by_viewer: likedPostIds.has(post.id),
     }));
   } else {
-     postsWithLikeStatus = (data || []).map((post) => ({
+    postsWithLikeStatus = typedData.map((post) => ({
       ...post,
       is_liked_by_viewer: false,
     }));

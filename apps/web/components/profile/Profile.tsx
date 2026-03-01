@@ -60,7 +60,6 @@ function Profile({ user, children }: ProfileProps) {
       setAvatars(data);
     };
     fetchAvatars();
-     
   }, [user.id]);
 
   const form = useForm({
@@ -211,7 +210,7 @@ function Profile({ user, children }: ProfileProps) {
                   </div>
                 )}
               </div>
-              <p className="text-muted-foreground font-medium line-clamp-2 md:line-clamp-3">
+              <p className="text-foreground text-sm max-w-2xl leading-relaxed mt-2 line-clamp-2">
                 {user?.description || (
                   <span className="italic opacity-60">
                     Chưa có lời giới thiệu nào
@@ -402,7 +401,7 @@ function Profile({ user, children }: ProfileProps) {
                 <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">
                   Về bản thân
                 </h3>
-                <p className="text-foreground text-base leading-relaxed">
+                <p className="text-foreground text-base leading-relaxed line-clamp-3 md:line-clamp-4">
                   {user?.description || (
                     <span className="italic opacity-60">
                       Chưa có lời giới thiệu nào

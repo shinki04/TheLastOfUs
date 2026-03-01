@@ -4,10 +4,12 @@ import { PostResponse } from "@repo/shared/types/post";
 import { Button } from "@repo/ui/components/button";
 import { Skeleton } from "@repo/ui/components/skeleton";
 import { Loader2 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import React from "react";
 import { Virtuoso } from "react-virtuoso";
 
 import PostCard from "@/components/posts/PostCard";
+import { FeedFilter } from "@repo/shared/types/post";
 import { useInfinitePostsQuery } from "@/hooks/useInfinitePosts";
 
 import PendingPost from "./PendingPost";
@@ -17,6 +19,9 @@ import PendingPost from "./PendingPost";
  * Uses react-virtuoso for efficient rendering with dynamic heights
  */
 export function InfinitePostsList() {
+  const searchParams = useSearchParams();
+  const filter = (searchParams.get("filter") as FeedFilter) || "all";
+
   const {
     data,
     fetchNextPage,
@@ -25,7 +30,7 @@ export function InfinitePostsList() {
     isLoading,
     isError,
     error,
-  } = useInfinitePostsQuery();
+  } = useInfinitePostsQuery(filter);
 
   const posts = data?.pages.flatMap((page) => page.posts) ?? [];
 
