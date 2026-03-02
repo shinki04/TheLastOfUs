@@ -20,7 +20,6 @@ export function GroupFilter({
             : "bg-gray-100 dark:bg-gray-800 text-slate-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-gray-700"
         }`}
       >
-        <span className="material-symbols-outlined text-[18px]">globe</span>
         Tất cả
       </button>
 
@@ -32,7 +31,6 @@ export function GroupFilter({
             : "bg-gray-100 dark:bg-gray-800 text-slate-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-gray-700"
         }`}
       >
-        <span className="material-symbols-outlined text-[18px]">lock_open</span>
         Công khai
       </button>
 
@@ -44,7 +42,6 @@ export function GroupFilter({
             : "bg-gray-100 dark:bg-gray-800 text-slate-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-gray-700"
         }`}
       >
-        <span className="material-symbols-outlined text-[18px]">lock</span>
         Riêng tư
       </button>
     </div>

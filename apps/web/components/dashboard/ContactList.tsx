@@ -49,8 +49,8 @@ export function ContactList() {
   if (isLoading) {
     return (
       <div>
-        <h3 className="font-bold text-base text-foreground mb-3">
-          Người liên hệ
+        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+          Bạn bè
         </h3>
         <div className="space-y-2">
           {[1, 2, 3, 4, 5].map((i) => (
@@ -67,8 +67,8 @@ export function ContactList() {
   if (!friends || friends.length === 0) {
     return (
       <div>
-        <h3 className="font-bold text-base text-foreground mb-3">
-          Người liên hệ
+        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+          Bạn bè
         </h3>
         <div className="flex flex-col items-center gap-2 py-6 text-muted-foreground">
           <Users className="h-8 w-8" />
@@ -80,8 +80,8 @@ export function ContactList() {
 
   return (
     <div>
-      <h3 className="font-bold text-base text-foreground mb-3">
-        Người liên hệ
+      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+        Bạn bè
       </h3>
       <div className="space-y-0.5">
         {friends.map((friend) => (

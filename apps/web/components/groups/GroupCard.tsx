@@ -1,4 +1,5 @@
 import { ExploreGroup } from "@repo/shared/types/explore-groups";
+import { Globe, Lock, ShieldX } from "lucide-react";
 import Link from "next/link";
 import React from "react";
 
@@ -7,6 +8,11 @@ interface GroupCardProps {
   onJoin?: (groupId: string) => void;
   isJoining?: boolean;
 }
+const PRIVACY_ICONS = {
+  public: Globe,
+  private: Lock,
+  secret: ShieldX,
+} as const;
 
 export function GroupCard({ group, onJoin, isJoining }: GroupCardProps) {
   const {
@@ -21,7 +27,8 @@ export function GroupCard({ group, onJoin, isJoining }: GroupCardProps) {
     my_membership_status,
   } = group;
 
-  const isPublic = privacy_level === "public";
+  const PrivacyIcon =
+    PRIVACY_ICONS[privacy_level as keyof typeof PRIVACY_ICONS];
 
   // Decide what button to show
   const showJoinButton = my_membership_status === "none";
@@ -43,11 +50,13 @@ export function GroupCard({ group, onJoin, isJoining }: GroupCardProps) {
           <div className="w-full h-full bg-slate-300 dark:bg-slate-700"></div>
         )}
         <span className="absolute top-3 right-3 z-20 bg-black/40 backdrop-blur-sm text-white text-xs font-medium px-2 py-1 rounded-md flex items-center gap-1 border border-white/20">
-          <span className="material-symbols-outlined text-[14px]">
-            {isPublic ? "public" : "lock"}
-          </span>{" "}
-          {isPublic ? "Công khai" : "Riêng tư"}
+          <PrivacyIcon strokeWidth={1.3} />
+          {/* {isPublic ? "Công khai" : "Riêng tư"} */}
         </span>
+        {/* <PrivacyIcon
+          size={20}
+          className="absolute top-3 right-3 z-20 bg-black/40 backdrop-blur-sm text-white rounded-md flex items-center gap-1 border border-white/20"
+        /> */}
       </div>
 
       {/* Content */}

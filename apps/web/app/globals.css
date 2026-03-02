@@ -361,4 +361,15 @@
     flex-direction: column;
     gap: 1.25rem;
   }
+  
+}
+@layer components {
+  .button-red {
+    background-color: var(--mainred);
+    color: var(--white);
+  }
+
+  .button-red:hover {
+    background-color: var(--mainred-hover);
+  }
 }

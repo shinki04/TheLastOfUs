@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import MagnifierIcon from "@repo/ui/components/magnifier-icon";
 
 interface GroupSearchBarProps {
   onSearch: (query: string) => void;
@@ -20,7 +21,7 @@ export function GroupSearchBar({ onSearch, placeholder = "Tìm kiếm nhóm theo
   return (
     <div className="group-search flex-1 relative w-full">
       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-        <span className="material-symbols-outlined text-gray-400">search</span>
+        <MagnifierIcon />
       </div>
       <input
         className="block w-full pl-10 pr-3 py-2.5 rounded-lg leading-5 sm:text-sm transition-colors group-search-input"

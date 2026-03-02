@@ -2,7 +2,6 @@
 
 import { GroupPrivacyFilter } from "@repo/shared/types/explore-groups";
 import { useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
 import React, { useState } from "react";
 import { toast } from "sonner";
 
@@ -11,6 +10,8 @@ import { GroupCard } from "@/components/groups/GroupCard";
 import { GroupFilter } from "@/components/groups/GroupFilter";
 import { GroupSearchBar } from "@/components/groups/GroupSearchBar";
 import { useExploreGroups } from "@/hooks/useGroup";
+import { SearchX } from "lucide-react";
+import { CreateGroupDialog } from "@/components/groups/create-group-dialog";
 
 export default function ExploreGroupsPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -64,12 +65,14 @@ export default function ExploreGroupsPage() {
             Tìm kiếm và tham gia các cộng đồng học thuật tại Văn Lang
           </p>
         </div>
-        <Link href="/groups/create" className="hidden md:flex">
-          <button className="flex items-center gap-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-4 py-2 rounded-lg font-medium shadow hover:opacity-90 transition-opacity">
-            <span className="material-symbols-outlined text-[20px]">add</span>
-            <span>Tạo nhóm mới</span>
-          </button>
-        </Link>
+        <div className="hidden md:flex">
+          {/* <Button>
+            <span className="flex items-center gap-2 justify-center">
+              <Plus /> Tạo nhóm mới
+            </span>
+          </Button> */}
+          <CreateGroupDialog />
+        </div>
       </div>
 
       <div className="bg-dashboard-card p-4 rounded-xl shadow-sm border border-dashboard-border">
@@ -82,14 +85,14 @@ export default function ExploreGroupsPage() {
               onFilterChange={setPrivacyFilter}
             />
             <div className="h-6 w-px bg-gray-300 dark:bg-gray-700 mx-2 hidden lg:block"></div>
-            <button
+            {/* <button
               className="hidden lg:flex items-center justify-center p-2.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-slate-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               title="Lọc nâng cao"
             >
               <span className="material-symbols-outlined text-[20px]">
                 tune
               </span>
-            </button>
+            </button> */}
           </div>
         </div>
       </div>
@@ -104,9 +107,7 @@ export default function ExploreGroupsPage() {
         </div>
       ) : groups.length === 0 ? (
         <div className="w-full p-12 text-center text-slate-500 bg-dashboard-sidebar rounded-xl border border-dashboard-border flex flex-col items-center justify-center gap-4">
-          <span className="material-symbols-outlined text-4xl text-slate-300">
-            search_off
-          </span>
+          <SearchX />
           <div>
             <p className="font-medium text-slate-700 dark:text-slate-200 text-lg">
               Không tìm thấy nhóm nào
