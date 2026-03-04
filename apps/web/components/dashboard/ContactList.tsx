@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@repo/ui/components/dropdown-menu";
 import { Skeleton } from "@repo/ui/components/skeleton";
-import { MessageCircle, User, Users } from "lucide-react";
+import { BadgeCheck,MessageCircle, User, Users } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
@@ -99,6 +99,13 @@ export function ContactList() {
                     height={36}
                     className="rounded-full object-cover aspect-square"
                   />
+                  {friend.global_role === "lecturer" && (
+                    <BadgeCheck
+                      className="absolute -bottom-1 -right-1 w-4 h-4 text-blue-500 bg-white dark:bg-dashboard-background rounded-full"
+                      fill="currentColor"
+                      stroke="white"
+                    />
+                  )}
                   {/* Online indicator dot - placeholder for future */}
                   {/* <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-background" /> */}
                 </div>
@@ -120,7 +127,9 @@ export function ContactList() {
                 <MessageCircle className="h-4 w-4 mr-2" />
                 Nhắn tin
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleViewProfile(friend.id)}>
+              <DropdownMenuItem
+                onClick={() => handleViewProfile(friend.slug || friend.id)}
+              >
                 <User className="h-4 w-4 mr-2" />
                 Xem trang cá nhân
               </DropdownMenuItem>

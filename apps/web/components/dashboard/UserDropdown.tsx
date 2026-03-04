@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@repo/ui/components/dropdown-menu";
-import { ChevronsUpDown, LogOut } from "lucide-react";
+import { ChevronsUpDown, LogOut, Settings, User } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -60,9 +60,13 @@ export function UserDropdown({
         <DropdownMenuContent align="end">
           <DropdownMenuGroup>
             <DropdownMenuItem onClick={() => router.push(`/profile/${slug}`)}>
+              <User />
               Trang cá nhân
             </DropdownMenuItem>
-            <DropdownMenuItem>Post đang chờ</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push(`/setting/profile`)}>
+              <Settings />
+              Cài đặt
+            </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuGroup>
             <DropdownMenuItem

@@ -35,7 +35,7 @@ export function SidebarNav({ unreadCount }: { unreadCount: number }) {
         <HomeIcon className={getIconClasses("/dashboard")} />
         <span className="text-base">Trang chủ</span>
       </Link>
-      
+
       <Link href="/messages" className={getLinkClasses("/messages")}>
         <MessageCircleIcon className={getIconClasses("/messages")} />
         <span className="text-base">Tin nhắn</span>
@@ -45,19 +45,19 @@ export function SidebarNav({ unreadCount }: { unreadCount: number }) {
           </span>
         )}
       </Link>
-      
+
       <Link href="/groups" className={getLinkClasses("/groups")}>
         <GroupsIcon className={getIconClasses("/groups")} />
         <span className="text-base">Nhóm</span>
       </Link>
-      
+
       <Link href="/friends" className={getLinkClasses("/friends")}>
         <UsersIcon className={getIconClasses("/friends")} />
         <span className="text-base">Bạn bè</span>
       </Link>
-      
-      <Link href="" className={getLinkClasses("")}>
-        <BookmarkIcon className={getIconClasses("")} />
+
+      <Link href="/saved" className={getLinkClasses("/saved")}>
+        <BookmarkIcon className={getIconClasses("/saved")} />
         <span className="text-base">Đã lưu</span>
       </Link>
     </nav>

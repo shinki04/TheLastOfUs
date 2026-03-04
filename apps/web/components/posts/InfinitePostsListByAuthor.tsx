@@ -7,7 +7,7 @@ import React, { useCallback, useEffect, useRef } from "react";
 import PostCard from "@/components/posts/PostCard";
 import { useInfinitePostsByAuthorQuery } from "@/hooks/useInfinitePosts";
 
-import PendingPost from "./PendingPost";
+
 interface PostByAuthorProps {
   authorId: string;
 }
@@ -95,8 +95,6 @@ export function InfinitePostsListByAuthor({ authorId }: PostByAuthorProps) {
         </div>
       ) : (
         <>
-          <PendingPost />
-
           {/* Regular fetched posts */}
           {posts.map((post: PostResponse) => (
             <PostCard key={post.id} post={post} />

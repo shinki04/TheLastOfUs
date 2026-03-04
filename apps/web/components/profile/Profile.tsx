@@ -11,7 +11,7 @@ import {
 } from "@repo/ui/components/dialog";
 import { Skeleton } from "@repo/ui/components/skeleton";
 import { useForm } from "@tanstack/react-form";
-import { Camera, Pencil } from "lucide-react";
+import { BadgeCheck, Camera, Pencil } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -192,21 +192,20 @@ function Profile({ user, children }: ProfileProps) {
             </div>
 
             <div className="flex-1 flex flex-col items-center md:items-start pt-2 md:pt-16 pb-2">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 justify-center items-center">
                 <h1 className="text-2xl md:text-3xl font-bold text-foreground">
                   {user?.display_name || user?.username}
                 </h1>
                 {user?.global_role === "lecturer" && (
                   <div
-                    className="bg-mainred text-white rounded-full px-2 py-0.5 flex items-center gap-1 shadow-sm border border-mainred"
                     title="Giảng viên đã xác thực"
+                    className="inline-flex items-center justify-center"
                   >
-                    <span className="material-symbols-outlined text-[14px] font-bold filled">
-                      verified
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:block">
-                      Xác thực giảng viên
-                    </span>
+                    <BadgeCheck
+                      className="w-6 h-6 text-blue-500"
+                      fill="currentColor"
+                      stroke="white"
+                    />
                   </div>
                 )}
               </div>
@@ -335,14 +334,23 @@ function Profile({ user, children }: ProfileProps) {
                         href={`/profile/${friend.id}`}
                         className="flex flex-col items-center gap-2 rounded-lg p-2 transition-colors hover:bg-dashboard-background"
                       >
-                        <Image
-                          src={friend.avatar_url || BLANK_AVATAR}
-                          alt={friend.display_name || "User"}
-                          width={64}
-                          height={64}
-                          className="rounded-full object-cover aspect-square border border-dashboard-border"
-                        />
-                        <span className="text-xs font-medium truncate max-w-full text-center">
+                        <div className="relative shrink-0">
+                          <Image
+                            src={friend.avatar_url || BLANK_AVATAR}
+                            alt={friend.display_name || "User"}
+                            width={64}
+                            height={64}
+                            className="rounded-full object-cover aspect-square border border-dashboard-border"
+                          />
+                          {friend.global_role === "lecturer" && (
+                            <BadgeCheck
+                              className="absolute -bottom-1 -right-1 w-5 h-5 text-blue-500 bg-white dark:bg-dashboard-card rounded-full"
+                              fill="currentColor"
+                              stroke="white"
+                            />
+                          )}
+                        </div>
+                        <span className="text-xs font-medium truncate max-w-full text-center mt-1">
                           {friend.display_name || friend.username}
                         </span>
                       </Link>
@@ -429,31 +437,40 @@ function Profile({ user, children }: ProfileProps) {
                     href={`/profile/${friend.id}`}
                     className="flex flex-col items-center gap-3 p-4 rounded-xl border border-dashboard-border bg-dashboard-background hover:border-mainred/50 hover:shadow-sm transition-all"
                   >
-                    <Image
-                      src={friend.avatar_url || BLANK_AVATAR}
-                      alt={friend.display_name || "User"}
-                      width={96}
-                      height={96}
-                      className="rounded-full object-cover aspect-square border-2 border-dashboard-card shadow-sm"
-                    />
-                    <div className="text-center w-full">
+                    <div className="relative shrink-0">
+                      <Image
+                        src={friend.avatar_url || BLANK_AVATAR}
+                        alt={friend.display_name || "User"}
+                        width={96}
+                        height={96}
+                        className="rounded-full object-cover aspect-square border-2 border-dashboard-card shadow-sm"
+                      />
+                      {friend.global_role === "lecturer" && (
+                        <div
+                          title="Giảng viên"
+                          className="absolute bottom-0 right-0"
+                        >
+                          <BadgeCheck
+                            className="w-6 h-6 text-blue-500 bg-white dark:bg-dashboard-background rounded-full"
+                            fill="currentColor"
+                            stroke="white"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-center w-full relative mt-1">
                       <span className="text-sm block font-bold text-foreground truncate max-w-full">
                         {friend.display_name || friend.username}
                       </span>
-                      {friend.global_role === "lecturer" && (
-                        <span className="text-[10px] text-mainred font-semibold mt-1 inline-block bg-mainred/10 px-2 py-0.5 rounded-full">
-                          Giảng viên
-                        </span>
-                      )}
                     </div>
                   </Link>
                 ))}
               </div>
             ) : (
               <div className="text-center py-12 text-muted-foreground">
-                <span className="material-symbols-outlined text-4xl mb-2">
+                {/* <span className="material-symbols-outlined text-4xl mb-2">
                   person_off
-                </span>
+                </span> */}
                 <p>Chưa có bạn bè.</p>
               </div>
             )}
@@ -469,9 +486,9 @@ function Profile({ user, children }: ProfileProps) {
               <OldAvatars avatars={avatars} />
             ) : (
               <div className="text-center py-12 text-muted-foreground">
-                <span className="material-symbols-outlined text-4xl mb-2">
+                {/* <span className="material-symbols-outlined text-4xl mb-2">
                   no_photography
-                </span>
+                </span> */}
                 <p>Chưa có ảnh nào.</p>
               </div>
             )}

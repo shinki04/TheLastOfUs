@@ -63,6 +63,39 @@ export function useInfinitePostsQuery(filter: FeedFilter = "all") {
   });
 }
 
+export function useInfiniteSavedPostsQuery() {
+  const user = useGetCurrentUser();
+  return useInfiniteQuery({
+    queryKey: ["posts", "saved", "infinite"],
+    queryFn: async ({ pageParam = 1 }) => {
+      if (!user.data) {
+        throw new Error("Something went wrong!");
+      }
+      const res = await fetch(
+        `/api/posts/saved?page=${pageParam}&itemsPerPage=${ITEMS_PER_PAGE}`
+      );
+      if (!res.ok) throw new Error("Failed to fetch saved posts");
+      const data = await res.json();
+      return {
+        posts: data.posts || [],
+        page: pageParam,
+        hasMore: data.hasMore,
+        total: data.total,
+        nextPage: pageParam + 1,
+      };
+    },
+    getNextPageParam: (lastPage) => {
+      return lastPage.hasMore ? lastPage.nextPage : undefined;
+    },
+    initialPageParam: 1,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+    enabled: !!user?.data?.id,
+  });
+}
+
 export function useInfinitePostsByAuthorQuery(authorId: string) {
   return useInfiniteQuery({
     queryKey: ["posts", "infinite", authorId],

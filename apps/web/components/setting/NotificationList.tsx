@@ -11,18 +11,18 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@repo/ui/components/avatar";
-import { BellIcon } from "@repo/ui/components/bell";
 import { Button } from "@repo/ui/components/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@repo/ui/components/dropdown-menu";
-import { InfiniteData,useQueryClient } from "@tanstack/react-query";
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@repo/ui/components/card";
+import { InfiniteData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import {
+  Bell,
   CheckCircle2,
   File,
   Heart,
@@ -33,8 +33,7 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import * as React from "react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useInView } from "react-intersection-observer";
 
 import {
@@ -62,11 +61,9 @@ function getNotificationIcon(type: NotificationType) {
     case "post":
       return <File className="h-4 w-4 text-blue-400" />;
     default:
-      return <BellIcon className="h-4 w-4 text-slate-500" />;
+      return <Bell className="h-4 w-4 text-slate-500" />;
   }
 }
-
-import { useQuery } from "@tanstack/react-query";
 
 function FriendRequestActionsWrapper({
   notification,
@@ -88,10 +85,10 @@ function FriendRequestActionsWrapper({
   if (relationship?.status === "friends") return null;
 
   return (
-    <div className="flex items-center gap-2 mt-2">
+    <div className="flex items-center gap-2 mt-3">
       <Button
         size="sm"
-        className="h-7 text-xs px-3"
+        className="h-8 text-xs px-4"
         onClick={async (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -113,7 +110,7 @@ function FriendRequestActionsWrapper({
       <Button
         size="sm"
         variant="outline"
-        className="h-7 text-xs px-3"
+        className="h-8 text-xs px-4"
         onClick={async (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -136,8 +133,7 @@ function FriendRequestActionsWrapper({
   );
 }
 
-export function NotificationDropdown() {
-  const [isOpen, setIsOpen] = useState(false);
+export function NotificationList() {
   const queryClient = useQueryClient();
 
   const {
@@ -160,7 +156,6 @@ export function NotificationDropdown() {
 
   useEffect(() => {
     const supabase = createClient();
-    // Get the current user to verify recipient
     const setupRealtime = async () => {
       if (!user) return;
 
@@ -169,13 +164,12 @@ export function NotificationDropdown() {
         .on(
           "postgres_changes",
           {
-            event: "INSERT", // Listen to all events (INSERT/UPDATE/DELETE)
+            event: "INSERT",
             schema: "public",
             table: "notifications",
             filter: `recipient_id=eq.${user.id}`,
           },
           () => {
-            // Invalidate the query to fetch fresh notifications
             queryClient.invalidateQueries({
               queryKey: ["notifications", "infinite"],
             });
@@ -195,20 +189,14 @@ export function NotificationDropdown() {
     };
   }, [queryClient, user]);
 
-  // Flatten the infinite query data structure
-  const notifications = React.useMemo(() => {
+  const notifications = useMemo(() => {
     return data?.pages.flatMap((page) => page.notifications) || [];
   }, [data]);
-
-  const unreadCount = React.useMemo(() => {
-    return notifications.filter((n) => !n.is_read).length;
-  }, [notifications]);
 
   const handleMarkAsRead = async (e: React.MouseEvent, id: string) => {
     e.preventDefault();
     e.stopPropagation();
     try {
-      // Optimistic update
       queryClient.setQueryData<
         InfiniteData<{
           notifications: NotificationWithSender[];
@@ -229,16 +217,12 @@ export function NotificationDropdown() {
       await markNotificationAsRead(id);
     } catch (error) {
       console.error("Failed to mark notification as read:", error);
-      // Revert optimism on error
       refetch();
     }
   };
 
-  const handleMarkAllAsRead = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleMarkAllAsRead = async () => {
     try {
-      // Optimistic update
       queryClient.setQueryData<
         InfiniteData<{
           notifications: NotificationWithSender[];
@@ -264,64 +248,51 @@ export function NotificationDropdown() {
     }
   };
 
-  return (
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuTrigger asChild>
-        <button className="relative p-1.5 md:p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300">
-          <BellIcon className="w-5 h-5 md:w-6 md:h-6" />
-          {unreadCount > 0 && (
-            <span className="absolute top-1 right-1 flex h-4 w-4">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-mainred opacity-75"></span>
-              <span className="relative flex h-4 w-4 items-center justify-center rounded-full bg-mainred text-[10px] font-bold text-white">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            </span>
-          )}
-        </button>
-      </DropdownMenuTrigger>
+  const unreadCount = useMemo(() => {
+    return notifications.filter((n) => !n.is_read).length;
+  }, [notifications]);
 
-      <DropdownMenuContent
-        align="end"
-        avoidCollisions
-        className="w-[calc(100vw-2rem)] max-w-[360px] sm:w-[360px] p-0 shadow-lg"
-        sideOffset={8}
-      >
-        <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="font-semibold text-base">Thông báo</h3>
+  return (
+    <div className="max-w-4xl mx-auto w-full pt-4">
+      <Card className="flex flex-col w-full border-none shadow-none md:border-solid bg-transparent md:bg-dashboard-card dark:md:bg-dashboard-darkCard overflow-hidden">
+        <CardHeader className="flex flex-row items-center justify-between p-4 md:px-8 border-b border-dashboard-border space-y-0">
+          <CardTitle className="text-xl md:text-2xl font-bold">
+            Thông báo của bạn
+          </CardTitle>
           {unreadCount > 0 && (
             <Button
               variant="ghost"
               size="sm"
-              className="text-xs text-primary h-auto py-1 px-2"
               onClick={handleMarkAllAsRead}
+              className="text-primary hover:text-mainred transition-colors shrink-0"
             >
-              <CheckCircle2 className="mr-1 h-3 w-3" />
-              Đánh dấu tất cả đã đọc
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Đánh dấu tất cả đã đọc</span>
+              <span className="sm:hidden">Đã đọc tất cả</span>
             </Button>
           )}
-        </div>
+        </CardHeader>
 
-        <div className="max-h-[70vh] overflow-y-auto w-full custom-scrollbar">
+        <CardContent className="flex flex-col w-full min-h-[40vh] p-0">
           {status === "pending" ? (
-            <div className="p-8 flex justify-center items-center">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <div className="p-12 flex justify-center items-center">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : notifications.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground flex flex-col items-center">
-              <BellIcon className="h-10 w-10 text-slate-200 mb-3" />
-              <p>Bạn không có thông báo nào.</p>
+            <div className="p-12 text-center text-muted-foreground flex flex-col items-center">
+              <Bell className="h-12 w-12 text-slate-200 dark:text-slate-800 mb-4" />
+              <p className="text-lg">Bạn không có thông báo nào.</p>
             </div>
           ) : (
-            <>
+            <div className="flex flex-col divide-y divide-dashboard-border">
               {notifications.map((notification) => (
-                <DropdownMenuItem
+                <div
                   key={notification.id}
-                  className={`p-4 border-b last:border-0 cursor-pointer rounded-none flex items-start gap-4 transition-colors ${
+                  className={`w-full transition-colors relative group ${
                     !notification.is_read
-                      ? "bg-slate-50 dark:bg-slate-900/50"
-                      : ""
+                      ? "bg-slate-50 dark:bg-slate-800/50"
+                      : "hover:bg-slate-50 dark:hover:bg-slate-800/30"
                   }`}
-                  asChild
                 >
                   <Link
                     href={
@@ -337,20 +308,16 @@ export function NotificationDropdown() {
                             ? `/post/${notification.entity_id}`
                             : "#"
                     }
-                    onClick={() => {
+                    onClick={(e) => {
                       if (!notification.is_read) {
-                        const fakeEvent = {
-                          preventDefault: () => {},
-                          stopPropagation: () => {},
-                        } as React.MouseEvent;
-                        handleMarkAsRead(fakeEvent, notification.id);
+                        handleMarkAsRead(e, notification.id);
                       }
-                      setIsOpen(false);
                     }}
+                    className="flex items-start gap-4 p-4 md:px-8"
                   >
-                    <div className="relative shrink-0">
+                    <div className="relative shrink-0 mt-1">
                       {notification.sender ? (
-                        <Avatar className="h-10 w-10">
+                        <Avatar className="h-12 w-12 border border-slate-200 dark:border-slate-800">
                           <AvatarImage
                             src={notification.sender.avatar_url || BLANK_AVATAR}
                           />
@@ -359,74 +326,86 @@ export function NotificationDropdown() {
                           </AvatarFallback>
                         </Avatar>
                       ) : (
-                        <div className="h-10 w-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                          <Info className="h-5 w-5 text-slate-500" />
+                        <div className="h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700">
+                          <Info className="h-6 w-6 text-slate-500" />
                         </div>
                       )}
-                      <span className="absolute -bottom-1 -right-1 rounded-full bg-background p-0.5 border shadow-sm">
+                      <span className="absolute -bottom-1 -right-1 rounded-full bg-background p-1 border shadow-sm">
                         {getNotificationIcon(notification.type)}
                       </span>
                     </div>
 
-                    <div className="flex-1 space-y-1 overflow-hidden">
+                    <div className="flex-1 space-y-1">
                       <p
-                        className={`text-sm wrap-break-word ${!notification.is_read ? "font-semibold text-foreground" : "text-muted-foreground"}`}
+                        className={`text-base ${
+                          !notification.is_read
+                            ? "font-semibold text-slate-900 dark:text-slate-100"
+                            : "text-slate-700 dark:text-slate-300"
+                        }`}
                       >
                         {notification.title}
                       </p>
-                      <p className="text-xs text-muted-foreground line-clamp-2">
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
                         {notification.message}
                       </p>
 
-                      {/* Inline Friend Request Actions */}
                       {notification.type === "friend" &&
                         !notification.is_read &&
                         notification.entity_id && (
-                          <FriendRequestActionsWrapper
-                            notification={notification}
-                            handleMarkAsRead={handleMarkAsRead}
-                          />
+                          <div onClick={(e) => e.preventDefault()}>
+                            <FriendRequestActionsWrapper
+                              notification={notification}
+                              handleMarkAsRead={handleMarkAsRead}
+                            />
+                          </div>
                         )}
 
-                      <div className="flex items-center justify-between mt-2">
-                        <span className="text-[11px] text-muted-foreground font-medium">
+                      <div className="mt-2 text-xs font-medium text-muted-foreground flex items-center gap-2">
+                        <span>
                           {notification.created_at
                             ? formatDistanceToNow(
                                 new Date(notification.created_at),
-                                {
-                                  addSuffix: true,
-                                  locale: vi,
-                                },
+                                { addSuffix: true, locale: vi },
                               )
                             : ""}
                         </span>
                         {!notification.is_read &&
                           notification.type !== "friend" && (
-                            <button
-                              onClick={(e) =>
-                                handleMarkAsRead(e, notification.id)
-                              }
-                              className="h-2 w-2 rounded-full bg-primary"
-                              title="Đánh dấu đã đọc"
-                            />
+                            <>
+                              <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
+                              <button
+                                onClick={(e) =>
+                                  handleMarkAsRead(e, notification.id)
+                                }
+                                className="text-primary hover:text-mainred transition-colors"
+                              >
+                                Đánh dấu đã đọc
+                              </button>
+                            </>
                           )}
                       </div>
                     </div>
+
+                    {!notification.is_read && (
+                      <div className="shrink-0 flex items-center h-full pt-4">
+                        <span className="w-2.5 h-2.5 rounded-full bg-primary" />
+                      </div>
+                    )}
                   </Link>
-                </DropdownMenuItem>
+                </div>
               ))}
 
               {hasNextPage && (
-                <div ref={ref} className="p-4 flex justify-center items-center">
+                <div ref={ref} className="p-8 flex justify-center items-center">
                   {isFetchingNextPage ? (
-                    <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" />
+                    <Loader2 className="h-6 w-6 text-muted-foreground animate-spin" />
                   ) : null}
                 </div>
               )}
-            </>
+            </div>
           )}
-        </div>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

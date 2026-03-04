@@ -22,6 +22,7 @@ export const ADMIN_ROUTES = {
   POSTS_ALL: "/dashboard/posts/all",
   POSTS_FLAGGED: "/dashboard/posts/flagged",
   POSTS_REJECTED: "/dashboard/posts/rejected",
+  POST_APPEALS: "/dashboard/posts/appeals",
   // Comments
   COMMENTS: "/dashboard/comments",
   COMMENTS_MANAGE: "/dashboard/comments/manage",
@@ -87,6 +88,7 @@ export const SIDEBAR_NAV_ITEMS: NavItem[] = [
       { title: "Tất cả bài đăng", url: ADMIN_ROUTES.POSTS_ALL },
       { title: "Bài viết bị đánh dấu Flag", url: ADMIN_ROUTES.POSTS_FLAGGED },
       { title: "Bài đăng bị từ chối", url: ADMIN_ROUTES.POSTS_REJECTED },
+      { title: "Bài viết khiếu nại", url: ADMIN_ROUTES.POST_APPEALS },
     ],
   },
   {

@@ -1,33 +1,20 @@
 "use client";
 
 import { PostResponse } from "@repo/shared/types/post";
-import { FeedFilter } from "@repo/shared/types/post";
 import { Button } from "@repo/ui/components/button";
 import { Skeleton } from "@repo/ui/components/skeleton";
-import { Loader2 } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import { Bookmark, Loader2 } from "lucide-react";
 import React from "react";
 import { Virtuoso } from "react-virtuoso";
 
 import PostCard from "@/components/posts/PostCard";
-import { useInfinitePostsQuery } from "@/hooks/useInfinitePosts";
-
-import PendingPost from "./PendingPost";
+import { useInfiniteSavedPostsQuery } from "@/hooks/useInfinitePosts";
 
 /**
- * Virtualized infinite scrolling posts list
- * Uses react-virtuoso for efficient rendering with dynamic heights
+ * Virtualized infinite scrolling list for saved (liked) posts.
+ * Same layout as InfinitePostsList but without PendingPost.
  */
-interface InfinitePostsListProps {
-  showPending?: boolean;
-}
-
-export function InfinitePostsList({
-  showPending = false,
-}: InfinitePostsListProps) {
-  const searchParams = useSearchParams();
-  const filter = (searchParams.get("filter") as FeedFilter) || "all";
-
+export function InfiniteSavedPostsList() {
   const {
     data,
     fetchNextPage,
@@ -36,11 +23,10 @@ export function InfinitePostsList({
     isLoading,
     isError,
     error,
-  } = useInfinitePostsQuery(filter);
+  } = useInfiniteSavedPostsQuery();
 
   const posts = data?.pages.flatMap((page) => page.posts) ?? [];
 
-  // Handle reaching end of list for infinite scroll
   const handleEndReached = React.useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
@@ -61,7 +47,7 @@ export function InfinitePostsList({
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center flex flex-col gap-2">
-          <p className="text-red-500 font-semibold">Lỗi khi tải bài viết</p>
+          <p className="text-red-500 font-semibold">Lỗi khi tải bài viết đã lưu</p>
           <p className="text-sm text-gray-500">
             {error instanceof Error ? error.message : "Có lỗi xảy ra"}
           </p>
@@ -73,8 +59,14 @@ export function InfinitePostsList({
 
   if (posts.length === 0) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <p className="text-gray-500">Chưa có bài viết nào</p>
+      <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-dashboard-border rounded-xl">
+        <Bookmark className="w-12 h-12 mb-4 text-slate-300 dark:text-slate-700" />
+        <p className="text-lg font-medium text-slate-900 dark:text-slate-100">
+          Bạn chưa lưu bài viết nào
+        </p>
+        <p className="text-sm text-muted-foreground mt-1">
+          Các bài viết bạn thả tim sẽ xuất hiện ở đây.
+        </p>
       </div>
     );
   }
@@ -86,7 +78,6 @@ export function InfinitePostsList({
       endReached={handleEndReached}
       overscan={200}
       components={{
-        Header: showPending ? () => <PendingPost /> : undefined,
         Footer: () =>
           isFetchingNextPage ? (
             <div className="flex justify-center py-8">
@@ -95,7 +86,7 @@ export function InfinitePostsList({
           ) : !hasNextPage && posts.length > 0 ? (
             <div className="flex items-center justify-center py-8">
               <p className="text-gray-400 text-sm">
-                Đã hiển thị tất cả bài viết
+                Đã hiển thị tất cả bài viết đã lưu
               </p>
             </div>
           ) : null,

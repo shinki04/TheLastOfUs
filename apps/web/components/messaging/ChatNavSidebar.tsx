@@ -77,7 +77,7 @@ export function ChatNavSidebar({
                   className={cn(
                     "relative flex items-center justify-center w-12 h-12 rounded-2xl transition-all duration-200 group",
                     item.isActive
-                      ? "bg-primary/10 text-primary"
+                      ? " bg-mainred/10 text-mainred"
                       : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary",
                   )}
                 >
@@ -85,7 +85,7 @@ export function ChatNavSidebar({
                     className={cn(
                       "transition-colors",
                       item.isActive
-                        ? "text-primary"
+                        ? "text-mainred"
                         : "text-inherit group-hover:text-primary",
                     )}
                   />

@@ -46,7 +46,7 @@ async function ProfileIdPage({ params }: ProfileIdPageProps) {
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <Profile user={user!}>
-        <div className="bg-dashboard-card rounded-xl shadow-sm border border-dashboard-border overflow-hidden">
+        {/* <div className="bg-dashboard-card rounded-xl shadow-sm border border-dashboard-border overflow-hidden">
           <div className="px-4 py-3 bg-mainred/5 flex items-center gap-2 border-b border-mainred/10">
             <span className="material-symbols-outlined filled text-sm text-mainred">
               subject
@@ -58,6 +58,9 @@ async function ProfileIdPage({ params }: ProfileIdPageProps) {
           <div className="p-4 w-full">
             <InfinitePostsListByAuthor authorId={user!.id} />
           </div>
+        </div> */}
+        <div className="p-4 w-full">
+          <InfinitePostsListByAuthor authorId={user!.id} />
         </div>
       </Profile>
     </HydrationBoundary>

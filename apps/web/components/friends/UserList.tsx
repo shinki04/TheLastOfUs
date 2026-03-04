@@ -9,7 +9,15 @@ import {
   DropdownMenuTrigger,
 } from "@repo/ui/components/dropdown-menu";
 import { useQueryClient } from "@tanstack/react-query";
-import { Clock,MessageCircle, MoreHorizontal, UserCheck, UserPlus, X } from "lucide-react";
+import {
+  BadgeCheck,
+  Clock,
+  MessageCircle,
+  MoreHorizontal,
+  UserCheck,
+  UserPlus,
+  X,
+} from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -72,6 +80,15 @@ function UserCard({ user }: { user: SearchedUser }) {
           height={64}
           className="rounded-full object-cover aspect-square"
         />
+        {user.global_role === "lecturer" && (
+          <div title="Giảng viên" className="absolute -bottom-1 -right-1">
+            <BadgeCheck
+              className="w-6 h-6 text-blue-500 bg-white dark:bg-slate-900 rounded-full"
+              fill="currentColor"
+              stroke="white"
+            />
+          </div>
+        )}
       </div>
 
       <div className="flex-1 min-w-0">
@@ -84,15 +101,13 @@ function UserCard({ user }: { user: SearchedUser }) {
         <div className="text-sm text-muted-foreground truncate">
           @{user.username}
         </div>
-        {user.global_role && (
+        {user.global_role && user.global_role !== "lecturer" && (
           <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
             {user.global_role === "student"
               ? "Sinh viên"
-              : user.global_role === "lecturer"
-                ? "Giảng viên"
-                : user.global_role === "admin"
-                  ? "Quản trị viên"
-                  : user.global_role}
+              : user.global_role === "admin"
+                ? "Quản trị viên"
+                : user.global_role}
           </div>
         )}
       </div>
