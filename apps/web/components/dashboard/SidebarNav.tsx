@@ -14,13 +14,14 @@ export function SidebarNav({ unreadCount }: { unreadCount: number }) {
 
   const getLinkClasses = (path: string) => {
     // Treat empty path as fundamentally inactive for now
-    if (!path) return "flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-mainred-hover font-medium transition-colors group";
+    if (!path)
+      return "flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-mainred/10 dark:hover:bg-mainred-hover font-medium transition-colors group";
     
     const isActive = pathname === path || (path !== "/dashboard" && pathname.startsWith(path));
     if (isActive) {
-      return "flex items-center gap-3 px-4 py-3 rounded-lg bg-mainred/10 text-mainred font-semibold transition-colors group";
+      return "flex items-center gap-3 px-4 py-3 rounded-lg bg-mainred/30 text-mainred font-semibold transition-colors group";
     }
-    return "flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-mainred-hover font-medium transition-colors group";
+    return "flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-mainred/10 dark:hover:bg-mainred-hover font-medium transition-colors group";
   };
 
   const getIconClasses = (path: string) => {
