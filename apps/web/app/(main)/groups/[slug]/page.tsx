@@ -12,7 +12,7 @@ interface GroupPageProps {
 
 export default async function GroupPage({ params }: GroupPageProps) {
   const { slug } = await params;
-  const group = await getGroup(slug);
+  const group = await getGroup({ slug });
 
   if (!group) {
     notFound();

@@ -8,7 +8,7 @@ interface AboutPageProps {
 
 export default async function AboutPage({ params }: AboutPageProps) {
   const { slug } = await params;
-  const group = await getGroup(slug);
+  const group = await getGroup({ slug });
 
   if (!group) {
     notFound();

@@ -11,7 +11,7 @@ interface ManagePageProps {
 export default async function ManagePage({ params, searchParams }: ManagePageProps) {
   const { slug } = await params;
   const { tab } = await searchParams;
-  const group = await getGroup(slug);
+  const group = await getGroup({ slug });
 
   if (!group) {
     notFound();

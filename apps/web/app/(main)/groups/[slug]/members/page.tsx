@@ -9,7 +9,7 @@ interface MembersPageProps {
 
 export default async function MembersPage({ params }: MembersPageProps) {
   const { slug } = await params;
-  const group = await getGroup(slug);
+  const group = await getGroup({ slug });
 
   if (!group) {
     notFound();

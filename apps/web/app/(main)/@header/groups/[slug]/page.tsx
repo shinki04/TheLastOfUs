@@ -5,6 +5,6 @@ interface GroupSlugProps {
 }
 export default async function GroupsHeader({ params }: GroupSlugProps) {
   const { slug } = await params;
-  const group = await getGroup(slug);
+  const group = await getGroup({ slug });
   return <Header title={group?.name || "Nhóm"} />;
 }

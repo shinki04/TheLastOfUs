@@ -187,7 +187,8 @@ export async function fetchPostById(postId: string) {
           comment_count,
           share_count,
           privacy_level,
-          is_anonymous
+          is_anonymous,
+          group_id
           `
       )
       .eq("id", postId)

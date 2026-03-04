@@ -9,7 +9,7 @@ interface SettingsPageProps {
 
 export default async function SettingsPage({ params }: SettingsPageProps) {
   const { slug } = await params;
-  const group = await getGroup(slug);
+  const group = await getGroup({ slug });
 
   if (!group) {
     notFound();

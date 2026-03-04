@@ -548,16 +548,20 @@ export interface GroupWithDetails extends GroupData {
 /**
  * Get group by slug with membership info for current user
  */
-export async function getGroup(slug: string): Promise<GroupWithDetails | null> {
+export async function getGroup({ slug, id }: { slug?: string, id?: string }): Promise<GroupWithDetails | null> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  let query = supabase.from("groups").select("*");
+  if (slug) {
+    query = query.eq("slug", slug);
+  }
+  if (id) {
+    query = query.eq("id", id);
+  }
+
   // Fetch group basic info
-  const { data: group, error } = await supabase
-    .from("groups")
-    .select("*")
-    .eq("slug", slug)
-    .single();
+  const { data: group, error } = await query.single();
 
   if (error || !group) {
     console.error("Error fetching group:", error);

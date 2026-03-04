@@ -11,7 +11,7 @@ interface GroupLayoutProps {
 
 export default async function GroupLayout({ children, params }: GroupLayoutProps) {
   const { slug } = await params;
-  const group = await getGroup(slug);
+  const group = await getGroup({ slug });
 
   if (!group) {
     notFound();
