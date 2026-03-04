@@ -1,12 +1,12 @@
 "use client";
 
+import { PostAppeal } from "@repo/shared/types/post";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@repo/ui/components/avatar";
 import { Button } from "@repo/ui/components/button";
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@repo/ui/components/table";
-import { formatDistanceToNow } from "date-fns";
-import { vi } from "date-fns/locale";
-import { CheckCircle, Loader2, XCircle, Eye, AlertCircle } from "lucide-react";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -15,14 +15,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@repo/ui/components/dialog";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@repo/ui/components/avatar";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@repo/ui/components/table";
+import { formatDistanceToNow } from "date-fns";
+import { vi } from "date-fns/locale";
+import { AlertCircle,CheckCircle, Eye, Loader2, XCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { getPendingAppeals, updateAppealStatus } from "@/app/actions/appeals";
-import { PostAppeal } from "@repo/shared/types/post";
 
 export default function AppealsPage() {
   const [appeals, setAppeals] = useState<PostAppeal[]>([]);

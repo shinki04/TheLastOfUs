@@ -1,8 +1,8 @@
 "use server";
 
-import { createClient } from "@repo/supabase/server";
 import { ManagementPost } from "@repo/shared/types/post";
 import { PostQueueItem } from "@repo/shared/types/postQueue";
+import { createClient } from "@repo/supabase/server";
 
 export async function getUserPostsManagement(): Promise<ManagementPost[]> {
     const supabase = await createClient();

@@ -1,6 +1,7 @@
 "use client";
 
 import { BLANK_AVATAR } from "@repo/shared/types/user";
+import { User } from "@repo/shared/types/user";
 import { Button } from "@repo/ui/components/button";
 import { CardContent } from "@repo/ui/components/card";
 import { Input } from "@repo/ui/components/input";
@@ -12,8 +13,6 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { getCurrentUser, updateProfileWithAvatar } from "@/app/actions/user";
-
-import { User } from "@repo/shared/types/user";
 
 export function ProfileForm() {
   const { data: user, isLoading } = useQuery({

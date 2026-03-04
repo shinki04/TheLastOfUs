@@ -1,5 +1,6 @@
 "use client";
 
+import { ManagementPost, PostResponse } from "@repo/shared/types/post";
 import { Badge } from "@repo/ui/components/badge";
 import { Button } from "@repo/ui/components/button";
 import {
@@ -11,6 +12,7 @@ import {
   DialogTitle,
 } from "@repo/ui/components/dialog";
 import { Input } from "@repo/ui/components/input";
+import { Separator } from "@repo/ui/components/separator";
 import { Textarea } from "@repo/ui/components/textarea";
 import {
   AlertCircle,
@@ -25,16 +27,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Virtuoso } from "react-virtuoso";
 import { toast } from "sonner";
 
-import { ManagementPost, PostResponse } from "@repo/shared/types/post";
-
 import {
   getQueuePendingPostsForUser,
   getUserPostsManagement,
   submitPostAppealAction,
 } from "@/app/actions/post_management";
-import { Separator } from "@repo/ui/components/separator";
-import { useGetCurrentUser } from "@/hooks/useAuth";
 import PostCard from "@/components/posts/PostCard";
+import { useGetCurrentUser } from "@/hooks/useAuth";
 
 type FilterType = "all" | "approved" | "pending" | "rejected";
 
