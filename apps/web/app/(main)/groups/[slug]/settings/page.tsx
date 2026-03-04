@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 
-import { getGroup } from "@/app/actions/group";
+import { cachedGetGroup } from "@/app/actions/cached-group";
 import { GroupSettingsForm } from "@/components/groups/group-settings-form";
 
 interface SettingsPageProps {
@@ -9,7 +9,7 @@ interface SettingsPageProps {
 
 export default async function SettingsPage({ params }: SettingsPageProps) {
   const { slug } = await params;
-  const group = await getGroup({ slug });
+  const group = await cachedGetGroup({ slug });
 
   if (!group) {
     notFound();

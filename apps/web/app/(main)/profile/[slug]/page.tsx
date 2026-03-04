@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-query";
 import React from "react";
 
-import { getUserProfile } from "@/app/actions/user";
+import { cachedGetUserProfile } from "@/app/actions/cached-user";
 import InfinitePostsListByAuthor from "@/components/posts/InfinitePostsListByAuthor";
 import Profile from "@/components/profile/Profile";
 
@@ -33,7 +33,7 @@ async function ProfileIdPage({ params }: ProfileIdPageProps) {
   // Prefetch data cho client-side
   await queryClient.fetchQuery({
     queryKey: ["user", slug],
-    queryFn: () => getUserProfile(slug),
+    queryFn: () => cachedGetUserProfile(slug),
     staleTime: 5 * 60 * 1000,
   });
   // await Promise.all([

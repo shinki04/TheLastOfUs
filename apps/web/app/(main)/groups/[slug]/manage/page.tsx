@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 
-import { getGroup } from "@/app/actions/group";
+import { cachedGetGroup } from "@/app/actions/cached-group";
 import { GroupManageTabs } from "@/components/groups/group-manage-tabs";
 
 interface ManagePageProps {
@@ -8,10 +8,13 @@ interface ManagePageProps {
   searchParams: Promise<{ tab?: string }>;
 }
 
-export default async function ManagePage({ params, searchParams }: ManagePageProps) {
+export default async function ManagePage({
+  params,
+  searchParams,
+}: ManagePageProps) {
   const { slug } = await params;
   const { tab } = await searchParams;
-  const group = await getGroup({ slug });
+  const group = await cachedGetGroup({ slug });
 
   if (!group) {
     notFound();
@@ -19,9 +22,9 @@ export default async function ManagePage({ params, searchParams }: ManagePagePro
 
   // Only admin, sub_admin, or moderator can access manage page
   const canManage = ["admin", "sub_admin", "moderator"].includes(
-    group.my_membership?.role ?? ""
+    group.my_membership?.role ?? "",
   );
-  
+
   if (!canManage) {
     redirect(`/groups/${slug}`);
   }
@@ -31,9 +34,9 @@ export default async function ManagePage({ params, searchParams }: ManagePagePro
   return (
     <div className="py-6">
       <h2 className="text-2xl font-bold mb-6">Quản lý Group</h2>
-      <GroupManageTabs 
-        group={group} 
-        isAdmin={isAdmin} 
+      <GroupManageTabs
+        group={group}
+        isAdmin={isAdmin}
         canManage={canManage}
         defaultTab={tab || "members"}
       />

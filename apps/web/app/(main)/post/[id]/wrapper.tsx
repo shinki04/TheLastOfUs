@@ -1,12 +1,13 @@
 "use client";
+import { PostResponse } from "@repo/shared/types/post";
+import { Card } from "@repo/ui/components/card";
+import React from "react";
+
 import { GroupWithDetails } from "@/app/actions/group";
 import { CommentInput } from "@/components/comments/CommentInput";
 import { CommentSection } from "@/components/comments/CommentSection";
 import PostCard from "@/components/posts/PostCard";
 import { useGetCurrentUser } from "@/hooks/useAuth";
-import { PostResponse } from "@repo/shared/types/post";
-import { Card } from "@repo/ui/components/card";
-import React from "react";
 
 interface WrapperProps {
   post: PostResponse;

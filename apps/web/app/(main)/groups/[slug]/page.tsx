@@ -3,7 +3,8 @@ import { createClient } from "@repo/supabase/server";
 import { Lock } from "lucide-react";
 import { notFound } from "next/navigation";
 
-import { getGroup, getGroupOverviewMembers, getGroupPosts } from "@/app/actions/group";
+import { cachedGetGroup } from "@/app/actions/cached-group";
+import { getGroupOverviewMembers, getGroupPosts } from "@/app/actions/group";
 import { GroupContent } from "@/components/groups/group-content";
 
 interface GroupPageProps {
@@ -12,14 +13,16 @@ interface GroupPageProps {
 
 export default async function GroupPage({ params }: GroupPageProps) {
   const { slug } = await params;
-  const group = await getGroup({ slug });
+  const group = await cachedGetGroup({ slug });
 
   if (!group) {
     notFound();
   }
 
   const supabase = await createClient();
-  const { data: { user: authUser } } = await supabase.auth.getUser();
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
 
   // Check privacy and membership
   const isPrivate = group.privacy_level === "private";
@@ -41,7 +44,9 @@ export default async function GroupPage({ params }: GroupPageProps) {
     );
   }
 
-  const { coreMembers, friendMembers } = await getGroupOverviewMembers(group.id);
+  const { coreMembers, friendMembers } = await getGroupOverviewMembers(
+    group.id,
+  );
   const { posts } = await getGroupPosts(group.id);
 
   return (

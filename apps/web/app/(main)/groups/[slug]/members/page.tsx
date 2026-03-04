@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-import { getGroup } from "@/app/actions/group";
+import { cachedGetGroup } from "@/app/actions/cached-group";
 import { MemberList } from "@/components/groups/member-list";
 
 interface MembersPageProps {
@@ -9,7 +9,7 @@ interface MembersPageProps {
 
 export default async function MembersPage({ params }: MembersPageProps) {
   const { slug } = await params;
-  const group = await getGroup({ slug });
+  const group = await cachedGetGroup({ slug });
 
   if (!group) {
     notFound();

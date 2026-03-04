@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-import { getGroup } from "@/app/actions/group";
+import { cachedGetGroup } from "@/app/actions/cached-group";
 
 interface AboutPageProps {
   params: Promise<{ slug: string }>;
@@ -8,7 +8,7 @@ interface AboutPageProps {
 
 export default async function AboutPage({ params }: AboutPageProps) {
   const { slug } = await params;
-  const group = await getGroup({ slug });
+  const group = await cachedGetGroup({ slug });
 
   if (!group) {
     notFound();
@@ -34,9 +34,7 @@ export default async function AboutPage({ params }: AboutPageProps) {
           <div>
             <p className="text-muted-foreground">Tham gia</p>
             <p className="font-medium">
-              {group.membership_mode === "request"
-                ? "Cần duyệt"
-                : "Tự động"}
+              {group.membership_mode === "request" ? "Cần duyệt" : "Tự động"}
             </p>
           </div>
           <div>
