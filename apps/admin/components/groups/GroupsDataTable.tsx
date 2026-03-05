@@ -109,7 +109,7 @@ export function GroupsDataTable({ initialData }: GroupsDataTableProps) {
             setDeleteId(null);
             // Optionally refresh list if needed, but filtering locally is faster UI feedback
         }
-    } catch (error) {
+    } catch {
         toast.error("Đã xảy ra lỗi khi xóa nhóm");
     } finally {
         setIsDeleting(false);
@@ -142,8 +142,8 @@ export function GroupsDataTable({ initialData }: GroupsDataTableProps) {
     <>
       <div className="space-y-4">
         {/* Search and Controls */}
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-2 flex-1">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto flex-1">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -160,9 +160,14 @@ export function GroupsDataTable({ initialData }: GroupsDataTableProps) {
               {loading ? "..." : `${totalCount} nhóm`}
             </Badge>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Dòng:</span>
-            <Select value={String(rowsPerPage)} onValueChange={handleRowsPerPageChange}>
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <span className="text-sm text-muted-foreground whitespace-nowrap">
+              Dòng:
+            </span>
+            <Select
+              value={String(rowsPerPage)}
+              onValueChange={handleRowsPerPageChange}
+            >
               <SelectTrigger className="w-[70px] h-9">
                 <SelectValue />
               </SelectTrigger>
@@ -178,7 +183,7 @@ export function GroupsDataTable({ initialData }: GroupsDataTableProps) {
         </div>
 
         {/* Table */}
-        <div className="rounded-lg border">
+        <div className="rounded-lg border overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
@@ -194,62 +199,90 @@ export function GroupsDataTable({ initialData }: GroupsDataTableProps) {
               {loading ? (
                 Array.from({ length: Math.min(rowsPerPage, 5) }).map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-8" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                    <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-32" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-16" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-8" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-20" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-8 w-8" />
+                    </TableCell>
                   </TableRow>
                 ))
               ) : groups.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                  <TableCell
+                    colSpan={6}
+                    className="h-32 text-center text-muted-foreground"
+                  >
                     Không tìm thấy nhóm nào
                   </TableCell>
                 </TableRow>
               ) : (
                 groups.map((group) => {
-                    const isPrivate = group.privacy_level === "private";
-                    return (
-                        <TableRow key={group.id}>
-                        <TableCell>
-                            <div className="font-medium">{group.name}</div>
-                        </TableCell>
-                        <TableCell>
-                            <div className="text-muted-foreground text-sm">/{group.slug}</div>
-                        </TableCell>
-                        <TableCell>
-                            <div className="flex items-center gap-2">
-                                {isPrivate ? <Lock className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
-                                <span className="capitalize">{group.privacy_level}</span>
-                            </div>
-                        </TableCell>
-                        <TableCell>
-                            {group.members_count}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-sm">
-                            {format(new Date(group.created_at), "MMM d, yyyy")}
-                        </TableCell>
-                        <TableCell>
-                            <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <span className="sr-only">Mở menu</span>
-                                <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Hành động</DropdownMenuLabel>
-                                <DropdownMenuItem onClick={() => setDeleteId(group.id)} className="text-red-600 cursor-pointer">
-                                    <Trash className="mr-2 h-4 w-4" />
-                                    Xóa nhóm
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                            </DropdownMenu>
-                        </TableCell>
-                        </TableRow>
-                    );
+                  const isPrivate = group.privacy_level === "private";
+                  return (
+                    <TableRow key={group.id}>
+                      <TableCell>
+                        <div className="font-medium">{group.name}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-muted-foreground text-sm">
+                          /{group.slug}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {isPrivate ? (
+                            <Lock className="h-4 w-4" />
+                          ) : (
+                            <Globe className="h-4 w-4" />
+                          )}
+                          <span className="capitalize">
+                            {group.privacy_level}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{group.members_count}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {format(new Date(group.created_at), "MMM d, yyyy")}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                            >
+                              <span className="sr-only">Mở menu</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Hành động</DropdownMenuLabel>
+                            <DropdownMenuItem
+                              onClick={() => setDeleteId(group.id)}
+                              className="text-red-600 cursor-pointer"
+                            >
+                              <Trash className="mr-2 h-4 w-4" />
+                              Xóa nhóm
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  );
                 })
               )}
             </TableBody>
@@ -257,11 +290,11 @@ export function GroupsDataTable({ initialData }: GroupsDataTableProps) {
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
             Trang {page} / {totalPages} ({totalCount} tổng)
           </p>
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center justify-center gap-1">
             <Button
               variant="outline"
               size="icon"
@@ -271,9 +304,14 @@ export function GroupsDataTable({ initialData }: GroupsDataTableProps) {
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            {getPageNumbers().map((pageNum, idx) => (
+            {getPageNumbers().map((pageNum, idx) =>
               pageNum === "..." ? (
-                <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">...</span>
+                <span
+                  key={`ellipsis-${idx}`}
+                  className="px-2 text-muted-foreground"
+                >
+                  ...
+                </span>
               ) : (
                 <Button
                   key={pageNum}
@@ -285,8 +323,8 @@ export function GroupsDataTable({ initialData }: GroupsDataTableProps) {
                 >
                   {pageNum}
                 </Button>
-              )
-            ))}
+              ),
+            )}
             <Button
               variant="outline"
               size="icon"
@@ -299,8 +337,8 @@ export function GroupsDataTable({ initialData }: GroupsDataTableProps) {
           </div>
         </div>
       </div>
-      
-       <AlertDialog
+
+      <AlertDialog
         open={!!deleteId}
         onOpenChange={(open) => !open && setDeleteId(null)}
         title="Bạn có chắc chắn?"

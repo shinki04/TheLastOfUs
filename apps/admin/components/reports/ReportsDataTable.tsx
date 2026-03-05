@@ -120,12 +120,15 @@ export function ReportsDataTable({ initialData }: ReportsDataTableProps) {
   const [loading, setLoading] = React.useState(!initialData);
   const [page, setPage] = React.useState(1);
   const [totalPages, setTotalPages] = React.useState(initialData?.totalPages ?? 1);
-  const [totalCount, setTotalCount] = React.useState(initialData?.total ?? 0);
+  const [_totalCount, _setTotalCount] = React.useState(initialData?.total ?? 0);
   const [rowsPerPage, setRowsPerPage] = React.useState(20);
-  const [statusFilter, setStatusFilter] = React.useState<ReportFilterStatusType>("all");
+  const [statusFilter, setStatusFilter] =
+    React.useState<ReportFilterStatusType>("all");
   const [typeFilter, setTypeFilter] = React.useState<ReportFilterType>("all");
   const [isInitialLoad, setIsInitialLoad] = React.useState(true);
-  const [selectedReport, setSelectedReport] = React.useState<Report | null>(null);
+  const [selectedReport, setSelectedReport] = React.useState<Report | null>(
+    null,
+  );
   const { refreshKey } = useRefresh();
 
   const fetchReports = React.useCallback(async () => {
@@ -137,7 +140,7 @@ export function ReportsDataTable({ initialData }: ReportsDataTableProps) {
       });
       setReports(result.reports as unknown as Report[]);
       setTotalPages(result.totalPages);
-      setTotalCount(result.total);
+      _setTotalCount(result.total);
     } catch (error) {
       console.error("Failed to fetch reports:", error);
     } finally {
@@ -146,19 +149,34 @@ export function ReportsDataTable({ initialData }: ReportsDataTableProps) {
   }, [page, rowsPerPage, statusFilter, typeFilter]);
 
   React.useEffect(() => {
-    if (isInitialLoad && initialData && statusFilter === "all" && typeFilter === "all") {
+    if (
+      isInitialLoad &&
+      initialData &&
+      statusFilter === "all" &&
+      typeFilter === "all"
+    ) {
       setIsInitialLoad(false);
       return;
     }
-    
+
     fetchReports();
-  }, [fetchReports, refreshKey, isInitialLoad, initialData, statusFilter, typeFilter]);
+  }, [
+    fetchReports,
+    refreshKey,
+    isInitialLoad,
+    initialData,
+    statusFilter,
+    typeFilter,
+  ]);
 
   const handleStatusChange = async (reportId: string, newStatus: string) => {
     try {
-      await updateReportStatus(reportId, newStatus as "pending" | "reviewed" | "resolved" | "dismissed");
+      await updateReportStatus(
+        reportId,
+        newStatus as "pending" | "reviewed" | "resolved" | "dismissed",
+      );
       setReports((prev) =>
-        prev.map((r) => (r.id === reportId ? { ...r, status: newStatus } : r))
+        prev.map((r) => (r.id === reportId ? { ...r, status: newStatus } : r)),
       );
     } catch (error) {
       console.error("Failed to update status:", error);
@@ -174,13 +192,19 @@ export function ReportsDataTable({ initialData }: ReportsDataTableProps) {
     <>
       <div className="space-y-4">
         {/* Filters Row */}
-        <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Bộ lọc:</span>
           </div>
 
-          <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v as ReportFilterStatusType); setPage(1); }}>
+          <Select
+            value={statusFilter}
+            onValueChange={(v) => {
+              setStatusFilter(v as ReportFilterStatusType);
+              setPage(1);
+            }}
+          >
             <SelectTrigger className="w-[140px] h-9">
               <SelectValue placeholder="Trạng thái" />
             </SelectTrigger>
@@ -193,7 +217,13 @@ export function ReportsDataTable({ initialData }: ReportsDataTableProps) {
             </SelectContent>
           </Select>
 
-          <Select value={typeFilter} onValueChange={(v) => { setTypeFilter(v as ReportFilterType); setPage(1); }}>
+          <Select
+            value={typeFilter}
+            onValueChange={(v) => {
+              setTypeFilter(v as ReportFilterType);
+              setPage(1);
+            }}
+          >
             <SelectTrigger className="w-[140px] h-9">
               <SelectValue placeholder="Loại" />
             </SelectTrigger>
@@ -206,22 +236,29 @@ export function ReportsDataTable({ initialData }: ReportsDataTableProps) {
             </SelectContent>
           </Select>
 
-          <div className="ml-auto flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Dòng:</span>
-            <Select value={String(rowsPerPage)} onValueChange={handleRowsPerPageChange}>
+          <div className="flex-1 sm:ml-auto flex items-center justify-start sm:justify-end gap-2 w-full sm:w-auto">
+            <span className="text-sm text-muted-foreground whitespace-nowrap">
+              Dòng:
+            </span>
+            <Select
+              value={String(rowsPerPage)}
+              onValueChange={handleRowsPerPageChange}
+            >
               <SelectTrigger className="w-[70px] h-9">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {ROWS_PER_PAGE_OPTIONS.map((opt) => (
-                  <SelectItem key={opt} value={String(opt)}>{opt}</SelectItem>
+                  <SelectItem key={opt} value={String(opt)}>
+                    {opt}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
         </div>
 
-        <div className="rounded-md border">
+        <div className="rounded-md border overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
@@ -245,13 +282,16 @@ export function ReportsDataTable({ initialData }: ReportsDataTableProps) {
                 </TableRow>
               ) : reports.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                  <TableCell
+                    colSpan={7}
+                    className="h-24 text-center text-muted-foreground"
+                  >
                     Không tìm thấy tố cáo nào
                   </TableCell>
                 </TableRow>
               ) : (
                 reports.map((report) => (
-                  <TableRow 
+                  <TableRow
                     key={report.id}
                     className="cursor-pointer hover:bg-muted/50 transition-colors"
                     onClick={() => setSelectedReport(report)}
@@ -259,16 +299,23 @@ export function ReportsDataTable({ initialData }: ReportsDataTableProps) {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Avatar className="h-7 w-7">
-                          <AvatarImage src={report.reporter?.avatar_url || undefined} />
+                          <AvatarImage
+                            src={report.reporter?.avatar_url || undefined}
+                          />
                           <AvatarFallback className="text-xs">
-                            {(report.reporter?.display_name || "U")[0]?.toUpperCase()}
+                            {(report.reporter?.display_name ||
+                              "U")[0]?.toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-sm">{report.reporter?.display_name || "Ẩn danh"}</span>
+                        <span className="text-sm">
+                          {report.reporter?.display_name || "Ẩn danh"}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${typeColors[report.reported_type] || "bg-gray-100"}`}>
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium ${typeColors[report.reported_type] || "bg-gray-100"}`}
+                      >
                         {report.reported_type}
                       </span>
                     </TableCell>
@@ -280,16 +327,22 @@ export function ReportsDataTable({ initialData }: ReportsDataTableProps) {
                     <TableCell>
                       <p className="font-medium text-sm">{report.reason}</p>
                       {report.description && (
-                        <p className="text-xs text-muted-foreground line-clamp-1">{report.description}</p>
+                        <p className="text-xs text-muted-foreground line-clamp-1">
+                          {report.description}
+                        </p>
                       )}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={statusColors[report.status ?? ""] || "outline"}>
+                      <Badge
+                        variant={statusColors[report.status ?? ""] || "outline"}
+                      >
                         {report.status ?? "Không rõ"}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      {report.created_at ? format(new Date(report.created_at), "MMM d, HH:mm") : "-"}
+                      {report.created_at
+                        ? format(new Date(report.created_at), "MMM d, HH:mm")
+                        : "-"}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
@@ -304,23 +357,40 @@ export function ReportsDataTable({ initialData }: ReportsDataTableProps) {
                           <Eye className="h-4 w-4" />
                         </Button>
                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenuTrigger
+                            asChild
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <Button variant="ghost" size="icon">
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Cập nhật trạng thái</DropdownMenuLabel>
+                            <DropdownMenuLabel>
+                              Cập nhật trạng thái
+                            </DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleStatusChange(report.id, "reviewed")}>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleStatusChange(report.id, "reviewed")
+                              }
+                            >
                               <Eye className="h-4 w-4 mr-2" />
                               Đánh dấu đã xem xét
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleStatusChange(report.id, "resolved")}>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleStatusChange(report.id, "resolved")
+                              }
+                            >
                               <CheckCircle className="h-4 w-4 mr-2" />
                               Đánh dấu đã giải quyết
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleStatusChange(report.id, "dismissed")}>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleStatusChange(report.id, "dismissed")
+                              }
+                            >
                               <XCircle className="h-4 w-4 mr-2" />
                               Bỏ qua
                             </DropdownMenuItem>
@@ -336,11 +406,11 @@ export function ReportsDataTable({ initialData }: ReportsDataTableProps) {
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <span className="text-sm text-muted-foreground">
             Trang {page} / {totalPages || 1}
           </span>
-          <div className="flex items-center space-x-1">
+          <div className="flex flex-wrap items-center justify-center gap-1">
             <Button
               variant="outline"
               size="sm"
@@ -352,15 +422,20 @@ export function ReportsDataTable({ initialData }: ReportsDataTableProps) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setPage(p => Math.max(1, p - 1))}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            
-            {generatePageNumbers(page, totalPages).map((pageNum, idx) => (
+
+            {generatePageNumbers(page, totalPages).map((pageNum, idx) =>
               pageNum === "..." ? (
-                <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">...</span>
+                <span
+                  key={`ellipsis-${idx}`}
+                  className="px-2 text-muted-foreground"
+                >
+                  ...
+                </span>
               ) : (
                 <Button
                   key={pageNum}
@@ -371,13 +446,13 @@ export function ReportsDataTable({ initialData }: ReportsDataTableProps) {
                 >
                   {pageNum}
                 </Button>
-              )
-            ))}
-            
+              ),
+            )}
+
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
             >
               <ChevronRight className="h-4 w-4" />

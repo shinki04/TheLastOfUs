@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { ChatNavSidebar } from "@/components/messaging/ChatNavSidebar";
-import { ChatRightSidebar } from "@/components/messaging/ChatRightSidebar";
+// import { ChatRightSidebar } from "@/components/messaging/ChatRightSidebar";
 import { ChatWindow } from "@/components/messaging/ChatWindow";
 import { ConversationList } from "@/components/messaging/ConversationList";
 import { CreateConversationDialog } from "@/components/messaging/CreateConversationDialog";
@@ -228,13 +228,13 @@ export function MessagesClient({
                   className="flex-1 min-w-0"
                   onToggleRightSidebar={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
                 />
-                <ChatRightSidebar
+                {/* <ChatRightSidebar
                   conversation={displayConversation}
                   currentUserId={currentUser.id}
                   isOpen={isRightSidebarOpen}
                   onClose={() => setIsRightSidebarOpen(false)}
                   onLeaveGroup={handleLeave}
-                />
+                /> */}
               </div>
             ) : (
               // Fallback: show error or retry state

@@ -13,6 +13,13 @@ import {
 } from "@repo/ui/components/dropdown-menu";
 import { Input } from "@repo/ui/components/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@repo/ui/components/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -20,7 +27,12 @@ import {
   TableHeader,
   TableRow,
 } from "@repo/ui/components/table";
-import { ChevronLeft, ChevronRight, MoreHorizontal, Search } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal,
+  Search,
+} from "lucide-react";
 import * as React from "react";
 
 import { getAllUsers, updateUserRole } from "@/app/actions/admin-users";
@@ -46,7 +58,10 @@ interface UsersDataTableProps {
 
 const ROLES = ["admin", "student", "lecturer", "moderator"] as const;
 
-const roleBadgeVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+const roleBadgeVariants: Record<
+  string,
+  "default" | "secondary" | "destructive" | "outline"
+> = {
   admin: "destructive",
   moderator: "default",
   lecturer: "secondary",
@@ -57,15 +72,21 @@ export function UsersDataTable({ initialData }: UsersDataTableProps) {
   const [users, setUsers] = React.useState<User[]>(initialData?.users ?? []);
   const [loading, setLoading] = React.useState(!initialData);
   const [search, setSearch] = React.useState("");
+  const [role, setRole] = React.useState("all");
   const [page, setPage] = React.useState(1);
-  const [totalPages, setTotalPages] = React.useState(initialData?.totalPages ?? 1);
+  const [totalPages, setTotalPages] = React.useState(
+    initialData?.totalPages ?? 1,
+  );
   const [isInitialLoad, setIsInitialLoad] = React.useState(true);
   const { refreshKey } = useRefresh();
 
   const fetchUsers = React.useCallback(async () => {
     setLoading(true);
     try {
-      const result = await getAllUsers(page, 20, { search: search || undefined });
+      const result = await getAllUsers(page, 20, {
+        search: search || undefined,
+        role: role !== "all" ? role : undefined,
+      });
       setUsers(result.users);
       setTotalPages(result.totalPages);
     } catch (error) {
@@ -73,25 +94,31 @@ export function UsersDataTable({ initialData }: UsersDataTableProps) {
     } finally {
       setLoading(false);
     }
-  }, [page, search]);
+  }, [page, search, role]);
 
   React.useEffect(() => {
     if (isInitialLoad && initialData) {
       setIsInitialLoad(false);
       return;
     }
-    
-    const timer = setTimeout(() => {
-      fetchUsers();
-    }, search ? 300 : 0);
-    return () => clearTimeout(timer);
-  }, [fetchUsers, search, refreshKey, isInitialLoad, initialData]);
 
-  const handleRoleChange = async (userId: string, newRole: typeof ROLES[number]) => {
+    const timer = setTimeout(
+      () => {
+        fetchUsers();
+      },
+      search ? 300 : 0,
+    );
+    return () => clearTimeout(timer);
+  }, [fetchUsers, search, role, refreshKey, isInitialLoad, initialData]);
+
+  const handleRoleChange = async (
+    userId: string,
+    newRole: (typeof ROLES)[number],
+  ) => {
     try {
       await updateUserRole(userId, newRole);
       setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, global_role: newRole } : u))
+        prev.map((u) => (u.id === userId ? { ...u, global_role: newRole } : u)),
       );
     } catch (error) {
       console.error("Failed to update role:", error);
@@ -100,22 +127,42 @@ export function UsersDataTable({ initialData }: UsersDataTableProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Tìm kiếm người dùng..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex w-full flex-col sm:flex-row gap-4 sm:max-w-2xl">
+          <div className="relative w-full sm:max-w-sm">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Tìm kiếm người dùng..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="pl-9"
+            />
+          </div>
+          <Select
+            value={role}
+            onValueChange={(value) => {
+              setRole(value);
               setPage(1);
             }}
-            className="pl-9"
-          />
+          >
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Vai trò" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả vai trò</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="moderator">Moderator</SelectItem>
+              <SelectItem value="lecturer">Giảng viên</SelectItem>
+              <SelectItem value="student">Sinh viên</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -137,7 +184,10 @@ export function UsersDataTable({ initialData }: UsersDataTableProps) {
               </TableRow>
             ) : users.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                <TableCell
+                  colSpan={5}
+                  className="h-24 text-center text-muted-foreground"
+                >
                   Không tìm thấy người dùng
                 </TableCell>
               </TableRow>
@@ -149,23 +199,37 @@ export function UsersDataTable({ initialData }: UsersDataTableProps) {
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={user.avatar_url || undefined} />
                         <AvatarFallback>
-                          {(user.display_name || user.username || "U")[0]?.toUpperCase()}
+                          {(user.display_name ||
+                            user.username ||
+                            "U")[0]?.toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium">{user.display_name || user.username || "Không rõ"}</p>
-                        <p className="text-xs text-muted-foreground">@{user.username || "không rõ"}</p>
+                        <p className="font-medium">
+                          {user.display_name || user.username || "Không rõ"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          @{user.username || "không rõ"}
+                        </p>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{user.email || "-"}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {user.email || "-"}
+                  </TableCell>
                   <TableCell>
-                    <Badge variant={roleBadgeVariants[user.global_role || ""] || "outline"}>
+                    <Badge
+                      variant={
+                        roleBadgeVariants[user.global_role || ""] || "outline"
+                      }
+                    >
                       {user.global_role || "Chưa có vai trò"}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {user.create_at ? new Date(user.create_at).toLocaleDateString() : "-"}
+                    {user.create_at
+                      ? new Date(user.create_at).toLocaleDateString()
+                      : "-"}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -184,7 +248,9 @@ export function UsersDataTable({ initialData }: UsersDataTableProps) {
                           <DropdownMenuItem
                             key={role}
                             onClick={() => handleRoleChange(user.id, role)}
-                            className={user.global_role === role ? "bg-muted" : ""}
+                            className={
+                              user.global_role === role ? "bg-muted" : ""
+                            }
                           >
                             {role.charAt(0).toUpperCase() + role.slice(1)}
                           </DropdownMenuItem>
@@ -199,7 +265,7 @@ export function UsersDataTable({ initialData }: UsersDataTableProps) {
         </Table>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <p className="text-sm text-muted-foreground">
           Trang {page} / {totalPages}
         </p>

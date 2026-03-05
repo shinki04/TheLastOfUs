@@ -86,8 +86,8 @@ export function HashtagsDataTable({ initialData }: HashtagsDataTableProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Tìm kiếm hashtag..."
@@ -101,7 +101,7 @@ export function HashtagsDataTable({ initialData }: HashtagsDataTableProps) {
         </div>
       </div>
 
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -122,7 +122,10 @@ export function HashtagsDataTable({ initialData }: HashtagsDataTableProps) {
               </TableRow>
             ) : hashtags.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                <TableCell
+                  colSpan={4}
+                  className="h-24 text-center text-muted-foreground"
+                >
                   Không tìm thấy hashtag
                 </TableCell>
               </TableRow>
@@ -136,10 +139,14 @@ export function HashtagsDataTable({ initialData }: HashtagsDataTableProps) {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="text-muted-foreground">{hashtag.post_count} bài viết</span>
+                    <span className="text-muted-foreground">
+                      {hashtag.post_count} bài viết
+                    </span>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
-                    {hashtag.created_at ? new Date(hashtag.created_at).toLocaleDateString() : "-"}
+                    {hashtag.created_at
+                      ? new Date(hashtag.created_at).toLocaleDateString()
+                      : "-"}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -166,13 +173,25 @@ export function HashtagsDataTable({ initialData }: HashtagsDataTableProps) {
         </Table>
       </div>
 
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">Trang {page} / {totalPages}</p>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <p className="text-sm text-muted-foreground">
+          Trang {page} / {totalPages}
+        </p>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+          >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+          >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
