@@ -54,14 +54,19 @@ function PageHeaderContent({
     <>
       <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
         <SidebarTrigger className="-ml-1" />
-        <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
+        <Separator
+          orientation="vertical"
+          className="mr-2 data-[orientation=vertical]:h-4"
+        />
         <Breadcrumb>
           <BreadcrumbList>
             {breadcrumbs.map((item, index) => (
               <React.Fragment key={item.label}>
                 <BreadcrumbItem className="hidden md:block">
                   {item.href ? (
-                    <BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
+                    <BreadcrumbLink href={item.href}>
+                      {item.label}
+                    </BreadcrumbLink>
                   ) : (
                     <BreadcrumbPage>{item.label}</BreadcrumbPage>
                   )}
@@ -74,8 +79,8 @@ function PageHeaderContent({
           </BreadcrumbList>
         </Breadcrumb>
       </header>
-      <div className="flex flex-1 flex-col gap-4 p-4">
-        <div className="flex items-start justify-between">
+      <div className="flex flex-1 flex-col gap-4 p-4 min-w-0 w-full overflow-hidden">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             {icon}
             <div>
@@ -85,7 +90,7 @@ function PageHeaderContent({
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             {actions}
             <Button
               variant="outline"
@@ -93,7 +98,9 @@ function PageHeaderContent({
               onClick={handleRefresh}
               disabled={isRefreshing}
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
+              <RefreshCw
+                className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`}
+              />
               Tải lại
             </Button>
           </div>

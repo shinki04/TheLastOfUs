@@ -51,9 +51,9 @@ export function PostStatsChart() {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <CardTitle>Post Statistics</CardTitle>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <PeriodSelector value={period} onChange={setPeriod} />
           <ChartTypeSelector
             value={chartType}

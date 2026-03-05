@@ -88,7 +88,7 @@ export const SIDEBAR_NAV_ITEMS: NavItem[] = [
       { title: "Tất cả bài đăng", url: ADMIN_ROUTES.POSTS_ALL },
       { title: "Bài viết bị đánh dấu Flag", url: ADMIN_ROUTES.POSTS_FLAGGED },
       { title: "Bài đăng bị từ chối", url: ADMIN_ROUTES.POSTS_REJECTED },
-      { title: "Bài viết khiếu nại", url: ADMIN_ROUTES.POST_APPEALS },
+      { title: "Xử lý khiếu nại", url: ADMIN_ROUTES.POST_APPEALS },
     ],
   },
   {

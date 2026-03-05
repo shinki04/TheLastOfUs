@@ -93,8 +93,8 @@ export function CommentsDataTable({ initialData }: CommentsDataTableProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Tìm kiếm bình luận..."
@@ -108,7 +108,7 @@ export function CommentsDataTable({ initialData }: CommentsDataTableProps) {
         </div>
       </div>
 
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -130,7 +130,10 @@ export function CommentsDataTable({ initialData }: CommentsDataTableProps) {
               </TableRow>
             ) : comments.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                <TableCell
+                  colSpan={5}
+                  className="h-24 text-center text-muted-foreground"
+                >
                   Không tìm thấy bình luận
                 </TableCell>
               </TableRow>
@@ -140,12 +143,17 @@ export function CommentsDataTable({ initialData }: CommentsDataTableProps) {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Avatar className="h-7 w-7">
-                        <AvatarImage src={comment.author?.avatar_url || undefined} />
+                        <AvatarImage
+                          src={comment.author?.avatar_url || undefined}
+                        />
                         <AvatarFallback className="text-xs">
-                          {(comment.author?.display_name || "U")[0]?.toUpperCase()}
+                          {(comment.author?.display_name ||
+                            "U")[0]?.toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-sm">{comment.author?.display_name || "Không rõ"}</span>
+                      <span className="text-sm">
+                        {comment.author?.display_name || "Không rõ"}
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -153,11 +161,15 @@ export function CommentsDataTable({ initialData }: CommentsDataTableProps) {
                   </TableCell>
                   <TableCell>
                     <p className="line-clamp-1 text-xs text-muted-foreground">
-                      {comment.post?.content?.slice(0, 50) || "Không rõ bài viết"}...
+                      {comment.post?.content?.slice(0, 50) ||
+                        "Không rõ bài viết"}
+                      ...
                     </p>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
-                    {comment.created_at ? new Date(comment.created_at).toLocaleDateString() : "-"}
+                    {comment.created_at
+                      ? new Date(comment.created_at).toLocaleDateString()
+                      : "-"}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -184,7 +196,7 @@ export function CommentsDataTable({ initialData }: CommentsDataTableProps) {
         </Table>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <p className="text-sm text-muted-foreground">
           Trang {page} / {totalPages}
         </p>

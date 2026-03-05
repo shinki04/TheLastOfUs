@@ -16,7 +16,7 @@ import { useState } from "react";
 
 import { useLogout } from "@/hooks/useAuth";
 
-import { ThemeSwitcher } from "../theme-switcher";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 
 interface UserDropdownProps {
   avatarUrl: string;

@@ -152,15 +152,25 @@ export function AnnouncementsDataTable({ initialData }: AnnouncementsDataTablePr
     <>
       <div className="space-y-4">
         {/* Toolbar */}
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <Button onClick={() => openForm()}>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between flex-wrap gap-4">
+          <Button
+            onClick={() => openForm()}
+            className="w-full sm:w-auto"
+            variant="default"
+          >
             <Plus className="mr-2 h-4 w-4" />
             Tạo thông báo mới
           </Button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2">
             <span className="text-sm text-muted-foreground">Dòng:</span>
-            <Select value={String(rowsPerPage)} onValueChange={(v) => { setRowsPerPage(Number(v)); setPage(1); }}>
+            <Select
+              value={String(rowsPerPage)}
+              onValueChange={(v) => {
+                setRowsPerPage(Number(v));
+                setPage(1);
+              }}
+            >
               <SelectTrigger className="w-[70px] h-9">
                 <SelectValue />
               </SelectTrigger>
@@ -176,7 +186,7 @@ export function AnnouncementsDataTable({ initialData }: AnnouncementsDataTablePr
         </div>
 
         {/* Table */}
-        <div className="rounded-md border">
+        <div className="rounded-md border overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
@@ -199,7 +209,10 @@ export function AnnouncementsDataTable({ initialData }: AnnouncementsDataTablePr
                 </TableRow>
               ) : announcements.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                  <TableCell
+                    colSpan={6}
+                    className="h-24 text-center text-muted-foreground"
+                  >
                     Không có thông báo nào
                   </TableCell>
                 </TableRow>
@@ -208,14 +221,22 @@ export function AnnouncementsDataTable({ initialData }: AnnouncementsDataTablePr
                   <TableRow key={item.id}>
                     <TableCell>
                       <p className="font-medium">{item.title}</p>
-                      <p className="text-xs text-muted-foreground line-clamp-1">{item.message}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-1">
+                        {item.message}
+                      </p>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={typeColors[item.type] || "default"}>{item.type}</Badge>
+                      <Badge variant={typeColors[item.type] || "default"}>
+                        {item.type}
+                      </Badge>
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                      S: {format(new Date(item.start_time), "MMM d, HH:mm")} <br />
-                      E: {item.end_time ? format(new Date(item.end_time), "MMM d, HH:mm") : "Không giới hạn"}
+                      S: {format(new Date(item.start_time), "MMM d, HH:mm")}{" "}
+                      <br />
+                      E:{" "}
+                      {item.end_time
+                        ? format(new Date(item.end_time), "MMM d, HH:mm")
+                        : "Không giới hạn"}
                     </TableCell>
                     <TableCell>
                       <Badge variant={item.is_active ? "default" : "secondary"}>
@@ -225,12 +246,17 @@ export function AnnouncementsDataTable({ initialData }: AnnouncementsDataTablePr
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
-                          <AvatarImage src={item.creator?.avatar_url || undefined} />
+                          <AvatarImage
+                            src={item.creator?.avatar_url || undefined}
+                          />
                           <AvatarFallback>
-                            {(item.creator?.display_name || "U")[0]?.toUpperCase()}
+                            {(item.creator?.display_name ||
+                              "U")[0]?.toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-xs">{item.creator?.display_name || "Ẩn danh"}</span>
+                        <span className="text-xs">
+                          {item.creator?.display_name || "Ẩn danh"}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -263,11 +289,11 @@ export function AnnouncementsDataTable({ initialData }: AnnouncementsDataTablePr
         </div>
 
         {/* Pagination Controls */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <span className="text-sm text-muted-foreground">
             Trang {page} / {totalPages || 1}
           </span>
-          <div className="flex items-center space-x-1">
+          <div className="flex flex-wrap items-center space-x-1">
             <Button
               variant="outline"
               size="sm"

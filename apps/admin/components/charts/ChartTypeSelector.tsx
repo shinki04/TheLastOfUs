@@ -85,14 +85,14 @@ const periodLabels: Record<TimePeriod, string> = {
 
 export function PeriodSelector({ value, onChange }: PeriodSelectorProps) {
   return (
-    <div className="flex gap-1 rounded-lg bg-muted p-1">
+    <div className="flex flex-wrap gap-1 rounded-lg bg-muted p-1 max-w-full overflow-hidden">
       {(Object.keys(periodLabels) as TimePeriod[]).map((period) => (
         <Button
           key={period}
           variant={value === period ? "default" : "ghost"}
           size="sm"
           onClick={() => onChange(period)}
-          className="h-7 px-3 text-xs"
+          className="h-7 px-2 sm:px-3 text-xs flex-1 sm:flex-none justify-center whitespace-nowrap"
         >
           {periodLabels[period]}
         </Button>

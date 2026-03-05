@@ -114,12 +114,17 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
   const [posts, setPosts] = React.useState<Post[]>(initialData?.posts as Post[] ?? []);
   const [loading, setLoading] = React.useState(!initialData);
   const [search, setSearch] = React.useState("");
+  const [statusFilter, setStatusFilter] = React.useState<
+    "all" | ModerationStatus
+  >("all");
   const [page, setPage] = React.useState(1);
   const [rowsPerPage, setRowsPerPage] = React.useState<number>(15);
-  const [totalPages, setTotalPages] = React.useState(initialData?.totalPages ?? 1);
+  const [totalPages, setTotalPages] = React.useState(
+    initialData?.totalPages ?? 1,
+  );
   const [totalCount, setTotalCount] = React.useState(initialData?.total ?? 0);
   const [isInitialLoad, setIsInitialLoad] = React.useState(true);
-  
+
   // Dialog states
   const [selectedPost, setSelectedPost] = React.useState<Post | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
@@ -135,7 +140,8 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
       // Determine moderation status filter
       let moderationStatus: ModerationStatus | undefined;
       if (flaggedOnly) moderationStatus = "flagged";
-      if (rejectedOnly) moderationStatus = "rejected";
+      else if (rejectedOnly) moderationStatus = "rejected";
+      else if (statusFilter !== "all") moderationStatus = statusFilter;
 
       const result = await getAllPosts(page, rowsPerPage, {
         search: search || undefined,
@@ -149,19 +155,29 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
     } finally {
       setLoading(false);
     }
-  }, [page, rowsPerPage, search, flaggedOnly, rejectedOnly]);
+  }, [page, rowsPerPage, search, flaggedOnly, rejectedOnly, statusFilter]);
 
   React.useEffect(() => {
     if (isInitialLoad && initialData) {
       setIsInitialLoad(false);
       return;
     }
-    
-    const timer = setTimeout(() => {
-      fetchPosts();
-    }, search ? 300 : 0);
+
+    const timer = setTimeout(
+      () => {
+        fetchPosts();
+      },
+      search ? 300 : 0,
+    );
     return () => clearTimeout(timer);
-  }, [fetchPosts, search, refreshKey, isInitialLoad, initialData]);
+  }, [
+    fetchPosts,
+    search,
+    statusFilter,
+    refreshKey,
+    isInitialLoad,
+    initialData,
+  ]);
 
   const handleDelete = async () => {
     if (!postToAction) return;
@@ -185,11 +201,15 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
     try {
       await flagPost(postToAction.id, reason);
       // Update local state
-      const updatePost = (p: Post) => 
-        p.id === postToAction.id 
-          ? { ...p, moderation_status: "flagged" as ModerationStatus, flag_reason: reason } 
+      const updatePost = (p: Post) =>
+        p.id === postToAction.id
+          ? {
+              ...p,
+              moderation_status: "flagged" as ModerationStatus,
+              flag_reason: reason,
+            }
           : p;
-      
+
       if (flaggedOnly || rejectedOnly) {
         // Remove from list if we're in a filtered view
         setPosts((prev) => prev.filter((p) => p.id !== postToAction.id));
@@ -197,7 +217,11 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
         setPosts((prev) => prev.map(updatePost));
       }
       if (selectedPost?.id === postToAction.id) {
-        setSelectedPost({ ...selectedPost, moderation_status: "flagged", flag_reason: reason });
+        setSelectedPost({
+          ...selectedPost,
+          moderation_status: "flagged",
+          flag_reason: reason,
+        });
       }
       setShowFlagDialog(false);
       setPostToAction(null);
@@ -213,11 +237,15 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
     setActionLoading(true);
     try {
       await rejectPost(postToAction.id, reason);
-      const updatePost = (p: Post) => 
-        p.id === postToAction.id 
-          ? { ...p, moderation_status: "rejected" as ModerationStatus, flag_reason: reason || null } 
+      const updatePost = (p: Post) =>
+        p.id === postToAction.id
+          ? {
+              ...p,
+              moderation_status: "rejected" as ModerationStatus,
+              flag_reason: reason || null,
+            }
           : p;
-      
+
       if (flaggedOnly) {
         // Remove from flagged list since it's now rejected
         setPosts((prev) => prev.filter((p) => p.id !== postToAction.id));
@@ -225,7 +253,11 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
         setPosts((prev) => prev.map(updatePost));
       }
       if (selectedPost?.id === postToAction.id) {
-        setSelectedPost({ ...selectedPost, moderation_status: "rejected", flag_reason: reason || null });
+        setSelectedPost({
+          ...selectedPost,
+          moderation_status: "rejected",
+          flag_reason: reason || null,
+        });
       }
       setShowRejectDialog(false);
       setPostToAction(null);
@@ -245,10 +277,22 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
         if (selectedPost?.id === post.id) setSelectedPost(null);
       } else {
         setPosts((prev) =>
-          prev.map((p) => (p.id === post.id ? { ...p, moderation_status: "approved" as ModerationStatus, flag_reason: null } : p))
+          prev.map((p) =>
+            p.id === post.id
+              ? {
+                  ...p,
+                  moderation_status: "approved" as ModerationStatus,
+                  flag_reason: null,
+                }
+              : p,
+          ),
         );
         if (selectedPost?.id === post.id) {
-          setSelectedPost({ ...selectedPost, moderation_status: "approved", flag_reason: null });
+          setSelectedPost({
+            ...selectedPost,
+            moderation_status: "approved",
+            flag_reason: null,
+          });
         }
       }
     } catch (error) {
@@ -286,7 +330,9 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
     if (!post.media_urls || post.media_urls.length === 0) {
       return { images: 0, videos: 0, files: 0, total: 0 };
     }
-    let images = 0, videos = 0, files = 0;
+    let images = 0,
+      videos = 0,
+      files = 0;
     for (const url of post.media_urls) {
       const info = getFileInfo(url);
       if (isImageType(info.type)) images++;
@@ -309,7 +355,11 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
     } else {
       pages.push(1);
       if (page > 3) pages.push("...");
-      for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) {
+      for (
+        let i = Math.max(2, page - 1);
+        i <= Math.min(totalPages - 1, page + 1);
+        i++
+      ) {
         pages.push(i);
       }
       if (page < totalPages - 2) pages.push("...");
@@ -322,11 +372,26 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
     const status = post.moderation_status || "approved";
     switch (status) {
       case "rejected":
-        return <Badge variant="destructive" className="text-xs">Từ chối</Badge>;
+        return (
+          <Badge variant="destructive" className="text-xs">
+            Từ chối
+          </Badge>
+        );
       case "flagged":
-        return <Badge variant="outline" className="text-xs border-orange-500 text-orange-500">Gắn cờ</Badge>;
+        return (
+          <Badge
+            variant="outline"
+            className="text-xs border-orange-500 text-orange-500"
+          >
+            Gắn cờ
+          </Badge>
+        );
       default:
-        return <Badge variant="secondary" className="text-xs">Hoạt động</Badge>;
+        return (
+          <Badge variant="secondary" className="text-xs">
+            Hoạt động
+          </Badge>
+        );
     }
   };
 
@@ -340,9 +405,9 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
     <>
       <div className="space-y-4">
         {/* Search and Controls */}
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-2 flex-1">
-            <div className="relative flex-1 max-w-sm">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto flex-1 gap-y-2">
+            <div className="relative flex-1 max-w-sm min-w-[200px]">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Tìm kiếm bài viết theo nội dung..."
@@ -354,13 +419,37 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
                 className="pl-9"
               />
             </div>
+            {!flaggedOnly && !rejectedOnly && (
+              <Select
+                value={statusFilter}
+                onValueChange={(value) => {
+                  setStatusFilter(value as "all" | ModerationStatus);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Trạng thái" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                  <SelectItem value="approved">Đã duyệt</SelectItem>
+                  <SelectItem value="flagged">Bị gắn cờ</SelectItem>
+                  <SelectItem value="rejected">Bị từ chối</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
             <Badge variant="outline" className="h-9 px-3 whitespace-nowrap">
               {loading ? "..." : `${totalCount} bài viết`}
             </Badge>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Dòng:</span>
-            <Select value={String(rowsPerPage)} onValueChange={handleRowsPerPageChange}>
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <span className="text-sm text-muted-foreground whitespace-nowrap">
+              Dòng:
+            </span>
+            <Select
+              value={String(rowsPerPage)}
+              onValueChange={handleRowsPerPageChange}
+            >
               <SelectTrigger className="w-[70px] h-9">
                 <SelectValue />
               </SelectTrigger>
@@ -376,14 +465,16 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
         </div>
 
         {/* Table */}
-        <div className="rounded-lg border">
+        <div className="rounded-lg border overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
                 <TableHead className="w-[200px]">Tác giả</TableHead>
                 <TableHead className="max-w-[300px]">Nội dung</TableHead>
                 <TableHead className="w-[100px] text-center">Media</TableHead>
-                <TableHead className="w-[100px] text-center">Tương tác</TableHead>
+                <TableHead className="w-[100px] text-center">
+                  Tương tác
+                </TableHead>
                 <TableHead className="w-[100px]">Trạng thái</TableHead>
                 <TableHead className="w-[140px]">Ngày tạo</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
@@ -399,17 +490,32 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
                         <Skeleton className="h-4 w-24" />
                       </div>
                     </TableCell>
-                    <TableCell><Skeleton className="h-4 w-full" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
-                    <TableCell><Skeleton className="h-6 w-16" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                    <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-16 mx-auto" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-16 mx-auto" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-6 w-16" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-20" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-8 w-8" />
+                    </TableCell>
                   </TableRow>
                 ))
               ) : posts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                  <TableCell
+                    colSpan={7}
+                    className="h-32 text-center text-muted-foreground"
+                  >
                     {getEmptyMessage()}
                   </TableCell>
                 </TableRow>
@@ -426,7 +532,9 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
-                            <AvatarImage src={post.author?.avatar_url || undefined} />
+                            <AvatarImage
+                              src={post.author?.avatar_url || undefined}
+                            />
                             <AvatarFallback className="text-xs">
                               {getAuthorInitials(post)}
                             </AvatarFallback>
@@ -435,11 +543,12 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
                             <p className="font-medium text-sm truncate">
                               {getAuthorName(post)}
                             </p>
-                            {post.author?.username && post.author.display_name && (
-                              <p className="text-xs text-muted-foreground truncate">
-                                @{post.author.username}
-                              </p>
-                            )}
+                            {post.author?.username &&
+                              post.author.display_name && (
+                                <p className="text-xs text-muted-foreground truncate">
+                                  @{post.author.username}
+                                </p>
+                              )}
                           </div>
                         </div>
                       </TableCell>
@@ -447,31 +556,47 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
                         <p className="text-sm text-foreground line-clamp-2">
                           {truncateText(post.content, 80)}
                         </p>
-                        {post.flag_reason && (status === "flagged" || status === "rejected") && (
-                          <p className={`text-xs mt-1 flex items-center gap-1 ${status === "rejected" ? "text-destructive" : "text-orange-500"}`}>
-                            {status === "rejected" ? <XCircle className="h-3 w-3" /> : <Flag className="h-3 w-3" />}
-                            {truncateText(post.flag_reason, 40)}
-                          </p>
-                        )}
+                        {post.flag_reason &&
+                          (status === "flagged" || status === "rejected") && (
+                            <p
+                              className={`text-xs mt-1 flex items-center gap-1 ${status === "rejected" ? "text-destructive" : "text-orange-500"}`}
+                            >
+                              {status === "rejected" ? (
+                                <XCircle className="h-3 w-3" />
+                              ) : (
+                                <Flag className="h-3 w-3" />
+                              )}
+                              {truncateText(post.flag_reason, 40)}
+                            </p>
+                          )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-center gap-1.5 text-muted-foreground">
                           {mediaCounts.total > 0 ? (
                             <>
                               {mediaCounts.images > 0 && (
-                                <span className="flex items-center gap-0.5 text-xs" title="Images">
+                                <span
+                                  className="flex items-center gap-0.5 text-xs"
+                                  title="Images"
+                                >
                                   <ImageIcon className="h-3.5 w-3.5" />
                                   {mediaCounts.images}
                                 </span>
                               )}
                               {mediaCounts.videos > 0 && (
-                                <span className="flex items-center gap-0.5 text-xs" title="Videos">
+                                <span
+                                  className="flex items-center gap-0.5 text-xs"
+                                  title="Videos"
+                                >
                                   <Video className="h-3.5 w-3.5" />
                                   {mediaCounts.videos}
                                 </span>
                               )}
                               {mediaCounts.files > 0 && (
-                                <span className="flex items-center gap-0.5 text-xs" title="Files">
+                                <span
+                                  className="flex items-center gap-0.5 text-xs"
+                                  title="Files"
+                                >
                                   <FileText className="h-3.5 w-3.5" />
                                   {mediaCounts.files}
                                 </span>
@@ -494,49 +619,79 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        {renderStatusBadge(post)}
-                      </TableCell>
+                      <TableCell>{renderStatusBadge(post)}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">
                         {formatDate(post.created_at)}
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <DropdownMenuTrigger
+                            asChild
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                            >
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Hành động</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setSelectedPost(post); }}>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedPost(post);
+                              }}
+                            >
                               <Eye className="h-4 w-4 mr-2" />
                               Xem chi tiết
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuLabel className="text-xs text-muted-foreground">Đặt trạng thái</DropdownMenuLabel>
+                            <DropdownMenuLabel className="text-xs text-muted-foreground">
+                              Đặt trạng thái
+                            </DropdownMenuLabel>
                             {status !== "approved" && (
-                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleApprove(post); }}>
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleApprove(post);
+                                }}
+                              >
                                 <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
                                 Phê duyệt
                               </DropdownMenuItem>
                             )}
                             {status !== "flagged" && (
-                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openFlagDialog(post); }}>
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openFlagDialog(post);
+                                }}
+                              >
                                 <Flag className="h-4 w-4 mr-2 text-orange-500" />
                                 Gắn cờ để xem xét
                               </DropdownMenuItem>
                             )}
                             {status !== "rejected" && (
-                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openRejectDialog(post); }}>
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openRejectDialog(post);
+                                }}
+                              >
                                 <XCircle className="h-4 w-4 mr-2 text-destructive" />
                                 Từ chối
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
-                              onClick={(e) => { e.stopPropagation(); openDeleteDialog(post); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openDeleteDialog(post);
+                              }}
                               className="text-destructive"
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
@@ -554,11 +709,11 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
             Trang {page} / {totalPages} ({totalCount} tổng)
           </p>
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center justify-center gap-1">
             <Button
               variant="outline"
               size="icon"
@@ -568,9 +723,14 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            {getPageNumbers().map((pageNum, idx) => (
+            {getPageNumbers().map((pageNum, idx) =>
               pageNum === "..." ? (
-                <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">...</span>
+                <span
+                  key={`ellipsis-${idx}`}
+                  className="px-2 text-muted-foreground"
+                >
+                  ...
+                </span>
               ) : (
                 <Button
                   key={pageNum}
@@ -582,8 +742,8 @@ export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, init
                 >
                   {pageNum}
                 </Button>
-              )
-            ))}
+              ),
+            )}
             <Button
               variant="outline"
               size="icon"
