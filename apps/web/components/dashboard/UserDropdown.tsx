@@ -14,9 +14,8 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { useLogout } from "@/hooks/useAuth";
-
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { useLogout } from "@/hooks/useAuth";
 
 interface UserDropdownProps {
   avatarUrl: string;

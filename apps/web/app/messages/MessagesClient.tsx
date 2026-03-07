@@ -214,7 +214,7 @@ export function MessagesClient({
           {activeConversationId ? (
             // Show loading only when actually fetching and no data yet
             isLoadingConversation ||
-              (isFetchingConversation && !displayConversation) ? (
+            (isFetchingConversation && !displayConversation) ? (
               <ChatWindowLoading />
             ) : displayConversation ? (
               <div className="flex flex-1 overflow-hidden relative">
@@ -226,8 +226,14 @@ export function MessagesClient({
                   isInitialLoading={false}
                   onLeave={handleLeave}
                   onAddFriend={handleAddFriend}
+                  onBack={() => {
+                    setActiveConversationId(null);
+                    window.history.pushState({}, "", "/messages");
+                  }}
                   className="flex-1 min-w-0"
-                  onToggleRightSidebar={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
+                  onToggleRightSidebar={() =>
+                    setIsRightSidebarOpen(!isRightSidebarOpen)
+                  }
                 />
                 {/* <ChatRightSidebar
                   conversation={displayConversation}

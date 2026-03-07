@@ -14,14 +14,8 @@ import {
 import { Skeleton } from "@repo/ui/components/skeleton";
 import { TooltipProvider } from "@repo/ui/components/tooltip";
 import { cn } from "@repo/ui/lib/utils";
-import { Loader2, MessageCircle, Users } from "lucide-react";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { ChevronLeft, Loader2, MessageCircle, Users } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
 
 import { useConversationFriendship } from "@/hooks/useConversations";
@@ -40,13 +34,20 @@ interface ChatWindowProps {
   onLeave?: () => void;
   onAddFriend?: (userId: string) => void;
   onToggleRightSidebar?: () => void;
+  onBack?: () => void;
   className?: string;
 }
 
 // Union type for virtualized items
 type VirtualizedItem =
   | { type: "date-separator"; date: string; key: string }
-  | { type: "message"; message: MessageWithSender | OptimisticMessage; isOwn: boolean; showAvatar: boolean; key: string };
+  | {
+      type: "message";
+      message: MessageWithSender | OptimisticMessage;
+      isOwn: boolean;
+      showAvatar: boolean;
+      key: string;
+    };
 
 /**
  * Main chat window with virtualized message list
@@ -60,6 +61,7 @@ export function ChatWindow({
   onLeave,
   onAddFriend,
   onToggleRightSidebar,
+  onBack,
   className,
 }: ChatWindowProps) {
   const virtuosoRef = useRef<VirtuosoHandle>(null);
@@ -110,7 +112,7 @@ export function ChatWindow({
     }
 
     const otherMember = conversation.members?.find(
-      (m) => m.user_id !== currentUserId
+      (m) => m.user_id !== currentUserId,
     );
     const profile = otherMember?.profile as Tables<"profiles"> | undefined;
 
@@ -183,52 +185,62 @@ export function ChatWindow({
   }, [friendshipData, onAddFriend]);
 
   // Reply handlers
-  const handleReply = useCallback((message: MessageWithSender | OptimisticMessage) => {
-    const sender = message.sender;
-    const messageId = "id" in message ? message.id : "";
-    if (!messageId) return;
+  const handleReply = useCallback(
+    (message: MessageWithSender | OptimisticMessage) => {
+      const sender = message.sender;
+      const messageId = "id" in message ? message.id : "";
+      if (!messageId) return;
 
-    setReplyingTo({
-      id: messageId,
-      content: message.content || null,
-      senderName: sender?.display_name || sender?.username || null,
-    });
-  }, []);
+      setReplyingTo({
+        id: messageId,
+        content: message.content || null,
+        senderName: sender?.display_name || sender?.username || null,
+      });
+    },
+    [],
+  );
 
   const handleCancelReply = useCallback(() => {
     setReplyingTo(null);
   }, []);
 
   // Wrapper for sendMessage that scrolls immediately
-  const handleSendMessage = useCallback(async (
-    content: string,
-    replyTo?: { id: string; content: string | null; sender?: { display_name: string | null } },
-    files?: File[]
-  ) => {
-    // Send message first (this adds optimistic message to state)
-    const sendPromise = sendMessage(content, replyTo, files);
+  const handleSendMessage = useCallback(
+    async (
+      content: string,
+      replyTo?: {
+        id: string;
+        content: string | null;
+        sender?: { display_name: string | null };
+      },
+      files?: File[],
+    ) => {
+      // Send message first (this adds optimistic message to state)
+      const sendPromise = sendMessage(content, replyTo, files);
 
-    // Force scroll to bottom after a small delay to ensure optimistic message is rendered
-    // Use multiple timeouts to handle both immediate add and file upload states
-    setTimeout(() => {
-      virtuosoRef.current?.scrollToIndex({
-        index: "LAST",
-        behavior: "smooth",
-        align: "end",
-      });
-    }, 50);
+      // Force scroll to bottom after a small delay to ensure optimistic message is rendered
+      // Use multiple timeouts to handle both immediate add and file upload states
+      setTimeout(() => {
+        virtuosoRef.current?.scrollToIndex({
+          index: "LAST",
+          behavior: "smooth",
+          align: "end",
+        });
+      }, 50);
 
-    // Second scroll after 200ms to handle any state updates from file processing
-    setTimeout(() => {
-      virtuosoRef.current?.scrollToIndex({
-        index: "LAST",
-        behavior: "smooth",
-        align: "end",
-      });
-    }, 200);
+      // Second scroll after 200ms to handle any state updates from file processing
+      setTimeout(() => {
+        virtuosoRef.current?.scrollToIndex({
+          index: "LAST",
+          behavior: "smooth",
+          align: "end",
+        });
+      }, 200);
 
-    return sendPromise;
-  }, [sendMessage]);
+      return sendPromise;
+    },
+    [sendMessage],
+  );
 
   // Scroll to bottom helper
   const scrollToBottom = useCallback(() => {
@@ -300,7 +312,7 @@ export function ChatWindow({
         </div>
       );
     },
-    [retryMessage, editMessage, recallMessage, handleReply]
+    [retryMessage, editMessage, recallMessage, handleReply],
   );
 
   // Header component for loading indicator
@@ -319,6 +331,15 @@ export function ChatWindow({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-chat-border bg-chat-bg/95 backdrop-blur z-10 transition-colors">
           <div className="flex items-center gap-4">
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="md:hidden p-2 -ml-2 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Quay lại"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+            )}
             <Avatar className="h-11 w-11 border-2 border-primary/10 shadow-sm">
               {headerInfo.avatarUrl ? (
                 <AvatarImage src={headerInfo.avatarUrl} alt={headerInfo.name} />
@@ -347,7 +368,22 @@ export function ChatWindow({
               onClick={onToggleRightSidebar}
               className="hover:text-[#C81D31] text-slate-400 transition-colors hover:bg-red-50 dark:hover:bg-red-950/30 p-2 rounded-full border-2 border-transparent hover:border-[#C81D31]/20"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-info"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="lucide lucide-info"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 16v-4" />
+                <path d="M12 8h.01" />
+              </svg>
             </button>
           </div>
         </div>
