@@ -42,6 +42,29 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* Custom Web Colors from tailwind.config.ts */
+  --color-mainred: #b52934;
+  --color-mainred-hover: #9a232e;
+  --color-red-main: #b52934;
+  --color-red-bg: rgba(181, 41, 52, 0.5);
+  --color-input-text: #ffffff;
+  --color-custom-white: #ffffff;
+
+  /* Dashboard Colors */
+  --color-dashboard-background: var(--dashboard-background);
+  --color-dashboard-sidebar: var(--dashboard-sidebar);
+  --color-dashboard-card: var(--dashboard-card);
+  --color-dashboard-border: var(--dashboard-border);
+  
+  /* --color-dashboard-background: #f8f6f6;
+  --color-dashboard-darkBackground: #221010;
+  --color-dashboard-sidebar: #ffffff;
+  --color-dashboard-darkSidebar: #2a1515;
+  --color-dashboard-card: #ffffff;
+  --color-dashboard-darkCard: #2a1515;
+  --color-dashboard-border: #e2e8f0;
+  --color-dashboard-darkBorder: #1e293b; */
 }
 
 :root {
@@ -79,9 +102,58 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  /* Dashboard Colors */
+  --dashboard-background: #f8f6f6;
+  --dashboard-sidebar: #ffffff;
+  --dashboard-card: #ffffff;
+  --dashboard-border: #e2e8f0;
+
+  /* Profile Colors (Light) */
+  --profile-bg: #f8f6f6;
+  --profile-card: #ffffff;
+  --profile-border: #e2e8f0;
+  --profile-tab-active: #b52934;
+  --profile-hover: #f1f5f9;
+
+  /* Group Colors (Light) */
+  --group-bg: var(--dashboard-background);
+  --group-card: var(--dashboard-card);
+  --group-border: var(--dashboard-border);
+  --group-hover: #f1f5f9;
+  --group-active: #e2e8f0;
+
+  /* Chat Colors (Light) */
+  --chat-bg: #f8f6f6;
+  --chat-panel: #ffffff;
+  --chat-sidebar: #ffffff;
+  --chat-border: rgba(236, 19, 19, 0.1);
+  --chat-bubble-self: #ec1313;
+  --chat-bubble-other: #f8f6f6;
+  --chat-input: #f8f6f6;
+  --chat-active: rgba(236, 19, 19, 0.08);
 }
 
 .dark {
+  /* Dashboard Colors */
+  /* --dashboard-background: #221010; */
+  --dashboard-background: oklch(0.145 0 0);
+
+  --dashboard-sidebar: #2a1515;
+  --dashboard-card:oklch(0.205 0 0);
+  --dashboard-border: oklch(1 0 0 / 10%);
+
+  /* Profile Colors (Dark) */
+  --profile-bg: oklch(0.145 0 0);
+  --profile-card: oklch(0.205 0 0);
+  --profile-border: oklch(1 0 0 / 10%);
+  --profile-tab-active: #b52934;
+  --profile-hover: #1f2937;
+
+  /* Group Colors (Dark) */
+  --group-hover: #1f2937;
+  --group-active: #374151;
+
+
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -113,6 +185,16 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Chat Colors (Dark) */
+  --chat-bg: oklch(0.145 0 0);
+  --chat-panel: oklch(0.205 0 0);
+  --chat-sidebar: #2a1515;
+  --chat-border: oklch(1 0 0 / 10%);
+  --chat-bubble-self: oklch(0.922 0 0);
+  --chat-bubble-other: oklch(0.269 0 0);
+  --chat-input: oklch(1 0 0 / 15%);
+  --chat-active: oklch(1 0 0 / 10%);
 }
 
 @layer base {
@@ -130,5 +212,164 @@
     border-radius: 1rem;
     box-shadow: 0 6px 32px 0 rgba(0, 0, 0, 0.18);
     border: 2px solid rgba(255, 255, 255, 0.15);
+  }
+
+  /* Chat UI Base Classes */
+  .chat-layout {
+    display: flex;
+    height: calc(100vh - 4rem);
+    width: 100%;
+    overflow: hidden;
+    background-color: var(--chat-bg);
+  }
+
+  .chat-sidebar {
+    width: 100%;
+    flex-shrink: 0;
+    border-right: 1px solid var(--chat-border);
+    background-color: var(--chat-sidebar);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  @media (min-width: 768px) {
+    .chat-sidebar {
+      width: 20rem; /* w-80 */
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .chat-sidebar {
+      width: 24rem; /* w-96 */
+    }
+  }
+
+  .chat-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: var(--chat-panel);
+    overflow: hidden;
+  }
+
+  .chat-bubble-self {
+    background-color: var(--chat-bubble-self);
+    color: white;
+    border-radius: 1rem;
+    border-top-right-radius: 0;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .chat-bubble-other {
+    background-color: var(--chat-bubble-other);
+    color: var(--foreground);
+    border-radius: 1rem;
+    border-top-left-radius: 0;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .chat-input-container {
+    /* padding: 1.5rem; */
+    border-top: 1px solid var(--chat-border);
+    background-color: var(--chat-panel);
+  }
+
+  .chat-conversation-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.75rem;
+    border-left: 4px solid transparent;
+    cursor: pointer;
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+    max-height: 72px;
+    height: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .chat-conversation-item:hover {
+    background-color: var(--chat-active);
+  }
+
+  .chat-conversation-item-active {
+    background-color: var(--chat-active);
+    border-left: 4px solid var(--chat-bubble-self);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  }
+
+  /* Profile UI Base Classes */
+  .profile-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+  .profile-cover {
+    position: relative;
+    width: 100%;
+    background-color: rgba(181, 41, 52, 0.05); /* mainred/5 */
+  }
+  .profile-avatar {
+    border-radius: 9999px;
+    object-fit: cover;
+    border: 1px solid var(--profile-border);
+  }
+  .profile-tabs {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    border-top: 1px solid var(--profile-border);
+    padding-top: 0.25rem;
+  }
+  @media (min-width: 768px) {
+    .profile-tabs { gap: 0.5rem; }
+  }
+  .profile-tab-active {
+    padding: 1rem 1.5rem;
+    color: var(--profile-tab-active);
+    border-bottom: 3px solid var(--profile-tab-active);
+    font-weight: 700;
+    white-space: nowrap;
+    background-color: rgba(181, 41, 52, 0.05);
+    transition: background-color 0.2s;
+  }
+  .profile-tab-inactive {
+    padding: 1rem 1.5rem;
+    color: var(--muted-foreground);
+    border-radius: 0.5rem 0.5rem 0 0;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: color 0.2s, background-color 0.2s;
+  }
+  .profile-tab-inactive:hover {
+    background-color: rgba(181, 41, 52, 0.05);
+    color: var(--profile-tab-active);
+  }
+  .profile-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+  
+}
+@layer components {
+  .button-red {
+    background-color: var(--mainred);
+    color: var(--white);
+  }
+
+  .button-red:hover {
+    background-color: var(--mainred-hover);
   }
 }

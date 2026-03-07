@@ -1,5 +1,6 @@
 import { getFeedCacheService } from "@repo/redis/feedCacheService";
 import { getRedisClient } from "@repo/redis/redis";
+import { FeedFilter } from "@repo/shared/types/post";
 import { NextRequest, NextResponse } from "next/server";
 
 import { fetchPosts } from "@/app/actions/post";
@@ -17,6 +18,7 @@ export async function GET(request: NextRequest) {
     );
     const userId = request.nextUrl.searchParams.get("userId");
     const noCache = request.nextUrl.searchParams.get("noCache") === "true";
+    const filter = (request.nextUrl.searchParams.get("filter") as unknown as FeedFilter) || "all";
 
     // Check if cache bypass is requested
     let cacheStatus = "MISS";
@@ -40,7 +42,7 @@ export async function GET(request: NextRequest) {
           {
             headers: {
               "X-Cache-Status": cacheStatus,
-              "X-Cache-Key": `feed:${userId}:${page}:${itemsPerPage}`,
+              "X-Cache-Key": `feed:${userId}:${filter}:${page}:${itemsPerPage}`,
             },
           }
         );
@@ -48,12 +50,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch from database
-    const response = await fetchPosts(page, itemsPerPage);
+    const response = await fetchPosts(page, itemsPerPage, filter);
 
     return NextResponse.json(response, {
       headers: {
         "X-Cache-Status": noCache ? "BYPASS" : cacheStatus,
-        "X-Cache-Key": `feed:${userId}:${page}:${itemsPerPage}`,
+        "X-Cache-Key": `feed:${userId}:${filter}:${page}:${itemsPerPage}`,
       },
     });
   } catch (error) {

@@ -1,4 +1,5 @@
 import {
+  Bell,
   FileText,
   Flag,
   Grid,
@@ -21,6 +22,7 @@ export const ADMIN_ROUTES = {
   POSTS_ALL: "/dashboard/posts/all",
   POSTS_FLAGGED: "/dashboard/posts/flagged",
   POSTS_REJECTED: "/dashboard/posts/rejected",
+  POST_APPEALS: "/dashboard/posts/appeals",
   // Comments
   COMMENTS: "/dashboard/comments",
   COMMENTS_MANAGE: "/dashboard/comments/manage",
@@ -38,6 +40,8 @@ export const ADMIN_ROUTES = {
   MODERATION: "/dashboard/moderation",
   MODERATION_ALL: "/dashboard/moderation/all",
   MODERATION_KEYWORDS: "/dashboard/moderation/keywords",
+  // Notifications
+  NOTIFICATIONS: "/dashboard/notifications",
 } as const;
 
 // Navigation item types
@@ -84,6 +88,7 @@ export const SIDEBAR_NAV_ITEMS: NavItem[] = [
       { title: "Tất cả bài đăng", url: ADMIN_ROUTES.POSTS_ALL },
       { title: "Bài viết bị đánh dấu Flag", url: ADMIN_ROUTES.POSTS_FLAGGED },
       { title: "Bài đăng bị từ chối", url: ADMIN_ROUTES.POSTS_REJECTED },
+      { title: "Xử lý khiếu nại", url: ADMIN_ROUTES.POST_APPEALS },
     ],
   },
   {
@@ -122,6 +127,11 @@ export const SIDEBAR_NAV_ITEMS: NavItem[] = [
       },
       { title: "Danh sách hashtag", url: ADMIN_ROUTES.HASHTAGS_MANAGE },
     ],
+  },
+  {
+    title: "Quản lý thông báo",
+    url: ADMIN_ROUTES.NOTIFICATIONS,
+    icon: Bell,
   },
 ];
 

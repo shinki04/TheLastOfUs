@@ -37,13 +37,13 @@ const allAllowedTypes = [
 
 export const fileMediaSchema = z
   .instanceof(File)
-  .refine((file) => file.size > 0, "File không được để trống")
+  .refine((file: File) => file.size > 0, "File không được để trống")
   .refine(
-    (file) => allAllowedTypes.includes(file.type),
+    (file: File) => allAllowedTypes.includes(file.type),
     "Chỉ hỗ trợ file ảnh, video, tài liệu (PDF, Word, Text) và Excel"
   )
   .refine(
-    (file) => file.size <= 10_000_000,
+    (file: File) => file.size <= 10_000_000,
     "Kích thước file phải nhỏ hơn 10MB"
   );
 

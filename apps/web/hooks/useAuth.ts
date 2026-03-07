@@ -5,6 +5,7 @@ import {
   getUserProfile,
   updateProfileWithAvatar,
 } from "@/app/actions/user";
+import { signOut } from "@/app/auth/action";
 
 export function useGetCurrentUser() {
   return useQuery({
@@ -48,3 +49,15 @@ export function useUpdateProfile() {
     },
   });
 }
+
+export function useLogout() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => signOut(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user"] });
+    },
+  });
+}
+

@@ -7,6 +7,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { MobileNav } from "@/components/dashboard/MobileNav";
+import { ChatNavSidebar } from "@/components/messaging/ChatNavSidebar";
+// import { ChatRightSidebar } from "@/components/messaging/ChatRightSidebar";
 import { ChatWindow } from "@/components/messaging/ChatWindow";
 import { ConversationList } from "@/components/messaging/ConversationList";
 import { CreateConversationDialog } from "@/components/messaging/CreateConversationDialog";
@@ -33,15 +36,18 @@ export function MessagesClient({
 }: MessagesClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   // Local state for active conversation ID (for shallow routing)
   // Initialize from URL param or initial prop
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(() => {
+  const [activeConversationId, setActiveConversationId] = useState<
+    string | null
+  >(() => {
     const paramId = searchParams.get("conversationId");
     return paramId || initialConversation?.id || null;
   });
-  
+
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
 
   // Sync with browser back/forward navigation (popstate)
   useEffect(() => {
@@ -73,36 +79,47 @@ export function MessagesClient({
     activeConversationId,
   });
 
+  const totalUnreadCount = conversations.reduce(
+    (acc, conv) => acc + (conv.unreadCount || 0),
+    0,
+  );
+
   // Fetch active conversation details (Client Side)
-  const { 
-    conversation: activeConversation, 
-    leave, 
-    isLoading: isLoadingConversation, 
+  const {
+    conversation: activeConversation,
+    leave,
+    isLoading: isLoadingConversation,
     isFetching: isFetchingConversation,
     error: conversationError,
-    refetch: refetchConversation
+    refetch: refetchConversation,
   } = useConversation(activeConversationId || "");
-  
+
   // Debug logging
-  console.log('[MessagesClient] activeConversationId:', activeConversationId);
-  console.log('[MessagesClient] activeConversation:', activeConversation);
-  console.log('[MessagesClient] isLoadingConversation:', isLoadingConversation);
-  console.log('[MessagesClient] isFetchingConversation:', isFetchingConversation);
-  console.log('[MessagesClient] conversationError:', conversationError);
-  
+  console.log("[MessagesClient] activeConversationId:", activeConversationId);
+  console.log("[MessagesClient] activeConversation:", activeConversation);
+  console.log("[MessagesClient] isLoadingConversation:", isLoadingConversation);
+  console.log(
+    "[MessagesClient] isFetchingConversation:",
+    isFetchingConversation,
+  );
+  console.log("[MessagesClient] conversationError:", conversationError);
+
   // Fallback to initial conversation if hook hasn't loaded yet
-  const displayConversation = activeConversation || 
-    (activeConversationId === initialConversation?.id ? initialConversation : null);
+  const displayConversation =
+    activeConversation ||
+    (activeConversationId === initialConversation?.id
+      ? initialConversation
+      : null);
 
   // Handle selecting a conversation - shallow routing for instant switch
   const handleSelectConversation = useCallback((id: string) => {
     // Update local state IMMEDIATELY for instant UI switch
     setActiveConversationId(id);
-    
+
     // Use shallow routing to avoid server-side re-render
     // This prevents Next.js from re-running page.tsx data fetching
     const url = `/messages?conversationId=${id}`;
-    window.history.pushState({}, '', url);
+    window.history.pushState({}, "", url);
   }, []);
 
   // Handle creating direct conversation
@@ -118,7 +135,7 @@ export function MessagesClient({
         throw error;
       }
     },
-    [createDirect, handleSelectConversation]
+    [createDirect, handleSelectConversation],
   );
 
   // Handle creating group conversation
@@ -136,7 +153,7 @@ export function MessagesClient({
         throw error;
       }
     },
-    [createGroup, handleSelectConversation]
+    [createGroup, handleSelectConversation],
   );
 
   // ... rest of handlers ...
@@ -148,7 +165,7 @@ export function MessagesClient({
       await leave();
       // Clear active conversation and URL using shallow routing
       setActiveConversationId(null);
-      window.history.pushState({}, '', '/messages');
+      window.history.pushState({}, "", "/messages");
       toast.success("Đã rời khỏi nhóm");
     } catch (error) {
       toast.error("Không thể rời nhóm");
@@ -160,17 +177,20 @@ export function MessagesClient({
     (userId: string) => {
       router.push(`/profile/${userId}`);
     },
-    [router]
+    [router],
   );
 
   return (
-    <>
-      <div className="flex h-[calc(100vh-4rem)] overflow-hidden rounded-lg border bg-background shadow-sm">
+    <div className="flex flex-col h-screen h-[100dvh] pb-[72px] md:pb-0">
+      <div className="flex-1 overflow-hidden chat-layout rounded-none md:rounded-lg border-0 md:border shadow-sm">
+        {/* Nav Sidebar */}
+        <ChatNavSidebar unreadCount={totalUnreadCount} />
+
         {/* Conversation list - sidebar */}
         <div
           className={cn(
-            "w-full md:w-80 lg:w-96 border-r shrink-0",
-            activeConversationId ? "hidden md:block" : "block"
+            "chat-sidebar",
+            activeConversationId ? "hidden md:flex" : "flex",
           )}
         >
           <ConversationList
@@ -186,23 +206,43 @@ export function MessagesClient({
 
         {/* Chat window - main area */}
         <div
-          className={cn("flex-1", !activeConversationId && "hidden md:flex")}
+          className={cn(
+            "chat-panel",
+            !activeConversationId && "hidden md:flex",
+          )}
         >
           {activeConversationId ? (
             // Show loading only when actually fetching and no data yet
-            (isLoadingConversation || (isFetchingConversation && !displayConversation)) ? (
+            isLoadingConversation ||
+            (isFetchingConversation && !displayConversation) ? (
               <ChatWindowLoading />
             ) : displayConversation ? (
-              <ChatWindow
-                key={activeConversationId} // Force remount on change
-                conversation={displayConversation}
-                currentUserId={currentUser.id}
-                currentUser={currentUser}
-                isInitialLoading={false}
-                onLeave={handleLeave}
-                onAddFriend={handleAddFriend}
-                className="w-full"
-              />
+              <div className="flex flex-1 overflow-hidden relative">
+                <ChatWindow
+                  key={activeConversationId} // Force remount on change
+                  conversation={displayConversation}
+                  currentUserId={currentUser.id}
+                  currentUser={currentUser}
+                  isInitialLoading={false}
+                  onLeave={handleLeave}
+                  onAddFriend={handleAddFriend}
+                  onBack={() => {
+                    setActiveConversationId(null);
+                    window.history.pushState({}, "", "/messages");
+                  }}
+                  className="flex-1 min-w-0"
+                  onToggleRightSidebar={() =>
+                    setIsRightSidebarOpen(!isRightSidebarOpen)
+                  }
+                />
+                {/* <ChatRightSidebar
+                  conversation={displayConversation}
+                  currentUserId={currentUser.id}
+                  isOpen={isRightSidebarOpen}
+                  onClose={() => setIsRightSidebarOpen(false)}
+                  onLeaveGroup={handleLeave}
+                /> */}
+              </div>
             ) : (
               // Fallback: show error or retry state
               <ChatWindowLoading />
@@ -212,7 +252,7 @@ export function MessagesClient({
           )}
         </div>
       </div>
-      
+
       {/* ... dialogs ... */}
       <CreateConversationDialog
         open={isCreateDialogOpen}
@@ -222,7 +262,9 @@ export function MessagesClient({
         onCreateGroup={handleCreateGroup}
         isCreating={isCreatingDirect || isCreatingGroup}
       />
-    </>
+
+      <MobileNav currentUser={currentUser} unreadCount={totalUnreadCount} />
+    </div>
   );
 }
 
@@ -263,7 +305,7 @@ function ChatWindowLoading() {
           <div className="h-3 w-20 bg-muted animate-pulse rounded" />
         </div>
       </div>
-      
+
       {/* Messages skeleton */}
       <div className="flex-1 p-4 space-y-4">
         {[...Array(5)].map((_, i) => (
@@ -284,7 +326,7 @@ function ChatWindowLoading() {
           </div>
         ))}
       </div>
-      
+
       {/* Input skeleton */}
       <div className="p-4 border-t">
         <div className="h-10 w-full bg-muted animate-pulse rounded-full" />

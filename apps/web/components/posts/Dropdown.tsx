@@ -34,19 +34,19 @@ export function PostOwnerDropdown({
             <Pencil />
             Cập nhật
           </DropdownMenuItem>
-          <DropdownMenuItem>Archive</DropdownMenuItem>
+          {/* <DropdownMenuItem>Archive</DropdownMenuItem> */}
         </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
+        {/* <DropdownMenuSeparator /> */}
+        {/* <DropdownMenuGroup>
           <DropdownMenuItem>Snooze</DropdownMenuItem>
           <DropdownMenuItem>Add to Calendar</DropdownMenuItem>
           <DropdownMenuItem>Add to List</DropdownMenuItem>
-        </DropdownMenuGroup>
+        </DropdownMenuGroup> */}
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem variant="destructive" onClick={onDelete}>
             <Trash2Icon />
-            Trash
+            Xóa bài viết
           </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>
@@ -71,11 +71,14 @@ export function PostViewerDropdown({ postId }: PostViewerDropdownProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-52">
           <DropdownMenuGroup>
-            <DropdownMenuItem onClick={() => setShowReportDialog(true)}>
+            <DropdownMenuItem
+              variant="destructive"
+              onClick={() => setShowReportDialog(true)}
+            >
               <Flag className="mr-2 h-4 w-4" />
               Báo cáo
             </DropdownMenuItem>
-            <DropdownMenuItem>Archive</DropdownMenuItem>
+            {/* <DropdownMenuItem>Archive</DropdownMenuItem> */}
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>

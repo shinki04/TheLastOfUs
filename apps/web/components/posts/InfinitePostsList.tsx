@@ -1,8 +1,11 @@
 "use client";
 
 import { PostResponse } from "@repo/shared/types/post";
+import { FeedFilter } from "@repo/shared/types/post";
+import { Button } from "@repo/ui/components/button";
 import { Skeleton } from "@repo/ui/components/skeleton";
 import { Loader2 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import React from "react";
 import { Virtuoso } from "react-virtuoso";
 
@@ -15,7 +18,16 @@ import PendingPost from "./PendingPost";
  * Virtualized infinite scrolling posts list
  * Uses react-virtuoso for efficient rendering with dynamic heights
  */
-export function InfinitePostsList() {
+interface InfinitePostsListProps {
+  showPending?: boolean;
+}
+
+export function InfinitePostsList({
+  showPending = false,
+}: InfinitePostsListProps) {
+  const searchParams = useSearchParams();
+  const filter = (searchParams.get("filter") as FeedFilter) || "all";
+
   const {
     data,
     fetchNextPage,
@@ -24,7 +36,7 @@ export function InfinitePostsList() {
     isLoading,
     isError,
     error,
-  } = useInfinitePostsQuery();
+  } = useInfinitePostsQuery(filter);
 
   const posts = data?.pages.flatMap((page) => page.posts) ?? [];
 
@@ -48,11 +60,12 @@ export function InfinitePostsList() {
   if (isError) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-center">
+        <div className="text-center flex flex-col gap-2">
           <p className="text-red-500 font-semibold">Lỗi khi tải bài viết</p>
           <p className="text-sm text-gray-500">
             {error instanceof Error ? error.message : "Có lỗi xảy ra"}
           </p>
+          <Button onClick={() => window.location.reload()}>Thử tải lại</Button>
         </div>
       </div>
     );
@@ -67,33 +80,31 @@ export function InfinitePostsList() {
   }
 
   return (
-    <div className="h-[calc(100vh-200px)]">
-      <Virtuoso
-        useWindowScroll
-        data={posts}
-        endReached={handleEndReached}
-        overscan={200}
-        components={{
-          Header: () => <PendingPost />,
-          Footer: () =>
-            isFetchingNextPage ? (
-              <div className="flex justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : !hasNextPage && posts.length > 0 ? (
-              <div className="flex items-center justify-center py-8">
-                <p className="text-gray-400 text-sm">
-                  Đã hiển thị tất cả bài viết
-                </p>
-              </div>
-            ) : null,
-        }}
-        itemContent={(index, post: PostResponse) => (
-          <div className="pb-4 pr-2">
-            <PostCard post={post} />
-          </div>
-        )}
-      />
-    </div>
+    <Virtuoso
+      useWindowScroll
+      data={posts}
+      endReached={handleEndReached}
+      overscan={200}
+      components={{
+        Header: showPending ? () => <PendingPost /> : undefined,
+        Footer: () =>
+          isFetchingNextPage ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : !hasNextPage && posts.length > 0 ? (
+            <div className="flex items-center justify-center py-8">
+              <p className="text-gray-400 text-sm">
+                Đã hiển thị tất cả bài viết
+              </p>
+            </div>
+          ) : null,
+      }}
+      itemContent={(index, post: PostResponse) => (
+        <div className="pb-4 pr-2">
+          <PostCard post={post} />
+        </div>
+      )}
+    />
   );
 }

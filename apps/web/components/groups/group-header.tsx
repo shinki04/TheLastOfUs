@@ -74,83 +74,89 @@ export function GroupHeader({ group, currentUser }: GroupHeaderProps) {
   };
 
   return (
-   <>
-    <div className="bg-card border-b mb-6">
-      {/* Cover Image */}
-      <div className="h-48 md:h-72 bg-muted relative w-full overflow-hidden">
-        {group.cover_url ? (
-          <img
-            src={group.cover_url}
-            alt="Cover"
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-r from-primary/10 to-primary/30" />
-        )}
-      </div>
+    <>
+      <div className="bg-card border-b mb-6">
+        {/* Cover Image */}
+        <div className="h-48 md:h-72 bg-muted relative w-full overflow-hidden">
+          {group.cover_url ? (
+            <img
+              src={group.cover_url}
+              alt="Cover"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-r from-primary/10 to-primary/30" />
+          )}
+        </div>
 
-      {/* Group Info */}
-      <div className="container max-w-5xl mx-auto px-4">
-        <div className="flex flex-col md:flex-row items-start md:items-end gap-4 -mt-6 relative z-10 ">
-          {/* Avatar */}
-          <div className="w-28 h-28 rounded-xl border-4 border-background bg-muted overflow-hidden shrink-0">
-            {group.avatar_url ? (
-              <img
-                src={group.avatar_url}
-                alt={group.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
-                <Users className="w-10 h-10 text-primary/60" />
-              </div>
-            )}
-          </div>
-
-          {/* Name and Meta */}
-          <div className="flex-1 flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 w-full">
-            <div>
-              <h1 className="text-2xl font-bold">{group.name}</h1>
-              <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  {group.privacy_level === "public" ? (
-                    <>
-                      <Globe className="w-4 h-4" /> Công khai
-                    </>
-                  ) : (
-                    <>
-                      <Lock className="w-4 h-4" /> Riêng tư
-                    </>
-                  )}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Users className="w-4 h-4" />
-                  {group.members_count} thành viên
-                </span>
-              </div>
+        {/* Group Info */}
+        <div className="container max-w-5xl mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-start md:items-end gap-4 -mt-6 relative z-10 ">
+            {/* Avatar */}
+            <div className="w-28 h-28 rounded-xl border-4 border-background bg-muted overflow-hidden shrink-0">
+              {group.avatar_url ? (
+                <img
+                  src={group.avatar_url}
+                  alt={group.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
+                  <Users className="w-10 h-10 text-primary/60" />
+                </div>
+              )}
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2">
-              {isPendingRequest ? (
-                <Button variant="outline" disabled>
-                  Đang chờ duyệt
-                </Button>
-              ) : isActiveMember ? (
-                <Button variant="outline" onClick={() => setOpen(true)} disabled={isPending}>
-                  {isPending ? "Đang xử lý..." : "Rời Group"}
-                </Button>
-              ) : (
-                <Button onClick={handleJoin} disabled={isPending}>
-                  {isPending ? "Đang xử lý..." : "Tham gia Group"}
-                </Button>
-              )}
+            {/* Name and Meta */}
+            <div className="flex-1 flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 w-full">
+              <div>
+                <h1 className="text-2xl font-bold">{group.name}</h1>
+                <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    {group.privacy_level === "public" ? (
+                      <>
+                        <Globe className="w-4 h-4" /> Công khai
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="w-4 h-4" /> Riêng tư
+                      </>
+                    )}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Users className="w-4 h-4" />
+                    {group.members_count} thành viên
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2">
+                {isPendingRequest ? (
+                  <Button variant="outline" disabled>
+                    Đang chờ duyệt
+                  </Button>
+                ) : isActiveMember ? (
+                  <Button onClick={() => setOpen(true)} disabled={isPending}>
+                    {isPending ? "Đang xử lý..." : "Rời Group"}
+                  </Button>
+                ) : (
+                  <Button onClick={handleJoin} disabled={isPending}>
+                    {isPending ? "Đang xử lý..." : "Tham gia Group"}
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-    <AlertDialog open={open} onOpenChange={setOpen} title="Rời Group" description="Bạn có chắc chắn muốn rời khỏi group này?" onConfirm={handleLeave}/>
-   </>
+      <AlertDialog
+        open={open}
+        onOpenChange={setOpen}
+        title="Rời Group"
+        description="Bạn có chắc chắn muốn rời khỏi group này?"
+        onConfirm={handleLeave}
+      />
+    </>
   );
 }

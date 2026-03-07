@@ -28,8 +28,10 @@ interface ConversationListProps {
 // Fixed height for conversation items
 const ITEM_HEIGHT = 72;
 
+type FilterType = "all" | "unread" | "group";
+
 /**
- * Virtualized list of conversations with search and new conversation button
+ * Virtualized list of conversations with search, filters, and new conversation button
  */
 export function ConversationList({
   conversations,
@@ -43,6 +45,7 @@ export function ConversationList({
 }: ConversationListProps) {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
+  const [filter, setFilter] = useState<FilterType>("all");
   const parentRef = useRef<HTMLDivElement>(null);
 
   // Prefetch messages on hover for instant loading
@@ -50,15 +53,23 @@ export function ConversationList({
     (conversationId: string) => {
       queryClient.prefetchInfiniteQuery(messagesQueryOptions(conversationId));
     },
-    [queryClient]
+    [queryClient],
   );
 
-  // Filter conversations by search query
+  // Filter conversations by search query and active tab
   const filteredConversations = useMemo(() => {
-    if (!searchQuery.trim()) return conversations;
+    let result = conversations;
+
+    if (filter === "unread") {
+      result = result.filter((conv) => (conv.unreadCount || 0) > 0);
+    } else if (filter === "group") {
+      result = result.filter((conv) => conv.type === "group");
+    }
+
+    if (!searchQuery.trim()) return result;
 
     const query = searchQuery.toLowerCase();
-    return conversations.filter((conv) => {
+    return result.filter((conv) => {
       // Search in group name
       if (conv.name?.toLowerCase().includes(query)) return true;
 
@@ -68,7 +79,7 @@ export function ConversationList({
         return (
           profile?.display_name?.toLowerCase().includes(query) ||
           profile?.slug?.toLowerCase().includes(query) ||
-          profile?.username?.toLowerCase().includes(query) 
+          profile?.username?.toLowerCase().includes(query)
         );
       });
       if (memberMatch) return true;
@@ -78,7 +89,7 @@ export function ConversationList({
 
       return false;
     });
-  }, [conversations, searchQuery]);
+  }, [conversations, searchQuery, filter]);
 
   // Setup virtualizer
   const virtualizer = useVirtualizer({
@@ -93,33 +104,69 @@ export function ConversationList({
   return (
     <div className={cn("flex flex-col h-full", className)}>
       {/* Header */}
-      <div className="p-4 border-b space-y-3">
+      <div className="p-4 border-b border-chat-border space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Tin nhắn</h2>
+          <h2 className="text-xl font-bold">Tin nhắn</h2>
           {onNewConversation && (
             <Button
               size="icon"
-              variant="ghost"
+              className="h-10 w-10 shrink-0 bg-mainred text-white hover:bg-mainred-hover focus-visible:ring-mainred/20 dark:focus-visible:ring-mainred/40 dark:bg-mainred/60 rounded-full flex items-center justify-center transition-all shadow-lg shadow-mainred/20"
               onClick={onNewConversation}
-              className="h-8 w-8"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-5 w-5" />
               <span className="sr-only">Tin nhắn mới</span>
             </Button>
           )}
         </div>
 
         {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="relative group mt-2">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-mainred transition-colors" />
           <Input
-            placeholder="Tìm kiếm cuộc trò chuyện..."
+            placeholder="Tìm kiếm hội thoại..."
             value={searchQuery}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               setSearchQuery(e.target.value)
             }
-            className="pl-9"
+            className="w-full pl-10 pr-4 py-2 bg-background dark:bg-background-dark border border-chat-border rounded-xl focus-visible:ring-2 focus-visible:ring-mainred focus-visible:border-transparent outline-none transition-all text-sm h-auto"
           />
+        </div>
+
+        {/* Conversation Filters */}
+        <div className="flex items-center gap-2 mt-3 overflow-x-auto pb-1 scrollbar-hide">
+          <button
+            onClick={() => setFilter("all")}
+            className={cn(
+              "whitespace-nowrap rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors border",
+              filter === "all"
+                ? "bg-mainred/10 border-mainred/20 text-mainred"
+                : "bg-transparent border-transparent text-muted-foreground hover:bg-slate-50 dark:hover:bg-slate-800/50",
+            )}
+          >
+            Tất cả
+          </button>
+          <button
+            onClick={() => setFilter("unread")}
+            className={cn(
+              "whitespace-nowrap rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors border",
+              filter === "unread"
+                ? "bg-mainred/10 border-mainred/20 text-mainred"
+                : "bg-transparent border-transparent text-muted-foreground hover:bg-slate-50 dark:hover:bg-slate-800/50",
+            )}
+          >
+            Chưa đọc
+          </button>
+          <button
+            onClick={() => setFilter("group")}
+            className={cn(
+              "whitespace-nowrap rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors border",
+              filter === "group"
+                ? "bg-mainred/10 border-mainred/20 text-mainred"
+                : "bg-transparent border-transparent text-muted-foreground hover:bg-slate-50 dark:hover:bg-slate-800/50",
+            )}
+          >
+            Nhóm
+          </button>
         </div>
       </div>
 

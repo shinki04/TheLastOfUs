@@ -3,17 +3,51 @@ import { Tables, Enums, TablesUpdate } from "./database.types";
 export type privacyPost = Enums<"privacy_post">;
 export type Post = Tables<"posts">;
 export type UpdatePost = TablesUpdate<"posts">;
+
+export type PostAppeal = Tables<"post_appeals"> & {
+  user: {
+    display_name: string | null;
+    username: string | null;
+    avatar_url: string | null;
+  } | null;
+  post: {
+    content: string;
+    author_id: string;
+    media_urls?: string[] | null;
+  } | null;
+};
+
+export type ManagementPost = Pick<Post, "id" | "content" | "created_at" | "privacy_level"> & {
+  moderation_status: Post["moderation_status"] | "queue_pending" | "failed";
+  post_appeals: {
+    id: string;
+    status: string;
+    reason: string;
+    created_at: string;
+  }[];
+  post_media?: {
+    id: string;
+    media_url: string;
+    media_type: string;
+  }[];
+  is_queue_item?: boolean;
+  queue_status?: string;
+  error_message?: string | null;
+  media_count?: number;
+};
+
+export type FeedFilter = "all" | "user" | "group";
 export type ModerationStatus = Enums<"moderation_status">;
 export type PostResponse = {
   id: string;
-  created_at: string;
+  created_at: string | null;
   author: {
     id: string;
-    username: string;
+    username: string | null;
     slug?: string;
-    display_name: string;
+    display_name: string | null;
     avatar_url: string | null;
-    global_role: "admin" | "moderator" | "student" | "lecturer";
+    global_role: "admin" | "moderator" | "student" | "lecturer" | "banned" | null;
   };
   content: string;
   media_urls: string[] | null;

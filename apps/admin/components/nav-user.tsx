@@ -1,5 +1,4 @@
 "use client";
-
 import { User } from "@repo/shared/types/user";
 import {
   Avatar,
@@ -20,12 +19,20 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@repo/ui/components/sidebar";
-import { ChevronsUpDown, LogOut } from "lucide-react";
-
+import {
+  ChevronsUpDown,
+  LogOut,
+  MonitorIcon,
+  MoonStarIcon,
+  SunIcon,
+} from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@repo/ui/components/tabs";
 import { signOut } from "@/app/auth/action";
+import { useTheme } from "next-themes";
 
 export function NavUser({ user }: { user: User }) {
   const { isMobile } = useSidebar();
+  const { theme, setTheme } = useTheme();
 
   return (
     <SidebarMenu>
@@ -47,11 +54,12 @@ export function NavUser({ user }: { user: User }) {
                 <span className="truncate font-medium">
                   {user.display_name || user.username}
                 </span>
-                  <span className="truncate text-xs capitalize text-primary font-medium">
+                <span className="truncate text-xs capitalize text-primary font-medium">
                   {user.global_role}
                 </span>
-                <span className="truncate text-xs text-muted-foreground">{user.email}</span>
-              
+                <span className="truncate text-xs text-muted-foreground">
+                  {user.email}
+                </span>
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -75,11 +83,12 @@ export function NavUser({ user }: { user: User }) {
                   <span className="truncate font-medium">
                     {user.display_name || user.username}
                   </span>
-                   <span className="truncate text-xs capitalize text-primary font-medium">
+                  <span className="truncate text-xs capitalize text-primary font-medium">
                     {user.global_role}
                   </span>
-                  <span className="truncate text-xs text-muted-foreground">{user.email}</span>
-                 
+                  <span className="truncate text-xs text-muted-foreground">
+                    {user.email}
+                  </span>
                 </div>
               </div>
             </DropdownMenuLabel>
@@ -106,6 +115,23 @@ export function NavUser({ user }: { user: User }) {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator /> */}
+            <div className="px-2 py-1.5">
+              <Tabs value={theme || "system"} onValueChange={setTheme}>
+                <TabsList className="w-full">
+                  <TabsTrigger value="system" className="flex-1">
+                    <MonitorIcon className="mr-2 size-4" />
+                  </TabsTrigger>
+                  <TabsTrigger value="light" className="flex-1">
+                    <SunIcon className="mr-2 size-4" />
+                  </TabsTrigger>
+                  <TabsTrigger value="dark" className="flex-1">
+                    <MoonStarIcon className="mr-2 size-4" />
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => signOut()}>
               <LogOut />
               Đăng xuất

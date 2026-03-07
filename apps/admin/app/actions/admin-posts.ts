@@ -61,7 +61,7 @@ export async function getAllPosts(
   if (error) throw error;
 
   return {
-    posts: data ?? [],
+    posts: (data ?? []),
     total: count ?? 0,
     page,
     totalPages: Math.ceil((count ?? 0) / limit),

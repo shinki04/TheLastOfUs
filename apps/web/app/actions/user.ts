@@ -214,14 +214,14 @@ export async function updateProfileWithAvatar(
   const displayName = formData.get("display_name") as string;
   const description = formData.get("description") as string;
   const slug = formData.get("slug") as string;
+  const phoneNumber = formData.get("phone_number") as string;
+  const birthDate = formData.get("birth_date") as string;
   const avatarImage = formData.get("avatar_image") as File | null;
-
-  if (!displayName?.trim()) {
-    throw new Error("Display name is required");
-  }
+  const coverImage = formData.get("cover_image") as File | null;
 
   const supabase = await createClient();
   let avatarUrl: string | undefined;
+  let backgroundUrl: string | undefined;
 
   // Upload new avatar if provided
   if (avatarImage && avatarImage.size > 0) {
@@ -230,22 +230,57 @@ export async function updateProfileWithAvatar(
     } catch (error) {
       console.error("Avatar upload failed:", error);
       throw new Error(
-        `Failed to upload avatar: ${
-          error instanceof Error ? error.message : "Unknown error"
+        `Failed to upload avatar: ${error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  }
+
+  // Upload new cover image if provided
+  if (coverImage && coverImage.size > 0) {
+    try {
+      const fileExt = coverImage.name.split(".").pop();
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
+      const filePath = `${userId}/covers/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, coverImage, {
+          contentType: coverImage.type,
+          upsert: false,
+        });
+
+      if (uploadError) {
+        throw new Error(`Cover upload failed: ${uploadError.message}`);
+      }
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      backgroundUrl = publicUrl;
+    } catch (error) {
+      console.error("Cover upload failed:", error);
+      throw new Error(
+        `Failed to upload cover: ${error instanceof Error ? error.message : "Unknown error"
         }`
       );
     }
   }
 
   // Prepare profile data
-  const profileData = {
+  const profileData: Record<string, unknown> = {
     id: userId,
-    display_name: displayName.trim(),
-    description: description?.trim() || null,
-    slug: slug?.trim() || null,
-    ...(avatarUrl && { avatar_url: avatarUrl }),
     updated_at: new Date().toISOString(),
   };
+
+  // Only include fields that were provided
+  if (displayName?.trim()) profileData.display_name = displayName.trim();
+  if (description !== null && description !== undefined) profileData.description = description?.trim() || null;
+  if (slug !== null && slug !== undefined) profileData.slug = slug?.trim() || null;
+  if (phoneNumber !== null && phoneNumber !== undefined) profileData.phone_number = phoneNumber?.trim() || null;
+  if (birthDate !== null && birthDate !== undefined) profileData.birth_date = birthDate?.trim() || null;
+  if (avatarUrl) profileData.avatar_url = avatarUrl;
+  if (backgroundUrl) profileData.background_url = backgroundUrl;
 
   const { data, error } = await supabase
     .from("profiles")

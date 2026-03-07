@@ -23,10 +23,16 @@ import ReadMore from "./ReadMore";
 interface PostCardProps {
   post: PostResponse;
   isPending?: boolean;
+  isPendingModeration?: boolean;
   allowAnonymousComments?: boolean;
 }
 
-export default function PostCard({ post, isPending = false, allowAnonymousComments = false }: PostCardProps) {
+export default function PostCard({
+  post,
+  isPending = false,
+  isPendingModeration = false,
+  allowAnonymousComments = false,
+}: PostCardProps) {
   const { mutate: mutateDelete } = useDeletePost();
   const currentUser = useGetCurrentUser();
 
@@ -49,7 +55,7 @@ export default function PostCard({ post, isPending = false, allowAnonymousCommen
         const fileInfo = getFileInfo(url);
         return isImageType(fileInfo.type);
       }) || [],
-    [post.media_urls]
+    [post.media_urls],
   );
 
   const handleMediaClick = React.useCallback(
@@ -74,7 +80,7 @@ export default function PostCard({ post, isPending = false, allowAnonymousCommen
         });
       }
     },
-    [imageUrls]
+    [imageUrls],
   );
 
   const handleDelete = React.useCallback(() => {
@@ -92,9 +98,9 @@ export default function PostCard({ post, isPending = false, allowAnonymousCommen
   return (
     <>
       <Card
-        className={`rounded-lg shadow hover:shadow-lg transition-shadow ${
+        className={`bg-dashboard-card dark:bg-dashboard-darkCard rounded-xl shadow-sm border border-dashboard-border dark:border-dashboard-darkBorder overflow-hidden ${
           isPending ? "opacity-50 pointer-events-none relative" : ""
-        }`}
+        } ${isPendingModeration ? "opacity-70" : ""}`}
       >
         {isPending && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 rounded-lg">
@@ -105,7 +111,7 @@ export default function PostCard({ post, isPending = false, allowAnonymousCommen
           </div>
         )}
 
-        <div className="p-4">
+        <div className="p-4 pb-0">
           <PostHeader
             postId={post.id}
             author={post.author}
@@ -118,23 +124,27 @@ export default function PostCard({ post, isPending = false, allowAnonymousCommen
             group={post.group}
             isAnonymous={post.is_anonymous ?? false}
             isGlobalAdmin={currentUser.data?.global_role === "admin"}
+            isPendingModeration={isPendingModeration}
           />
 
           <div className="mb-3">
             <ReadMore content={post.content} />
           </div>
-          <PostMediaGallery
-            mediaUrls={post.media_urls || []}
-            onMediaClick={handleMediaClick}
-          />
+        </div>
 
+        <PostMediaGallery
+          mediaUrls={post.media_urls || []}
+          onMediaClick={handleMediaClick}
+        />
+
+        <div className="p-4 pt-0 mt-2">
           <PostActions
             post={{
-                id: post.id,
-                like_count: post.like_count || 0,
-                comment_count: post.comment_count || 0,
-                share_count: post.share_count || 0,
-                is_liked_by_viewer: !!post.is_liked_by_viewer
+              id: post.id,
+              like_count: post.like_count || 0,
+              comment_count: post.comment_count || 0,
+              share_count: post.share_count || 0,
+              is_liked_by_viewer: !!post.is_liked_by_viewer,
             }}
             onCommentClick={() => setShowDetailDialog(true)}
             showStats={true}
@@ -142,7 +152,7 @@ export default function PostCard({ post, isPending = false, allowAnonymousCommen
         </div>
       </Card>
 
-      <PostDetailDialog 
+      <PostDetailDialog
         post={post}
         open={showDetailDialog}
         onOpenChange={setShowDetailDialog}

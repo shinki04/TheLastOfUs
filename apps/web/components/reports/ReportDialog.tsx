@@ -133,6 +133,7 @@ export function ReportDialog({
             <div className="space-y-2">
               <Label htmlFor="description">Mô tả chi tiết</Label>
               <Textarea
+                className="resize-none"
                 id="description"
                 placeholder="Vui lòng mô tả lý do báo cáo..."
                 value={description}
