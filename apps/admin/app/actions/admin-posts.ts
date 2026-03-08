@@ -41,7 +41,12 @@ export async function getAllPosts(
     .range(start, end);
 
   if (filters?.search) {
-    query = query.ilike("content", `%${filters.search}%`);
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (uuidRegex.test(filters.search)) {
+      query = query.or(`content.ilike.%${filters.search}%,id.eq.${filters.search}`);
+    } else {
+      query = query.ilike("content", `%${filters.search}%`);
+    }
   }
 
   if (filters?.authorId) {

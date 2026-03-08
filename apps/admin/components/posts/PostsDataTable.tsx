@@ -45,6 +45,7 @@ import {
   Video,
   XCircle,
 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import * as React from "react";
 
 import { approvePost,deletePostAdmin, flagPost, getAllPosts, rejectPost } from "@/app/actions/admin-posts";
@@ -111,9 +112,10 @@ function formatDate(dateString: string | null): string {
 }
 
 export function PostsDataTable({ flaggedOnly = false, rejectedOnly = false, initialData }: PostsDataTableProps) {
+  const searchParams = useSearchParams();
   const [posts, setPosts] = React.useState<Post[]>(initialData?.posts as Post[] ?? []);
   const [loading, setLoading] = React.useState(!initialData);
-  const [search, setSearch] = React.useState("");
+  const [search, setSearch] = React.useState(searchParams.get("search") || "");
   const [statusFilter, setStatusFilter] = React.useState<
     "all" | ModerationStatus
   >("all");
