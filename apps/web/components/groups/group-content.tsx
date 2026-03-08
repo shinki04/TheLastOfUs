@@ -325,7 +325,7 @@ export function GroupContent({
             {group.description && (
               <div>
                 <h3 className="font-medium mb-2">Mô tả</h3>
-                <p className="text-muted-foreground whitespace-pre-wrap">
+                <p className="text-muted-foreground whitespace-pre-wrap text-sm">
                   {group.description}
                 </p>
               </div>

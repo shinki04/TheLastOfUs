@@ -80,16 +80,15 @@ function UserCard({ user }: { user: SearchedUser }) {
           height={64}
           className="rounded-full object-cover aspect-square"
         />
-        {user.global_role === "lecturer" ||
-          (user.global_role === "admin" && (
-            <div title="Giảng viên" className="absolute -bottom-1 -right-1">
-              <BadgeCheck
-                className="w-6 h-6 text-blue-500 bg-white dark:bg-slate-900 rounded-full"
-                fill="currentColor"
-                stroke="white"
-              />
-            </div>
-          ))}
+        {(user.global_role === "lecturer" || user.global_role === "admin") && (
+          <div title="Giảng viên" className="absolute -bottom-1 -right-1">
+            <BadgeCheck
+              className="w-6 h-6 text-blue-500 bg-white dark:bg-slate-900 rounded-full"
+              fill="currentColor"
+              stroke="white"
+            />
+          </div>
+        )}
       </div>
 
       <div className="flex-1 min-w-0">
