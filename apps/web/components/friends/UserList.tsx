@@ -47,7 +47,7 @@ function UserCard({ user }: { user: SearchedUser }) {
   };
 
   const handleViewProfile = () => {
-    router.push(`/profile/${user.id}`);
+    router.push(`/profile/${user.slug || user.id}`);
   };
 
   const handleAction = async (
